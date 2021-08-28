@@ -1,6 +1,6 @@
 import numpy as np
 
-from yt.frontends.idefix.dmpfile_io import read_single_field
+from .dmpfile_io import read_single_field
 from yt.utilities.io_handler import BaseIOHandler
 
 

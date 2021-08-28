@@ -7,7 +7,7 @@ import numpy as np
 
 from yt.data_objects.index_subobjects.grid_patch import AMRGridPatch
 from yt.data_objects.static_output import Dataset
-from .dmpfile_io import (
+from yt_idefix.frontend.dmpfile_io import (
     parse_fields_index,
     read_header,
     read_idefix_dmpfile,
@@ -16,7 +16,9 @@ from yt.funcs import setdefaultattr
 from yt.geometry.grid_geometry_handler import GridIndex
 
 from .fields import IdefixFieldInfo
-import inifix # FRONTEND EXCLUSIVE DEPENDENCY
+import inifix
+
+_IDEFIX_VERSION_REGEXP = re.compile(r"v\d+\.\d+\.?\d*[-\w+]*")
 
 class IdefixGrid(AMRGridPatch):
     _id_offset = 0
@@ -133,8 +135,9 @@ class IdefixDataset(Dataset):
 
         # parse the version hash
         header = read_header(self.parameter_filename)
-        version_exp = r"v\d+\.\d+[-\w]+"  # version number + git hash
-        self.parameters["idefix version"] = re.findall(version_exp, header)[0]
+        
+        match = re.search(_IDEFIX_VERSION_REGEXP, header)
+        self.parameters["idefix version"] = "unknown" if match is None else match.group()
 
         if self.inifile is not None:
             self.parameters.update(inifix.load(self.inifile))
