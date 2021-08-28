@@ -18,13 +18,13 @@ Make sure you have Python 3.6 or newer, then run
 ```shell
 python3 -m pip install yt_idefix
 ```
-
+If you don't already have yt it will be installed along.
 
 ## Usage
 
-On top of import `yt` itself, make sure to activate the extension as
+After importing `yt` itself, make sure to activate the extension
 ```python
 import yt
 import yt.extensions.idefix
 ```
-Then you should be able to load Idefix snapshots seamlessly with `yt.load`.
+Then you should be able to load Idefix data seamlessly with `yt.load`.
