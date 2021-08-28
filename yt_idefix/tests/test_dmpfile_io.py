@@ -4,8 +4,8 @@ import numpy as np
 from numpy.testing import assert_equal
 
 from yt.config import ytcfg
-from yt.frontends.idefix.dmpfile_io import read_idefix_dmpfile
 from yt.testing import requires_file
+from yt_idefix.dmpfile_io import read_idefix_dmpfile
 
 idefix_khi = os.path.join("idefix", "KHI", "dump.0001.dmp")
 

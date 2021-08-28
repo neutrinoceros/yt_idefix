@@ -1,8 +1,8 @@
 import os
 
-from yt.frontends.idefix.api import IdefixDumpDataset
 from yt.loaders import load
 from yt.testing import requires_file
+from yt_idefix.api import IdefixDumpDataset
 
 idefix_khi = os.path.join("idefix", "KHI", "dump.0001.dmp")
 
