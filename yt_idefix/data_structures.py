@@ -85,7 +85,7 @@ class IdefixHierarchy(GridIndex):
             self.grids[i] = g
 
 
-class IdefixDataset(Dataset):
+class IdefixDumpDataset(Dataset):
     _index_class = IdefixHierarchy
     _field_info_class = IdefixFieldInfo
 
