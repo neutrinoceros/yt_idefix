@@ -7,7 +7,7 @@ import numpy as np
 
 from yt.data_objects.index_subobjects.grid_patch import AMRGridPatch
 from yt.data_objects.static_output import Dataset
-from yt_idefix.frontend.dmpfile_io import (
+from .dmpfile_io import (
     parse_fields_index,
     read_header,
     read_idefix_dmpfile,
