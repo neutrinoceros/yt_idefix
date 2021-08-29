@@ -8,4 +8,4 @@ from .io import IdefixIOHandler
 output_type_registry["IdefixDumpDataset"] = IdefixDumpDataset
 
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
