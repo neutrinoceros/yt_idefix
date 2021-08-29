@@ -28,3 +28,22 @@ import yt
 import yt.extensions.idefix
 ```
 Then you should be able to load Idefix data seamlessly with `yt.load`.
+
+
+## Current limitations
+
+As of version 0.1.0 of this project, the frontend allows one to read Idefix's
+dumpfiles only, through the `IdefixDumpDataset` class. `IdefixVTKDataset` may be
+implemented in the future, but won't be usable directly with `yt.load` before
+the next yt bugfix release is available (see bellow).
+
+The `IdefixDumpDataset` class is functional but far from optimized, it may take
+much longer than strictly needed to perform queries. This will be adressed in
+the future.
+
+As of yt 4.0.1:
+- Non-uniform grids (using log spacing) are not supported, which makes this
+  frontend of very limited use for Idefix.
+- `yt.load()` is not suitable for vtk files that are not produced by Athena.
+  https://github.com/yt-project/yt/issues/3001 This bug is however resolved on
+  the main branch (https://github.com/yt-project/yt/pull/3424)
