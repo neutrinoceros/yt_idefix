@@ -1,6 +1,7 @@
 import abc
 import os
 import re
+import warnings
 import weakref
 from pathlib import Path
 
@@ -139,9 +140,15 @@ class IdefixDumpDataset(IdefixDataset):
         header = read_header(self.parameter_filename)
 
         match = re.search(_IDEFIX_VERSION_REGEXP, header)
-        self.parameters["idefix version"] = (
-            "unknown" if match is None else match.group()
-        )
+        version: str
+        if match is None:
+            warnings.warn(
+                f"Could not determine Idefix version from file header {header!r}"
+            )
+            version = "unknown"
+        else:
+            version = match.group()
+        self.parameters["idefix version"] = version
 
         if self.inifile is not None:
             self.parameters.update(inifix.load(self.inifile))
