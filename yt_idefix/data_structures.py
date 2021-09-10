@@ -4,6 +4,7 @@ import re
 import warnings
 import weakref
 from pathlib import Path
+from typing import List
 
 import inifix
 import numpy as np
@@ -85,7 +86,41 @@ class IdefixHierarchy(GridIndex):
 
 
 class IdefixDataset(Dataset, abc.ABC):
-    pass
+    """A common abstraction for IdefixDumpDataset and IdefixVtkDataset."""
+
+    def _parse_inifile(self) -> None:
+        if self.inifile is None:
+            warnings.warn(
+                "Cannot validate grid structure. "
+                "Please pass the `inifile` keyword argument to `yt.load`"
+            )
+            return
+
+        self.parameters.update(inifix.load(self.inifile))
+        grid_ini = self.parameters["Grid"]
+
+        msg_elems: List[str] = []
+        for ax, vals in grid_ini.items():
+            if vals[0] > 1:
+                # more than one block is only relevant for mixing grid spacings,
+                # but only "u" is supported
+                msg_elems.append(f"found multiple blocks in direction {ax}; got {vals}")
+            if any(_ != "u" for _ in vals[3::3]):
+                msg_elems.append(f"found non-uniform block(s) in direction {ax}")
+        if len(msg_elems) > 0:
+            msg = (
+                "yt + yt_idefix currently only supports a single block "
+                "with uniform spacing in each direction. Got the following issue(s)\n"
+                + "- "
+                + "\n- ".join(msg_elems)
+                + "\nThe grid will be treated as uniformly spaced in every direction. "
+                "Only the domain edges are expected to be correctly parsed."
+            )
+            warnings.warn(msg)
+
+
+class IdefixVtkDataset(IdefixDataset):
+    NotImplemented
 
 
 class IdefixDumpDataset(IdefixDataset):
@@ -150,16 +185,7 @@ class IdefixDumpDataset(IdefixDataset):
             version = match.group()
         self.parameters["idefix version"] = version
 
-        if self.inifile is not None:
-            self.parameters.update(inifix.load(self.inifile))
-            grid_ini = self.parameters["Grid"]
-            for ax, vals in grid_ini.items():
-                if vals[0] > 1:
-                    # more than one block is only relevant for mixing grid spacings,
-                    # but only "u" is supported
-                    raise ValueError(f"Unsupported block structure for {ax}.")
-                if vals[3] != "u":
-                    raise ValueError(f"Unsupported grid spacing '{vals[3]}'.")
+        self._parse_inifile()
 
         # parse the grid
         axes = ("x1", "x2", "x3")
