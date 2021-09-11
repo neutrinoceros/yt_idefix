@@ -3,7 +3,7 @@ from yt.fields.magnetic_field import setup_magnetic_field_aliases
 
 
 class IdefixFieldInfo(FieldInfoContainer):
-    known_other_fields = (
+    known_other_fields = (  # type: ignore
         ("Vc-RHO", ("code_mass / code_length**3", ["density"], None)),
         ("Vc-VX1", ("code_length / code_time", ["velocity_x"], None)),
         ("Vc-VX2", ("code_length / code_time", ["velocity_y"], None)),
