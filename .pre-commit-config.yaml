@@ -63,3 +63,9 @@ repos:
     rev: v1.9.0
     hooks:
     -   id: rst-backticks
+
+# additional hooks not from yt
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v0.910
+    hooks:
+    -   id: mypy

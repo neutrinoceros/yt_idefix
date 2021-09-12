@@ -1,8 +1,10 @@
 import re
 import struct
-from typing import List
+from typing import BinaryIO, Dict, List, Tuple
 
 import numpy as np
+
+from .commons import IdefixFieldProperties, IdefixMetadata
 
 # hardcoded in idefix
 HEADERSIZE = 128
@@ -78,9 +80,12 @@ def read_header(filename):
     return header
 
 
-def parse_fields_index(fh):
+def get_field_offset_index(fh: BinaryIO) -> Dict[str, int]:
     """
     Go over a dumpfile, parse bytes offsets associated with each field.
+    Returns
+    -------
+    field_index: mapping (field name -> offset)
     """
     field_index = {}
 
@@ -102,19 +107,28 @@ def parse_fields_index(fh):
     return field_index
 
 
-def read_single_field(fh, field_offset):
+def read_single_field(fh: BinaryIO, field_offset: int) -> np.ndarray:
+    """
+    Returns
+    -------
+    data: 3D np.ndarray with dtype float64
+    """
     fh.seek(field_offset)
     field_name, dtype, ndim, dim = read_next_field_properties(fh)
     data = read_distributed(fh, dim)
     return data
 
 
-def read_idefix_dmpfile(filename, skip_data=False):
+def read_idefix_dmpfile(
+    filename: str, skip_data: bool = False
+) -> Tuple[IdefixFieldProperties, IdefixMetadata]:
     with open(filename, "rb") as fh:
         return read_idefix_dump_from_buffer(fh, skip_data)
 
 
-def read_idefix_dump_from_buffer(fh, skip_data=False):
+def read_idefix_dump_from_buffer(
+    fh: BinaryIO, skip_data: bool = False
+) -> Tuple[IdefixFieldProperties, IdefixMetadata]:
 
     # skip header
     fh.seek(HEADERSIZE)

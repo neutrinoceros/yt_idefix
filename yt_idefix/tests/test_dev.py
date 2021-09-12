@@ -2,7 +2,7 @@ import os
 
 from yt.loaders import load
 from yt.testing import requires_file
-from yt_idefix.api import IdefixDumpDataset
+from yt_idefix.api import IdefixDmpDataset
 
 idefix_khi = os.path.join("idefix", "KHI", "dump.0001.dmp")
 
@@ -10,7 +10,7 @@ idefix_khi = os.path.join("idefix", "KHI", "dump.0001.dmp")
 @requires_file(idefix_khi)
 def test_load():
     ds = load(idefix_khi)
-    assert isinstance(ds, IdefixDumpDataset)
+    assert isinstance(ds, IdefixDmpDataset)
     assert ds.dimensionality == 2
 
 
