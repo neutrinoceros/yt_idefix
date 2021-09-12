@@ -3,7 +3,6 @@ import re
 import warnings
 import weakref
 from abc import ABC, abstractmethod
-from pathlib import Path
 from typing import BinaryIO, Dict, List, Tuple
 
 import inifix
@@ -243,7 +242,7 @@ class IdefixDmpDataset(IdefixDataset):
     @classmethod
     def _is_valid(cls, fn, *args, **kwargs):
         ok = bool(
-            re.match(r"^(dump)\.\d{4}(\.dmp)$", Path(fn).name)
+            re.match(r"^(dump)\.\d{4}(\.dmp)$", os.path.basename(fn))
         )  # this is possibly too restrictive
         try:
             ok &= "idefix" in dmp_io.read_header(fn).lower()
