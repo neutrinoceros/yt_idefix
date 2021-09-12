@@ -32,7 +32,7 @@ Then you should be able to load Idefix data seamlessly with `yt.load`.
 
 ## Current limitations
 
-As of version 0.3.0 of this project, the frontend allows one to read Idefix's
+As of version 0.3.1 of this project, the frontend allows one to read Idefix's
 dumpfiles only, through the `IdefixDmpDataset` class. `IdefixVtkDataset` may be
 implemented in the future, but won't be usable directly with `yt.load` before
 the next yt bugfix release is available (see bellow).
