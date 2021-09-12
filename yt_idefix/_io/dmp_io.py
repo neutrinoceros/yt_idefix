@@ -1,6 +1,6 @@
 import re
 import struct
-from typing import BinaryIO, Dict, List, Tuple
+from typing import BinaryIO, Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -17,7 +17,7 @@ SIZE_INT = 4
 DTYPES = ["d", "f", "i"]
 
 
-def read_null_terminated_string(fh, maxsize=NAMESIZE):
+def read_null_terminated_string(fh: BinaryIO, maxsize: int = NAMESIZE):
     """Read maxsize * SIZE_CHAR bytes, but only parse non-null characters."""
     b = fh.read(maxsize * SIZE_CHAR)
     s = b.decode("utf-8", errors="backslashreplace")
@@ -25,7 +25,7 @@ def read_null_terminated_string(fh, maxsize=NAMESIZE):
     return s
 
 
-def read_next_field_properties(fh):
+def read_next_field_properties(fh: BinaryIO):
     """Emulate Idefix's OutputDump::ReadNextFieldProperty"""
     field_name = read_null_terminated_string(fh)
 
@@ -39,7 +39,19 @@ def read_next_field_properties(fh):
     return field_name, dtype, ndim, dim
 
 
-def read_chunk(fh, ndim: int, dim: List[int], dtype, is_scalar=False, skip_data=False):
+def read_chunk(
+    fh: BinaryIO,
+    ndim: int,
+    dim: List[int],
+    dtype: str,
+    *,
+    is_scalar: bool = False,
+    skip_data: bool = False,
+) -> Optional[np.ndarray]:
+    # NOTE: ret type is only dependent on skip_data...
+    # this could be better expressed in the type annotationation but it would make
+    # more sense to just refactor this function to avoid the boolean trap, so I'll keep wonky
+    # type hints for now
     assert ndim == len(dim)
     fmt = f"={np.product(dim)}{dtype}"
     size = struct.calcsize(fmt)
@@ -56,13 +68,17 @@ def read_chunk(fh, ndim: int, dim: List[int], dtype, is_scalar=False, skip_data=
     return data
 
 
-def read_serial(fh, ndim: int, dim: List[int], dtype, is_scalar=False):
+def read_serial(
+    fh: BinaryIO, ndim: int, dim: List[int], dtype: str, *, is_scalar: bool = False
+) -> Optional[np.ndarray]:
     """Emulate Idefix's OutputDump::ReadSerial"""
     assert ndim == 1  # corresponds to an error raised in IDEFIX
     return read_chunk(fh, ndim=ndim, dim=dim, dtype=dtype, is_scalar=is_scalar)
 
 
-def read_distributed(fh, dim, skip_data=False):
+def read_distributed(
+    fh: BinaryIO, dim: List[int], *, skip_data: bool = False
+) -> Optional[np.ndarray]:
     """Emulate Idefix's OutputDump::ReadDistributed"""
     # note: OutputDump::ReadDistributed only read doubles
     # because chucks written in integers are small enough
@@ -74,7 +90,7 @@ def read_distributed(fh, dim, skip_data=False):
 # The following functions are originally designed for yt
 
 
-def read_header(filename):
+def read_header(filename: str) -> str:
     with open(filename, "rb") as fh:
         header = read_null_terminated_string(fh, maxsize=HEADERSIZE)
     return header
