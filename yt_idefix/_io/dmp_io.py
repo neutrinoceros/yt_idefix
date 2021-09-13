@@ -14,7 +14,8 @@ SIZE_CHAR = 1
 SIZE_INT = 4
 # emulating C++
 # enum DataType {DoubleType, SingleType, IntegerType};
-DTYPES = ["d", "f", "i"]
+DTYPES = {0: "d", 1: "f", 2: "i"}
+DTYPES_2_NUMPY = {"d": "=f8", "f": "=f4", "i": "=i4"}
 
 
 def read_null_terminated_string(fh: BinaryIO, maxsize: int = NAMESIZE):
@@ -58,14 +59,15 @@ def read_chunk(
     if skip_data:
         fh.seek(size, 1)
         return None
-    data = struct.unpack(fmt, fh.read(size))
 
     # note: this reversal may not be desirable in general
     if is_scalar:
-        return data[0]
-
-    data = np.reshape(data, dim, order="F")
-    return data
+        retv = struct.unpack(fmt, fh.read(size))[0]
+        return retv
+    else:
+        data = np.fromfile(fh, DTYPES_2_NUMPY[dtype], count=np.product(dim))
+        data.shape = dim[::-1]
+        return data.T
 
 
 def read_serial(
