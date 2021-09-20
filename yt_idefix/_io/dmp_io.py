@@ -1,26 +1,29 @@
 import re
 import struct
+from enum import IntEnum
 from typing import BinaryIO, Dict, List, Optional, Tuple
 
 import numpy as np
 
-from .commons import IdefixFieldProperties, IdefixMetadata
+from .commons import ByteSize, IdefixFieldProperties, IdefixMetadata
 
-# hardcoded in idefix
-HEADERSIZE = 128
-NAMESIZE = 16
 
-SIZE_CHAR = 1
-SIZE_INT = 4
+class CharCount(IntEnum):
+    # hardcoded in idefix
+    HEADER = 128
+    NAME = 16
+
+
 # emulating C++
 # enum DataType {DoubleType, SingleType, IntegerType};
 DTYPES = {0: "d", 1: "f", 2: "i"}
 DTYPES_2_NUMPY = {"d": "=f8", "f": "=f4", "i": "=i4"}
+DTYPES_2_SIZE = {"i": ByteSize.INT, "f": ByteSize.FLOAT, "d": ByteSize.DOUBLE}
 
 
-def read_null_terminated_string(fh: BinaryIO, maxsize: int = NAMESIZE):
-    """Read maxsize * SIZE_CHAR bytes, but only parse non-null characters."""
-    b = fh.read(maxsize * SIZE_CHAR)
+def read_null_terminated_string(fh: BinaryIO, maxsize: int = CharCount.NAME):
+    """Read maxsize * ByteSize.CHAR bytes, but only parse non-null characters."""
+    b = fh.read(maxsize * ByteSize.CHAR)
     s = b.decode("utf-8", errors="backslashreplace")
     s = s.split("\x00", maxsplit=1)[0]
     return s
@@ -54,18 +57,19 @@ def read_chunk(
     # more sense to just refactor this function to avoid the boolean trap, so I'll keep wonky
     # type hints for now
     assert ndim == len(dim)
-    fmt = f"={np.product(dim)}{dtype}"
-    size = struct.calcsize(fmt)
+    count = np.product(dim)
+    size = count * DTYPES_2_SIZE[dtype]
     if skip_data:
         fh.seek(size, 1)
         return None
 
     # note: this reversal may not be desirable in general
     if is_scalar:
+        fmt = f"={count}{dtype}"
         retv = struct.unpack(fmt, fh.read(size))[0]
         return retv
     else:
-        data = np.fromfile(fh, DTYPES_2_NUMPY[dtype], count=np.product(dim))
+        data = np.fromfile(fh, DTYPES_2_NUMPY[dtype], count=count)
         data.shape = dim[::-1]
         return data.T
 
@@ -94,7 +98,7 @@ def read_distributed(
 
 def read_header(filename: str) -> str:
     with open(filename, "rb") as fh:
-        header = read_null_terminated_string(fh, maxsize=HEADERSIZE)
+        header = read_null_terminated_string(fh, maxsize=CharCount.HEADER)
     return header
 
 
@@ -108,7 +112,7 @@ def get_field_offset_index(fh: BinaryIO) -> Dict[str, int]:
     field_index = {}
 
     # skip header
-    fh.seek(HEADERSIZE)
+    fh.seek(CharCount.HEADER * ByteSize.CHAR)
     # skip grid properties
     for _ in range(9):
         _field_name, dtype, ndim, dim = read_next_field_properties(fh)
@@ -149,7 +153,7 @@ def read_idefix_dump_from_buffer(
 ) -> Tuple[IdefixFieldProperties, IdefixMetadata]:
 
     # skip header
-    fh.seek(HEADERSIZE)
+    fh.seek(CharCount.HEADER * ByteSize.CHAR)
 
     fprops = {}
     fdata = {}

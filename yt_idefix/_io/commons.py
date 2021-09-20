@@ -1,4 +1,5 @@
 import sys
+from enum import IntEnum
 from typing import Any, Dict, Tuple
 
 import numpy as np
@@ -19,3 +20,12 @@ IdefixFieldProperties = Dict[str, Tuple[Prec, Dim, np.ndarray]]
 
 # Map various str keys to scalars and arrays
 IdefixMetadata = Dict[str, Any]
+
+
+class ByteSize(IntEnum):
+    """Constant byte size for data types"""
+
+    CHAR = 1
+    INT = 4
+    FLOAT = 4
+    DOUBLE = 8
