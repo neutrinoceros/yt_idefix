@@ -1,4 +1,6 @@
-from typing import BinaryIO, Dict
+from __future__ import annotations
+
+from typing import BinaryIO
 
 
 def read_header(filename: str) -> str:
@@ -6,5 +8,5 @@ def read_header(filename: str) -> str:
         return "".join(fh.readline(256).decode() for _ in range(2))
 
 
-def get_field_offset_index(fh: BinaryIO) -> Dict[str, int]:  # type: ignore
+def get_field_offset_index(fh: BinaryIO) -> dict[str, int]:  # type: ignore
     ...

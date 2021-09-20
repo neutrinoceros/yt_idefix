@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import re
 import struct
 from enum import IntEnum
-from typing import BinaryIO, Dict, List, Optional, Tuple
+from typing import BinaryIO
 
 import numpy as np
 
@@ -46,12 +48,12 @@ def read_next_field_properties(fh: BinaryIO):
 def read_chunk(
     fh: BinaryIO,
     ndim: int,
-    dim: List[int],
+    dim: list[int],
     dtype: str,
     *,
     is_scalar: bool = False,
     skip_data: bool = False,
-) -> Optional[np.ndarray]:
+) -> np.ndarray | None:
     # NOTE: ret type is only dependent on skip_data...
     # this could be better expressed in the type annotationation but it would make
     # more sense to just refactor this function to avoid the boolean trap, so I'll keep wonky
@@ -75,16 +77,16 @@ def read_chunk(
 
 
 def read_serial(
-    fh: BinaryIO, ndim: int, dim: List[int], dtype: str, *, is_scalar: bool = False
-) -> Optional[np.ndarray]:
+    fh: BinaryIO, ndim: int, dim: list[int], dtype: str, *, is_scalar: bool = False
+) -> np.ndarray | None:
     """Emulate Idefix's OutputDump::ReadSerial"""
     assert ndim == 1  # corresponds to an error raised in IDEFIX
     return read_chunk(fh, ndim=ndim, dim=dim, dtype=dtype, is_scalar=is_scalar)
 
 
 def read_distributed(
-    fh: BinaryIO, dim: List[int], *, skip_data: bool = False
-) -> Optional[np.ndarray]:
+    fh: BinaryIO, dim: list[int], *, skip_data: bool = False
+) -> np.ndarray | None:
     """Emulate Idefix's OutputDump::ReadDistributed"""
     # note: OutputDump::ReadDistributed only read doubles
     # because chucks written in integers are small enough
@@ -102,7 +104,7 @@ def read_header(filename: str) -> str:
     return header
 
 
-def get_field_offset_index(fh: BinaryIO) -> Dict[str, int]:
+def get_field_offset_index(fh: BinaryIO) -> dict[str, int]:
     """
     Go over a dumpfile, parse bytes offsets associated with each field.
     Returns
@@ -143,14 +145,14 @@ def read_single_field(fh: BinaryIO, field_offset: int) -> np.ndarray:
 
 def read_idefix_dmpfile(
     filename: str, skip_data: bool = False
-) -> Tuple[IdefixFieldProperties, IdefixMetadata]:
+) -> tuple[IdefixFieldProperties, IdefixMetadata]:
     with open(filename, "rb") as fh:
         return read_idefix_dump_from_buffer(fh, skip_data)
 
 
 def read_idefix_dump_from_buffer(
     fh: BinaryIO, skip_data: bool = False
-) -> Tuple[IdefixFieldProperties, IdefixMetadata]:
+) -> tuple[IdefixFieldProperties, IdefixMetadata]:
 
     # skip header
     fh.seek(CharCount.HEADER * ByteSize.CHAR)
