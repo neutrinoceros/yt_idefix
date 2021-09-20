@@ -14,7 +14,7 @@ This frontend is a candidate for integration in the core yt code base.
 
 ## Installation
 
-Make sure you have Python 3.6 or newer, then run
+Make sure you have Python 3.7 or newer, then run
 ```shell
 python3 -m pip install yt_idefix
 ```

@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import os
 import re
 import warnings
 import weakref
 from abc import ABC, abstractmethod
-from typing import BinaryIO, Dict, List, Tuple
+from typing import BinaryIO
 
 import inifix
 import numpy as np
@@ -87,19 +89,19 @@ class IdefixHierarchy(GridIndex, ABC):
 
     @staticmethod
     @abstractmethod
-    def _get_field_offset_index(fh: BinaryIO) -> Dict[str, int]:
+    def _get_field_offset_index(fh: BinaryIO) -> dict[str, int]:
         pass
 
 
 class IdefixVtkHierarchy(IdefixHierarchy):
     @staticmethod
-    def _get_field_offset_index(fh: BinaryIO) -> Dict[str, int]:
+    def _get_field_offset_index(fh: BinaryIO) -> dict[str, int]:
         return vtk_io.get_field_offset_index(fh)
 
 
 class IdefixDmpHierarchy(IdefixHierarchy):
     @staticmethod
-    def _get_field_offset_index(fh: BinaryIO) -> Dict[str, int]:
+    def _get_field_offset_index(fh: BinaryIO) -> dict[str, int]:
         return dmp_io.get_field_offset_index(fh)
 
 
@@ -176,7 +178,7 @@ class IdefixDataset(Dataset, ABC):
         self.parameters.update(inifix.load(self.inifile))
         grid_ini = self.parameters["Grid"]
 
-        msg_elems: List[str] = []
+        msg_elems: list[str] = []
         for ax, vals in grid_ini.items():
             if vals[0] > 1:
                 # more than one block is only relevant for mixing grid spacings,
@@ -213,7 +215,7 @@ class IdefixDataset(Dataset, ABC):
             setdefaultattr(self, key, self.quan(1, unit))
 
     @abstractmethod
-    def _get_fields_metadata(self) -> Tuple[IdefixFieldProperties, IdefixMetadata]:
+    def _get_fields_metadata(self) -> tuple[IdefixFieldProperties, IdefixMetadata]:
         pass
 
     @abstractmethod
@@ -250,7 +252,7 @@ class IdefixDmpDataset(IdefixDataset):
             ok = False
         return ok
 
-    def _get_fields_metadata(self) -> Tuple[IdefixFieldProperties, IdefixMetadata]:
+    def _get_fields_metadata(self) -> tuple[IdefixFieldProperties, IdefixMetadata]:
         # read everything except large arrays
         return dmp_io.read_idefix_dmpfile(self.parameter_filename, skip_data=True)
 
