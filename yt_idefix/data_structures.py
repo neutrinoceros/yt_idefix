@@ -5,7 +5,6 @@ import re
 import warnings
 import weakref
 from abc import ABC, abstractmethod
-from typing import BinaryIO
 
 import inifix
 import numpy as np
@@ -17,7 +16,7 @@ from yt.geometry.grid_geometry_handler import GridIndex
 
 from ._io import dmp_io, vtk_io
 from ._io.commons import IdefixFieldProperties, IdefixMetadata
-from .fields import IdefixFieldInfo
+from .fields import IdefixDmpFieldInfo, IdefixVtkFieldInfo
 
 _IDEFIX_VERSION_REGEXP = re.compile(r"v\d+\.\d+\.?\d*[-\w+]*")
 
@@ -65,9 +64,7 @@ class IdefixHierarchy(GridIndex, ABC):
         self.grid_levels[0][0] = 1
         self.max_level = 1
 
-        cls = self.__class__
-        with open(self.ds.parameter_filename, "rb") as fh:
-            self._field_offsets = cls._get_field_offset_index(fh)
+        self._field_offsets = self._get_field_offset_index()
 
     def _populate_grid_objects(self):
         # the minimal form of this method is
@@ -87,22 +84,24 @@ class IdefixHierarchy(GridIndex, ABC):
             g._setup_dx()
             self.grids[i] = g
 
-    @staticmethod
     @abstractmethod
-    def _get_field_offset_index(fh: BinaryIO) -> dict[str, int]:
-        pass
+    def _get_field_offset_index(self) -> dict[str, int]:
+        HEADER_SIZE: int = 256
+        with open(self.index_filename, "rb") as fh:
+            fh.seek(HEADER_SIZE)
+            field_index = ...
+        return field_index  # type: ignore
 
 
 class IdefixVtkHierarchy(IdefixHierarchy):
-    @staticmethod
-    def _get_field_offset_index(fh: BinaryIO) -> dict[str, int]:
-        return vtk_io.get_field_offset_index(fh)
+    def _get_field_offset_index(self) -> dict[str, int]:
+        return self.ds._field_offset_index
 
 
 class IdefixDmpHierarchy(IdefixHierarchy):
-    @staticmethod
-    def _get_field_offset_index(fh: BinaryIO) -> dict[str, int]:
-        return dmp_io.get_field_offset_index(fh)
+    def _get_field_offset_index(self) -> dict[str, int]:
+        with open(self.index_filename, "rb") as fh:
+            return dmp_io.get_field_offset_index(fh)
 
 
 class IdefixDataset(Dataset, ABC):
@@ -110,16 +109,17 @@ class IdefixDataset(Dataset, ABC):
 
     def __init__(
         self,
-        dmpfile,
-        inifile=None,
-        dataset_type="idefix",
+        filename,
+        dataset_type=None,
         unit_system="cgs",
         units_override=None,
+        inifile=None,
     ):
-        self.fluid_types += ("idefix",)
+        dt = type(self)._dataset_type
+        self.fluid_types += (dt,)
         super().__init__(
-            dmpfile,
-            dataset_type,
+            filename,
+            dataset_type=dt,
             units_override=units_override,
             unit_system=unit_system,
         )
@@ -132,33 +132,9 @@ class IdefixDataset(Dataset, ABC):
         self.refine_by = 1
 
     def _parse_parameter_file(self):
-
-        fprops, fdata = self._get_fields_metadata()
-        self._detected_field_list = [k for k in fprops if re.match(r"^V[sc]-", k)]
-
+        # base method, intended to be subclassed
         # parse the version hash
         self.parameters["idefix version"] = self._get_idefix_version()
-
-        # parse the grid
-        axes = ("x1", "x2", "x3")
-        self.domain_dimensions = np.concatenate([fprops[k][-1] for k in axes])
-        self.dimensionality = np.count_nonzero(self.domain_dimensions - 1)
-
-        # note that domain edges parsing is already implemented in a mutli-block
-        # supporting fashion even though we specifically error out in case there's more
-        # than one block.
-        self.domain_left_edge = np.array(
-            [fdata[f"xl{idir}"][0] for idir in "123"], dtype="float64"
-        )
-        self.domain_right_edge = np.array(
-            [fdata[f"xr{idir}"][-1] for idir in "123"], dtype="float64"
-        )
-
-        self.current_time = fdata["time"]
-
-        self._periodicity = tuple(bool(p) for p in fdata["periodicity"])
-        enum_geoms = {1: "cartesian", 2: "cylindrial", 3: "polar", 4: "spherical"}
-        self.geometry = enum_geoms[fdata["geometry"]]
 
         # idefix is never cosmological
         self.cosmological_simulation = 0
@@ -214,50 +190,14 @@ class IdefixDataset(Dataset, ABC):
         for key, unit in self.__class__.default_units.items():
             setdefaultattr(self, key, self.quan(1, unit))
 
-    @abstractmethod
-    def _get_fields_metadata(self) -> tuple[IdefixFieldProperties, IdefixMetadata]:
-        pass
+    # The following methods are frontend-specific
 
     @abstractmethod
-    def _get_idefix_version(self) -> str:
+    def _get_header(self) -> str:
         pass
 
-
-class IdefixVtkDataset(IdefixDataset):
-    _index_class = IdefixVtkHierarchy
-    _field_info_class = IdefixFieldInfo
-
-    @classmethod
-    def _is_valid(cls, fn, *args, **kwargs) -> bool:
-        try:
-            header = vtk_io.read_header(fn)
-        except Exception:
-            return False
-        else:
-            return "Idefix" in header
-
-
-class IdefixDmpDataset(IdefixDataset):
-    _index_class = IdefixDmpHierarchy
-    _field_info_class = IdefixFieldInfo
-
-    @classmethod
-    def _is_valid(cls, fn, *args, **kwargs):
-        ok = bool(
-            re.match(r"^(dump)\.\d{4}(\.dmp)$", os.path.basename(fn))
-        )  # this is possibly too restrictive
-        try:
-            ok &= "idefix" in dmp_io.read_header(fn).lower()
-        except Exception:
-            ok = False
-        return ok
-
-    def _get_fields_metadata(self) -> tuple[IdefixFieldProperties, IdefixMetadata]:
-        # read everything except large arrays
-        return dmp_io.read_idefix_dmpfile(self.parameter_filename, skip_data=True)
-
     def _get_idefix_version(self) -> str:
-        header = dmp_io.read_header(self.parameter_filename)
+        header = self._get_header()
 
         match = re.search(_IDEFIX_VERSION_REGEXP, header)
         version: str
@@ -269,3 +209,103 @@ class IdefixDmpDataset(IdefixDataset):
         else:
             version = match.group()
         return version
+
+
+class IdefixVtkDataset(IdefixDataset):
+    _index_class = IdefixVtkHierarchy
+    _field_info_class = IdefixVtkFieldInfo
+    _dataset_type = "idefix-vtk"
+
+    @classmethod
+    def _is_valid(cls, fn, *args, **kwargs) -> bool:
+        try:
+            header = vtk_io.read_header(fn)
+        except Exception:
+            return False
+        else:
+            return "Idefix" in header
+
+    def _get_header(self) -> str:
+        return vtk_io.read_header(self.parameter_filename)
+
+    def _parse_parameter_file(self):
+        super()._parse_parameter_file()
+
+        # parse the grid
+        with open(self.parameter_filename, "rb") as fh:
+            md = vtk_io.read_metadata(fh)
+            coords = vtk_io.read_grid_coordinates(fh, md)
+            self._field_offset_index = vtk_io.read_field_offset_index(
+                fh, md["array_shape"]
+            )
+
+        self.parameters.update(md)
+
+        self._detected_field_list = list(self._field_offset_index.keys())
+
+        self.domain_dimensions = np.array(md["array_shape"])
+        self.dimensionality = np.count_nonzero(self.domain_dimensions - 1)
+
+        # NOTE: this is temporarily simplified. I'm taking brute cell
+        # coordinates regardless their actualy meaning (cell center, cell edge)
+        self.domain_left_edge = np.array([_[0] for _ in coords], dtype="float64")
+
+        # temporary hack to prevent 0-width dimensions for 2D data
+        _re = [max(_[-1], _[0] - _[-1] + 1) for _ in coords]
+        self.domain_right_edge = np.array(_re, dtype="float64")
+
+        # time wasn't stored in vtk files before Idefix 0.8
+        self.current_time = md.get("time", -1)
+        # periodicity is not stored in vtk files as of Idefix 0.8
+        self._periodicity = md.get("peridicity", (True, True, True))
+        self.geometry = md["geometry"]
+
+
+class IdefixDmpDataset(IdefixDataset):
+    _index_class = IdefixDmpHierarchy
+    _field_info_class = IdefixDmpFieldInfo
+    _dataset_type = "idefix-dmp"
+
+    @classmethod
+    def _is_valid(cls, fn, *args, **kwargs):
+        ok = bool(
+            re.match(r"^(dump)\.\d{4}(\.dmp)$", os.path.basename(fn))
+        )  # this is possibly too restrictive
+        try:
+            ok &= "Idefix" in dmp_io.read_header(fn)
+        except Exception:
+            ok = False
+        return ok
+
+    def _get_fields_metadata(self) -> tuple[IdefixFieldProperties, IdefixMetadata]:
+        # read everything except large arrays
+        return dmp_io.read_idefix_dmpfile(self.parameter_filename, skip_data=True)
+
+    def _get_header(self) -> str:
+        return dmp_io.read_header(self.parameter_filename)
+
+    def _parse_parameter_file(self):
+        super()._parse_parameter_file()
+
+        fprops, fdata = self._get_fields_metadata()
+        self._detected_field_list = [k for k in fprops if re.match(r"^V[sc]-", k)]
+
+        # parse the grid
+        axes = ("x1", "x2", "x3")
+        self.domain_dimensions = np.concatenate([fprops[k][-1] for k in axes])
+        self.dimensionality = np.count_nonzero(self.domain_dimensions - 1)
+
+        # note that domain edges parsing is already implemented in a mutli-block
+        # supporting fashion even though we specifically error out in case there's more
+        # than one block.
+        self.domain_left_edge = np.array(
+            [fdata[f"xl{idir}"][0] for idir in "123"], dtype="float64"
+        )
+        self.domain_right_edge = np.array(
+            [fdata[f"xr{idir}"][-1] for idir in "123"], dtype="float64"
+        )
+
+        self.current_time = fdata["time"]
+
+        self._periodicity = tuple(bool(p) for p in fdata["periodicity"])
+        self.geometry = fdata["geometry"]

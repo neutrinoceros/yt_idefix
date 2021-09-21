@@ -27,23 +27,39 @@ After importing `yt` itself, make sure to activate the extension
 import yt
 import yt.extensions.idefix
 ```
-Then you should be able to load Idefix data seamlessly with `yt.load`.
+Single dump files as well as time series can be loaded directly with `yt.load`, e.g.,
+```python
+ds = yt.load("dump.0054.dmp")
+ts = yt.load("dump.00??.dmp")
+```
 
+But vtk files currently require a little additional work
+```python
+# load a single dataset
+from yt_idefix.api import IdefixVtkDataset
+
+ds = IdefixVtkDataset("data.0042.vtk")
+
+# load time series
+class IdefixVtkDatasetSeries(yt.DatasetSeries):
+    _dataset_cls = IdefixVtkDataset
+
+
+ts = IdefixVtkDatasetSeries("data.00??.vtk")
+```
+This is because of a bug that will be fixed in yt's next release, see after.
 
 ## Current limitations
 
-As of version 0.3.1 of this project, the frontend allows one to read Idefix's
-dumpfiles only, through the `IdefixDmpDataset` class. `IdefixVtkDataset` may be
-implemented in the future, but won't be usable directly with `yt.load` before
-the next yt bugfix release is available (see bellow).
+As of version 0.5.0 of this project, I/O performances are yet to be optimized
+for both dump and vtk files.
 
-The `IdefixDmpDataset` class is functional but far from optimized, it may take
-much longer than strictly needed to perform queries. This will be adressed in
-the future.
+Vtk support is limited to cartesian geometries and currently slightly hacky. It
+will received better care in upcoming releases.
 
 As of yt 4.0.1:
 - Non-uniform grids (using log spacing) are not supported, which makes this
   frontend of very limited use for Idefix.
-- `yt.load()` is not suitable for vtk files that are not produced by Athena.
-  https://github.com/yt-project/yt/issues/3001 This bug is however resolved on
-  the main branch (https://github.com/yt-project/yt/pull/3424)
+- `yt.load()` is not suitable for vtk files because they are considered ambiguous
+  since *all* vtk files are (erroneously) recognized as Athena.
+  This bug is resolved on yt's dev branch (https://github.com/yt-project/yt/pull/3424)

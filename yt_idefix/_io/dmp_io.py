@@ -2,12 +2,20 @@ from __future__ import annotations
 
 import re
 import struct
+import warnings
 from enum import IntEnum
 from typing import BinaryIO
 
 import numpy as np
 
 from .commons import ByteSize, IdefixFieldProperties, IdefixMetadata
+
+KNOWN_GEOMETRIES: dict[int, str] = {
+    1: "cartesian",
+    2: "cylindrial",
+    3: "polar",
+    4: "spherical",
+}
 
 
 class CharCount(IntEnum):
@@ -181,5 +189,16 @@ def read_idefix_dump_from_buffer(
             data = read_serial(fh, ndim, dim, dtype, is_scalar=is_scalar)
         fdata[field_name] = data
         field_name, dtype, ndim, dim = read_next_field_properties(fh)
+
+    if "geometry" not in fdata:
+        warnings.warn("Could not determine geometry, assuming cartesian.")
+        fdata["geometry"] = "cartesian"
+    elif isinstance(fdata["geometry"], int):
+        fdata["geometry"] = KNOWN_GEOMETRIES[fdata["geometry"]]
+    else:
+        raise RuntimeError(
+            f"Got a geometry flag with unexpected type {type(fdata['geometry'])}; "
+            f"got {fdata['geometry']}"
+        )
 
     return fprops, fdata

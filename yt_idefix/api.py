@@ -6,5 +6,5 @@ from .data_structures import (
     IdefixVtkDataset,
     IdefixVtkHierarchy,
 )
-from .fields import IdefixFieldInfo
-from .io import IdefixIOHandler
+from .fields import IdefixDmpFieldInfo, IdefixVtkFieldInfo
+from .io import IdefixDmpIOHandler, IdefixVtkIOHandler
