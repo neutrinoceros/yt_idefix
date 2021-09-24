@@ -27,6 +27,8 @@ VTK_FILES = (
     # (DATA_DIR.joinpath("planet-disk", "data.0034.vtk"), "polar"),
     # contributed by Marc; this dataset is stretched in the radial direction
     (DATA_DIR.joinpath("cataclysmic-disk", "data.0086.vtk"), "polar"),
+    # small spherical 3D test case
+    (DATA_DIR.joinpath("FargoMHDSpherical", "data.0010.vtk"), "spherical"),
 )
 
 
@@ -43,12 +45,6 @@ def test_data_access(fn, geometry):
 
 
 @pytest.mark.parametrize(("fn", "geometry"), VTK_FILES)
-def test_slice_plot(fn, geometry):
-    ds = myload(fn, geometry=geometry)
-    yt.SlicePlot(ds, "z", ("gas", "density"))
-
-
-@pytest.mark.parametrize(("fn", "geometry"), VTK_FILES)
 def test_load(fn, geometry):
     ds = myload(fn, geometry=geometry)
     if geometry is None:
@@ -59,10 +55,18 @@ def test_load(fn, geometry):
 
 # TODO: make this a pytest-mpl test
 @pytest.mark.parametrize(("fn", "geometry"), VTK_FILES)
-def test_plot(fn, geometry):
+def test_slice_plot(fn, geometry):
     ds = myload(fn, geometry=geometry, unit_system="code")
-    yt.SlicePlot(ds, "z", ("gas", "density"))
-    # p.save("/tmp/")
+    if YT_VERSION <= Version("4.0.1"):
+        if ds.geometry == "spherical":
+            normal = "phi"
+        else:
+            normal = "z"
+        yt.SlicePlot(ds, normal=normal, fields=("gas", "density"))
+    else:
+        # this should work but it's broken with yt 4.0.1
+        # it is fixed in https://github.com/yt-project/yt/pull/3489
+        yt.SlicePlot(ds, normal=(0, 0, 1), fields=("gas", "density"))
 
 
 @pytest.mark.xfail(
