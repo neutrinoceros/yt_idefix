@@ -51,7 +51,7 @@ def parse_shape(s: str, md: dict[str, Any]) -> None:
 
 
 # this may not be kept in the following form
-def read_metadata(fh: BinaryIO) -> dict[str, Any]:
+def read_metadata(fh: BinaryIO, *, geometry: str | None = None) -> dict[str, Any]:
 
     fh.seek(0)
     # skip over the first 4 lines which normally contains
@@ -71,7 +71,14 @@ def read_metadata(fh: BinaryIO) -> dict[str, Any]:
             d = next(fh).decode()
             if d.startswith("GEOMETRY"):
                 geom_flag: int = struct.unpack(">i", fh.read(4))[0]
-                metadata["geometry"] = KNOWN_GEOMETRIES.get(geom_flag, "unknown")
+                geometry_from_data = KNOWN_GEOMETRIES.get(geom_flag)
+                if geometry_from_data is None:
+                    warnings.warn(
+                        f"Unknown geometry enum value {geom_flag}, please report this."
+                    )
+                elif geometry != geometry_from_data:
+                    warnings.warn("Got inconsistent geometries. Ignoring user input")
+                metadata["geometry"] = geometry_from_data
             elif d.startswith("TIME"):
                 metadata["time"] = struct.unpack(">f", fh.read(4))[0]
             else:
@@ -81,12 +88,12 @@ def read_metadata(fh: BinaryIO) -> dict[str, Any]:
 
     elif line.startswith("DIMENSIONS"):
         # Idefix < 0.8
+        if geometry is None:
+            raise ValueError(
+                "To load vtk data from idefix < 0.8 , the geometry argument must be specified."
+            )
+        metadata["geometry"] = geometry
         parse_shape(line, metadata)
-        warnings.warn(
-            "yt_idefix has limited support for vtk files with idefix < 0.8 . "
-            "Assuming a cartesian geometry."
-        )
-        metadata["geometry"] = "cartesian"
 
     else:
         raise RuntimeError(f"Failed to parse {line!r}")
@@ -101,12 +108,14 @@ def read_grid_coordinates(
         fh.seek(0)
         md = read_metadata(fh)
 
+    geometry = md["geometry"]
+    shape = md["shape"]
     coords: list[np.ndarray] = []
     # now assuming that fh is positioned at the end of metadata
-    if md["geometry"] == "cartesian":
-        for key in ("n1", "n2", "n3"):
+    if geometry == "cartesian":
+        for nx in shape:
             next(fh)
-            coords.append(np.fromfile(fh, dtype=">f", count=getattr(md["shape"], key)))
+            coords.append(np.fromfile(fh, dtype=">f", count=nx))
             next(fh)
         line = next(fh).decode()
         point_type, npoints = (t(_) for t, _ in zip((str, int), line.split()))
@@ -118,12 +127,70 @@ def read_grid_coordinates(
                 "point_type = CELL_DATA is not fully supported yet. "
                 "This will be treated as POINT_DATA instead"
             )
-            md["array_shape"] = md["shape"].to_cell_centered()
+            md["array_shape"] = shape.to_cell_centered()
         else:
-            md["array_shape"] = md["shape"]
+            md["array_shape"] = shape
 
+    elif geometry in ("polar", "spherical"):
+        rshape = Shape(*reversed(shape))
+        npoints = int(next(fh).decode().split()[1])  # POINTS NXNYNZ float
+        assert shape.size == npoints
+        points = np.fromfile(fh, dtype=">f", count=3 * npoints)
+        next(fh)
+
+        xcart = points[::3]
+        xcart.shape = rshape
+        xcart = xcart.T
+
+        ycart = points[1::3]
+        ycart.shape = rshape
+        ycart = ycart.T
+
+        zcart = points[2::3]
+        zcart.shape = rshape
+        zcart = zcart.T
+
+        # Reconstruct the polar coordinate system
+        if geometry == "polar":
+            r = np.sqrt(xcart[:, 0, 0] ** 2 + ycart[:, 0, 0] ** 2)
+            theta = np.unwrap(np.arctan2(ycart[0, :, 0], xcart[0, :, 0]))
+            z = zcart[0, 0, :]
+
+            data_type = next(fh).decode().split()[0]  # CELL_DATA (NX-1)(NY-1)(NZ-1)
+            assert data_type == "CELL_DATA"
+            next(fh)
+
+            # Perform averaging on coordinate system to get cell centers
+            # The file contains face coordinates, so we extrapolate to get the cell center coordinates.
+
+            warnings.warn(
+                "extrapolating cell center position, loosing data on cell face position"
+            )
+            # see https://github.com/neutrinoceros/yt_idefix/issues/25
+            md["array_shape"] = shape.to_cell_centered()
+
+            if shape.n1 > 1:
+                coords.append(0.5 * (r[1:] + r[:-1]))
+            else:
+                coords.append(r)
+            if shape.n2 > 1:
+                coords.append(
+                    (0.5 * (theta[1:] + theta[:-1]) + np.pi) % (2.0 * np.pi) - np.pi
+                )
+            else:
+                coords.append(theta)
+            if shape.n3 > 1:
+                coords.append(0.5 * (z[1:] + z[:-1]))
+            else:
+                coords.append(z)
+
+        elif geometry == "spherical":
+            # Reconstruct the spherical coordinate system
+            raise NotImplementedError("spherical case is not implemented yet")
+        else:
+            raise RuntimeError("This should be logically impossible.")
     else:
-        raise NotImplementedError("Non cartesian coordinates are not implemented yet")
+        raise RuntimeError(f"Found unknown geometry {geometry!r}")
 
     return Coordinates(*coords)
 
