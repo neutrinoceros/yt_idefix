@@ -250,9 +250,6 @@ class IdefixVtkDataset(IdefixDataset):
         self.domain_dimensions = np.array(md["array_shape"])
         self.dimensionality = np.count_nonzero(self.domain_dimensions - 1)
 
-        # NOTE: this is temporarily simplified. I'm taking brute cell
-        # coordinates regardless their actualy meaning (cell center, cell edge)
-        # see https://github.com/neutrinoceros/yt_idefix/issues/25
         dle = np.array([arr.min() for arr in coords], dtype="float64")
         dre = np.array([arr.max() for arr in coords], dtype="float64")
 
