@@ -113,10 +113,14 @@ class IdefixDataset(Dataset, ABC):
         dataset_type=None,
         unit_system="cgs",
         units_override=None,
+        *,
+        geometry: str | None = None,
         inifile=None,
     ):
         dt = type(self)._dataset_type
         self.fluid_types += (dt,)
+        if geometry is not None:
+            self.geometry = geometry
         super().__init__(
             filename,
             dataset_type=dt,
@@ -233,7 +237,7 @@ class IdefixVtkDataset(IdefixDataset):
 
         # parse the grid
         with open(self.parameter_filename, "rb") as fh:
-            md = vtk_io.read_metadata(fh)
+            md = vtk_io.read_metadata(fh, geometry=self.geometry)
             coords = vtk_io.read_grid_coordinates(fh, md)
             self._field_offset_index = vtk_io.read_field_offset_index(
                 fh, md["array_shape"]
@@ -248,11 +252,14 @@ class IdefixVtkDataset(IdefixDataset):
 
         # NOTE: this is temporarily simplified. I'm taking brute cell
         # coordinates regardless their actualy meaning (cell center, cell edge)
-        self.domain_left_edge = np.array([_[0] for _ in coords], dtype="float64")
+        # see https://github.com/neutrinoceros/yt_idefix/issues/25
+        dle = np.array([arr.min() for arr in coords], dtype="float64")
+        dre = np.array([arr.max() for arr in coords], dtype="float64")
 
         # temporary hack to prevent 0-width dimensions for 2D data
-        _re = [max(_[-1], _[0] - _[-1] + 1) for _ in coords]
-        self.domain_right_edge = np.array(_re, dtype="float64")
+        dre = np.where(dre == dle, dle + 1, dre)
+        self.domain_left_edge = dle
+        self.domain_right_edge = dre
 
         # time wasn't stored in vtk files before Idefix 0.8
         self.current_time = md.get("time", -1)
