@@ -104,6 +104,8 @@ def read_metadata(fh: BinaryIO, *, geometry: str | None = None) -> dict[str, Any
 def read_grid_coordinates(
     fh: BinaryIO, md: dict[str, Any] | None = None
 ) -> Coordinates:
+    # Return cell edges coordinates
+
     if md is None:
         fh.seek(0)
         md = read_metadata(fh)
@@ -123,6 +125,7 @@ def read_grid_coordinates(
         if point_type == "CELL_DATA":
             # raw data is cell face coords
             # we'd need to interpolate cell centers
+            # see https://github.com/neutrinoceros/yt_idefix/issues/25
             warnings.warn(
                 "point_type = CELL_DATA is not fully supported yet. "
                 "This will be treated as POINT_DATA instead"
@@ -152,6 +155,9 @@ def read_grid_coordinates(
 
         # Reconstruct the polar coordinate system
         if geometry == "polar":
+            # on disk coordinates are cell face coordinates.
+            # We need to convert from cartesian to polar,
+            # but no interpolation is needed.
             r = np.sqrt(xcart[:, 0, 0] ** 2 + ycart[:, 0, 0] ** 2)
             theta = np.unwrap(np.arctan2(ycart[0, :, 0], xcart[0, :, 0]))
             z = zcart[0, 0, :]
@@ -160,30 +166,11 @@ def read_grid_coordinates(
             assert data_type == "CELL_DATA"
             next(fh)
 
-            # Perform averaging on coordinate system to get cell centers
-            # The file contains face coordinates, so we extrapolate to get the cell center coordinates.
-
-            warnings.warn(
-                "extrapolating cell center position, loosing data on cell face position"
-            )
-            # see https://github.com/neutrinoceros/yt_idefix/issues/25
             md["array_shape"] = shape.to_cell_centered()
 
-            if shape.n1 > 1:
-                coords.append(0.5 * (r[1:] + r[:-1]))
-            else:
-                coords.append(r)
-            if shape.n2 > 1:
-                coords.append(
-                    (0.5 * (theta[1:] + theta[:-1]) + np.pi) % (2.0 * np.pi) - np.pi
-                )
-            else:
-                coords.append(theta)
-            if shape.n3 > 1:
-                coords.append(0.5 * (z[1:] + z[:-1]))
-            else:
-                coords.append(z)
-
+            # manually changing phase origin (theta) to match
+            # results from Idefix's pytools
+            coords = [r, theta + np.pi, z]
         elif geometry == "spherical":
             # Reconstruct the spherical coordinate system
             raise NotImplementedError("spherical case is not implemented yet")
