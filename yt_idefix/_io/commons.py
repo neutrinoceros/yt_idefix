@@ -7,13 +7,11 @@ from typing import Any, Dict, NamedTuple, Tuple
 import numpy as np
 
 if sys.version_info >= (3, 8):
-    from functools import cached_property
     from typing import Literal
 
     Prec = Literal["d", "f", "i"]
     Dim = Literal[1, 2, 3]
 else:
-    cached_property = property
     Prec = str
     Dim = int
 
@@ -23,7 +21,7 @@ class Shape(NamedTuple):
     n2: int = 1
     n3: int = 1
 
-    @cached_property
+    @property
     def size(self):
         return self.n1 * self.n2 * self.n3
 
@@ -39,7 +37,7 @@ class Coordinates(NamedTuple):
     x2: np.ndarray
     x3: np.ndarray
 
-    @cached_property
+    @property
     def shape(self) -> Shape:
         return Shape(len(self.x1), len(self.x2), len(self.x3))
 
