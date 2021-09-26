@@ -173,16 +173,46 @@ def read_grid_coordinates(
             assert data_type == "CELL_DATA"
             next(fh)
 
-            md["array_shape"] = shape.to_cell_centered()
-
             # manually changing phase origin (theta) to match
             # results from Idefix's pytools
             coords = [r, theta + np.pi, z]
         elif geometry == "spherical":
             # Reconstruct the spherical coordinate system
-            raise NotImplementedError("spherical case is not implemented yet")
+            if shape.n3 == 1:
+                r = np.sqrt(xcart[:, 0, 0] ** 2 + ycart[:, 0, 0] ** 2)
+                phi = np.unwrap(
+                    np.arctan2(zcart[0, shape.n2 // 2, :], xcart[0, shape.n2 // 2, :])
+                )
+                theta = np.arccos(
+                    ycart[0, :, 0] / np.sqrt(xcart[0, :, 0] ** 2 + ycart[0, :, 0] ** 2)
+                )
+            else:
+                r = np.sqrt(
+                    xcart[:, 0, 0] ** 2 + ycart[:, 0, 0] ** 2 + zcart[:, 0, 0] ** 2
+                )
+                phi = np.unwrap(
+                    np.arctan2(
+                        ycart[shape.n1 // 2, shape.n2 // 2, :],
+                        xcart[shape.n1 // 2, shape.n2 // 2, :],
+                    )
+                )
+                theta = np.arccos(
+                    zcart[0, :, 0]
+                    / np.sqrt(
+                        xcart[0, :, 0] ** 2 + ycart[0, :, 0] ** 2 + zcart[0, :, 0] ** 2
+                    )
+                )
+            coords = [r, theta, phi]
+
+            data_type = next(fh).decode().split()[0]  # CELL_DATA (NX-1)(NY-1)(NZ-1)
+            if data_type != "CELL_DATA":
+                raise RuntimeError
+            next(fh)
         else:
             raise RuntimeError("This should be logically impossible.")
+
+        md["array_shape"] = shape.to_cell_centered()
+
     else:
         raise RuntimeError(f"Found unknown geometry {geometry!r}")
 
