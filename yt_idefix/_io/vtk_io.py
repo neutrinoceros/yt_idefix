@@ -123,15 +123,22 @@ def read_grid_coordinates(
         point_type, npoints = (t(_) for t, _ in zip((str, int), line.split()))
         next(fh)
         if point_type == "CELL_DATA":
-            # raw data is cell face coords
-            # we'd need to interpolate cell centers
-            # see https://github.com/neutrinoceros/yt_idefix/issues/25
-            warnings.warn(
-                "point_type = CELL_DATA is not fully supported yet. "
-                "This will be treated as POINT_DATA instead"
-            )
             md["array_shape"] = shape.to_cell_centered()
         else:
+            if point_type == "POINT_DATA":
+                # raw data is cell center coords, extrapolation would be needed here
+                # However it's probably never going to be worth it since this branch
+                # corresponds to Idefix < 0.8 and should never be hit in practice.
+                # Raising a warning should suffice
+                warnings.warn(
+                    "point_type=POINT_DATA case is not fully supported. "
+                    "Domain edges will be slightly off."
+                )
+            else:
+                warnings.warn(
+                    f"Got unexpected value point_type={point_type!r}. "
+                    "Results are not guaranteed."
+                )
             md["array_shape"] = shape
 
     elif geometry in ("polar", "spherical"):
