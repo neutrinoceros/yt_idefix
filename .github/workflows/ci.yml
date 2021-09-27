@@ -18,6 +18,7 @@ jobs:
       matrix:
         os: [
           ubuntu-latest,
+          macos-latest,
         ]
         python-version: [
           '3.7',
@@ -26,15 +27,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
-      with:
-        lfs: true
-    - name: Checkout LFS objects
-      run: git lfs checkout
     - name: Setup Python
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
     - name: Setup package
-      run: python3 -m pip install -e .[dev]
+      run: |
+        python3 -m pip install -U pip
+        python3 -m pip install -e .
     - name: run tests
       run: pytest
