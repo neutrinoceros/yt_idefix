@@ -55,9 +55,6 @@ This is because of a bug that will be fixed in yt's next release, see after.
 As of version 0.5.0 of this project, I/O performances are yet to be optimized
 for both dump and vtk files.
 
-Vtk support is limited to cartesian geometries and currently slightly hacky. It
-will received better care in upcoming releases.
-
 As of yt 4.0.1:
 - Non-uniform grids (using log spacing) are not supported, which makes this
   frontend of very limited use for Idefix.
