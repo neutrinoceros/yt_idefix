@@ -62,7 +62,7 @@ def read_metadata(fh: BinaryIO, *, geometry: str | None = None) -> dict[str, Any
     for _ in range(4):
         next(fh)
 
-    metadata = {}
+    metadata: dict[str, Any] = {}
     line = next(fh).decode()  # DIMENSIONS NX NY NZ or FIELD
     if line.startswith("FIELD"):
         # Idefix >= 0.8
@@ -81,6 +81,10 @@ def read_metadata(fh: BinaryIO, *, geometry: str | None = None) -> dict[str, Any
                 metadata["geometry"] = geometry_from_data
             elif d.startswith("TIME"):
                 metadata["time"] = struct.unpack(">f", fh.read(4))[0]
+            elif d.startswith("PERIODICITY"):
+                metadata["periodicity"] = tuple(
+                    np.fromfile(fh, dtype=">i4", count=3).astype(bool)
+                )
             else:
                 warnings.warn(f"Found unknown field {d!r}")
             next(fh)  # skip extra linefeed (empty line)

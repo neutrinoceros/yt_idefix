@@ -260,8 +260,8 @@ class IdefixVtkDataset(IdefixDataset):
 
         # time wasn't stored in vtk files before Idefix 0.8
         self.current_time = md.get("time", -1)
-        # periodicity is not stored in vtk files as of Idefix 0.8
-        self._periodicity = md.get("peridicity", (True, True, True))
+        # periodicity was not stored in vtk files before Idefix 0.9
+        self._periodicity = md.get("periodicity", (True, True, True))
         self.geometry = md["geometry"]
 
 
