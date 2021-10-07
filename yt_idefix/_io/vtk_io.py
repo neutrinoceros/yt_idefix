@@ -8,7 +8,7 @@ import numpy as np
 
 from .commons import ByteSize, Coordinates, Shape
 
-KNOWN_GEOMETRIES = {0: "cartesian", 1: "polar", 2: "spherical"}
+KNOWN_GEOMETRIES = {0: "cartesian", 1: "polar", 2: "spherical", 3: "cylindrical"}
 
 
 def read_header(filename: str) -> str:
@@ -114,7 +114,9 @@ def read_grid_coordinates(
     shape = md["shape"]
     coords: list[np.ndarray] = []
     # now assuming that fh is positioned at the end of metadata
-    if geometry == "cartesian":
+    if geometry in ("cartesian", "cylindrical"):
+        # In Idefix, cylindrical geometry is only meant to be used in 2D,
+        # so the grid structure is effectively cartesian (R, z)
         for nx in shape:
             next(fh)
             coords.append(np.fromfile(fh, dtype=">f", count=nx))
