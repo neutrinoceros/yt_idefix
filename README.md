@@ -1,7 +1,7 @@
 
 # yt_idefix
-[![PyPI](https://img.shields.io/pypi/v/yt_idefix)](https://pypi.org/project/yt_idefix)
-[![Supported Python Versions](https://img.shields.io/pypi/pyversions/yt_idefix/0.4.0)](https://pypi.org/project/yt_idefix/)
+[![PyPI](https://img.shields.io/pypi/v/yt-idefix.svg?logo=pypi&logoColor=white&label=PyPI)](https://pypi.org/project/yt_idefix/)
+[![PyPI](https://img.shields.io/pypi/pyversions/yt-idefix/0.6.0?logo=python&logoColor=white&label=Python)](https://pypi.org/project/yt_idefix/)
 [![yt-project](https://img.shields.io/static/v1?label="works%20with"&message="yt"&color="blueviolet")](https://yt-project.org)
 
 <!--- Tests and style --->
