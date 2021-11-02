@@ -119,8 +119,8 @@ class IdefixDataset(Dataset, ABC):
     ):
         dt = type(self)._dataset_type
         self.fluid_types += (dt,)
-        if geometry is not None:
-            self.geometry = geometry
+
+        self.geometry = geometry
         super().__init__(
             filename,
             dataset_type=dt,
@@ -237,6 +237,7 @@ class IdefixVtkDataset(IdefixDataset):
 
         # parse the grid
         with open(self.parameter_filename, "rb") as fh:
+            # at this point, self.geometry represents the user input (possibly None)
             md = vtk_io.read_metadata(fh, geometry=self.geometry)
             coords = vtk_io.read_grid_coordinates(fh, md)
             self._field_offset_index = vtk_io.read_field_offset_index(
