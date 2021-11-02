@@ -76,8 +76,13 @@ def read_metadata(fh: BinaryIO, *, geometry: str | None = None) -> dict[str, Any
                     warnings.warn(
                         f"Unknown geometry enum value {geom_flag}, please report this."
                     )
-                elif geometry != geometry_from_data:
-                    warnings.warn("Got inconsistent geometries. Ignoring user input")
+                elif geometry not in (None, geometry_from_data):
+                    warnings.warn(
+                        f"Got inconsistent geometries:\n"
+                        f" - {geometry_from_data!r} (from file)\n"
+                        f" - {geometry!r} (from user)\n"
+                        "Ignoring user input"
+                    )
                 metadata["geometry"] = geometry_from_data
             elif d.startswith("TIME"):
                 metadata["time"] = struct.unpack(">f", fh.read(4))[0]
