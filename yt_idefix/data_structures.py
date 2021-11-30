@@ -149,10 +149,6 @@ class IdefixDataset(Dataset, ABC):
 
     def _parse_inifile(self) -> None:
         if self.inifile is None:
-            warnings.warn(
-                "Cannot validate grid structure. "
-                "Please pass the `inifile` keyword argument to `yt.load`"
-            )
             return
 
         self.parameters.update(inifix.load(self.inifile))
@@ -168,12 +164,11 @@ class IdefixDataset(Dataset, ABC):
                 msg_elems.append(f"found non-uniform block(s) in direction {ax}")
         if len(msg_elems) > 0:
             msg = (
-                "yt + yt_idefix currently only supports a single block "
-                "with uniform spacing in each direction. Got the following issue(s)\n"
+                "Streched grid detected !\n"
                 + "- "
                 + "\n- ".join(msg_elems)
                 + "\nThe grid will be treated as uniformly spaced in every direction. "
-                "Only the domain edges are expected to be correctly parsed."
+                "yt_idefix.load_stretched may be a better alternative loader for these data"
             )
             warnings.warn(msg)
 
