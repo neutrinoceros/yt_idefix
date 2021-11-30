@@ -1,21 +1,11 @@
-import os
 from pathlib import Path
 
 import pytest
 from packaging.version import Version
 
 import yt
+import yt_idefix
 from yt.extensions.idefix.api import IdefixVtkDataset
-
-
-def myload(fn, *args, **kwargs):
-    # drop in replacement for yt.load, that compensate for the limitations of loading vtk files
-    fn = os.fspath(fn)
-    if fn.endswith(".vtk"):
-        return IdefixVtkDataset(fn, *args, **kwargs)
-    else:
-        return yt.load(fn, *args, **kwargs)
-
 
 YT_VERSION = Version(yt.__version__)
 
@@ -39,14 +29,14 @@ def test_validation(fn):
 
 @pytest.mark.parametrize(("fn", "geometry"), VTK_FILES)
 def test_data_access(fn, geometry):
-    ds = myload(fn, geometry=geometry)
+    ds = yt_idefix.load(fn, geometry=geometry)
     ad = ds.all_data()
     ad["gas", "density"]
 
 
 @pytest.mark.parametrize(("fn", "geometry"), VTK_FILES)
 def test_load(fn, geometry):
-    ds = myload(fn, geometry=geometry)
+    ds = yt_idefix.load(fn, geometry=geometry)
     if geometry is None:
         assert ds.geometry in ("cartesian", "polar", "spherical")
     else:
@@ -56,7 +46,7 @@ def test_load(fn, geometry):
 # TODO: make this a pytest-mpl test
 @pytest.mark.parametrize(("fn", "geometry"), VTK_FILES)
 def test_slice_plot(fn, geometry):
-    ds = myload(fn, geometry=geometry, unit_system="code")
+    ds = yt_idefix.load(fn, geometry=geometry, unit_system="code")
     if YT_VERSION <= Version("4.0.1"):
         if ds.geometry == "spherical":
             normal = "phi"
@@ -70,11 +60,16 @@ def test_slice_plot(fn, geometry):
 
 
 @pytest.mark.xfail(
-    YT_VERSION < Version("4.1"),
+    YT_VERSION < Version("4.0.2"),
     reason="all .vtk files are detected as Athena-compatible, "
-    "hence dataformat is considered ambiguous before y 4.1",
+    "hence dataformat is considered ambiguous before yt 4.0.2",
 )
 @pytest.mark.parametrize(("fn", "geometry"), VTK_FILES)
 def test_load_magic(fn, geometry):
     ds = yt.load(fn, geometry=geometry)
     assert isinstance(ds, IdefixVtkDataset)
+
+
+@pytest.mark.parametrize(("fn", "geometry"), VTK_FILES)
+def test_load_stretched(fn, geometry):
+    yt_idefix.load_stretched(fn, geometry=geometry)
