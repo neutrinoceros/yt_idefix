@@ -1,7 +1,7 @@
 
 # yt_idefix
 [![PyPI](https://img.shields.io/pypi/v/yt-idefix.svg?logo=pypi&logoColor=white&label=PyPI)](https://pypi.org/project/yt_idefix/)
-[![PyPI](https://img.shields.io/pypi/pyversions/yt-idefix/0.6.0?logo=python&logoColor=white&label=Python)](https://pypi.org/project/yt_idefix/)
+[![PyPI](https://img.shields.io/pypi/pyversions/yt-idefix/0.7.0?logo=python&logoColor=white&label=Python)](https://pypi.org/project/yt_idefix/)
 [![yt-project](https://img.shields.io/static/v1?label="works%20with"&message="yt"&color="blueviolet")](https://yt-project.org)
 
 <!--- Tests and style --->
@@ -15,18 +15,15 @@ This frontend is a candidate for integration in the core yt code base.
 
 ## Installation
 
-Make sure you have Python 3.7 or newer, then run
 ```shell
-python3 -m pip install yt_idefix
+pip install yt_idefix
 ```
-If you don't already have yt it will be installed along.
-
 ## Usage
 
 After importing `yt` itself, make sure to activate the extension
 ```python
 import yt
-import yt.extensions.idefix
+import yt_idefix
 ```
 Single dump files as well as time series can be loaded directly with `yt.load`, e.g.,
 ```python
@@ -34,30 +31,19 @@ ds = yt.load("dump.0054.dmp")
 ts = yt.load("dump.00??.dmp")
 ```
 
-But vtk files currently require a little additional work
+For vtk files, with yt < 4.0.2, a specialized loader function is provided
 ```python
-# load a single dataset
-from yt_idefix.api import IdefixVtkDataset
-
-ds = IdefixVtkDataset("data.0042.vtk")
-
-# load time series
-class IdefixVtkDatasetSeries(yt.DatasetSeries):
-    _dataset_cls = IdefixVtkDataset
-
-
-ts = IdefixVtkDatasetSeries("data.00??.vtk")
+ds = yt_idefix.load("data.0042.vtk")
 ```
-This is because of a bug that will be fixed in yt's next release, see after.
+With yt >= 4.0.2 (not released yet), this workaround will not be necessary and `yt.load` will be usable directly.
 
-## Current limitations
 
-As of version 0.5.0 of this project, I/O performances are yet to be optimized
-for both dump and vtk files.
+### Strecthed grids support
 
-As of yt 4.0.1:
-- Non-uniform grids (using log spacing) are not supported, which makes this
-  frontend of very limited use for Idefix.
-- `yt.load()` is not suitable for vtk files because they are considered ambiguous
-  since *all* vtk files are (erroneously) recognized as Athena.
-  This bug is resolved on yt's dev branch (https://github.com/yt-project/yt/pull/3424)
+yt_idefix comes a specialized loader function for datasets with streched grids
+`yt_idefix.load_stretched`. This function is experimental. Here are its known
+limitations.
+- no field magic (no aliasing, or dimensionalization, or automatic derived field generation)
+- no lazy loading (all data has to reside in memory)
+- projections are not supported
+- only supports vtk outputs (not dumps)

@@ -8,3 +8,4 @@ from .data_structures import (
 )
 from .fields import IdefixDmpFieldInfo, IdefixVtkFieldInfo
 from .io import IdefixDmpIOHandler, IdefixVtkIOHandler
+from .loaders import load, load_stretched

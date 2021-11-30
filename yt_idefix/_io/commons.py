@@ -41,6 +41,13 @@ class Coordinates(NamedTuple):
     def shape(self) -> Shape:
         return Shape(len(self.x1), len(self.x2), len(self.x3))
 
+    def padded(self) -> Coordinates:
+        arrs = list(self)
+        for i, arr in enumerate(arrs):
+            if arr.size == 1:
+                arrs[i] = np.array((arr[0], arr[0] + 1))
+        return Coordinates(*arrs)
+
 
 # map field name to numpy array init data:
 # precision (-> datatype), dimensionality, [nx, ny, nz]
