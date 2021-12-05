@@ -23,7 +23,7 @@ def load(fn, *args, **kwargs):
     drop-in replacement for yt.load with a workaround for vtk files
     (recognized as Athena format with yt < 4.0.2)
     """
-    fn = os.fspath(fn)
+    fn = os.path.expanduser(fn)
 
     if YT_VERSION < Version("4.0.2") and fn.endswith(".vtk"):
         if any(wildcard in fn for wildcard in "[]?!*"):
