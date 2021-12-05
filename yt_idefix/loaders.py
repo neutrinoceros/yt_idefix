@@ -7,7 +7,7 @@ from packaging.version import Version
 
 import yt
 from yt_idefix._io import vtk_io
-from yt_idefix.data_structures import IdefixDataset, IdefixVtkDataset
+from yt_idefix.data_structures import IdefixVtkDataset
 
 YT_VERSION = Version(yt.__version__)
 
@@ -45,14 +45,8 @@ def load_stretched(fn, *, geometry: str | None = None, **kwargs):
     """
 
     # brute force validation
-    ds = load(fn, geometry=geometry)
-    if not isinstance(ds, IdefixDataset):
-        raise TypeError("yt_idefix.load_stretched is dedicated to Idefix data")
-
-    if not isinstance(ds, IdefixVtkDataset):
+    if not IdefixVtkDataset._is_valid(fn, geometry=geometry):
         raise TypeError("yt_idefix.load_stretched only supports Idefix vtk files")
-
-    del ds
 
     # actual parsing
     with open(fn, "rb") as fh:
