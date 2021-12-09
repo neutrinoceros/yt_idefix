@@ -5,12 +5,12 @@ from packaging.version import Version
 
 import yt
 import yt_idefix
-from yt.extensions.idefix.api import IdefixVtkDataset
+from yt.extensions.idefix.api import IdefixVtkDataset, PlutoVtkDataset
 
 YT_VERSION = Version(yt.__version__)
 
 DATA_DIR = Path(__file__).parent / "data"
-VTK_FILES = (
+IDEFIX_VTK_FILES = (
     # KHI in cartesian coordinates, geom included in datafile, no streching
     (DATA_DIR.joinpath("khi", "data.0100.vtk"), None),
     # contributed by Gaylor; this dataset is vertically stretched
@@ -20,11 +20,19 @@ VTK_FILES = (
     # small spherical 3D test case
     (DATA_DIR.joinpath("FargoMHDSpherical", "data.0010.vtk"), "spherical"),
 )
+PLUTO_VTK_FILES = ((DATA_DIR.joinpath("pluto_sedov", "data.0018.vtk"), "cartesian"),)
+
+VTK_FILES = IDEFIX_VTK_FILES + PLUTO_VTK_FILES
 
 
-@pytest.mark.parametrize("fn", [_[0] for _ in VTK_FILES])
-def test_validation(fn):
+@pytest.mark.parametrize("fn", [_[0] for _ in IDEFIX_VTK_FILES])
+def test_validation_idefix(fn):
     assert IdefixVtkDataset._is_valid(fn)
+
+
+@pytest.mark.parametrize("fn", [_[0] for _ in PLUTO_VTK_FILES])
+def test_validation_pluto(fn):
+    assert PlutoVtkDataset._is_valid(fn)
 
 
 @pytest.mark.parametrize(("fn", "geometry"), VTK_FILES)
