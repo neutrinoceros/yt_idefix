@@ -96,16 +96,19 @@ def read_metadata(fh: BinaryIO, *, geometry: str | None = None) -> dict[str, Any
         parse_shape(next(fh).decode(), metadata)
 
     elif line.startswith("DIMENSIONS"):
-        # Idefix < 0.8
-        if geometry is None:
-            raise ValueError(
-                "To load vtk data from idefix < 0.8 , the geometry argument must be specified."
-            )
-        metadata["geometry"] = geometry
         parse_shape(line, metadata)
 
     else:
         raise RuntimeError(f"Failed to parse {line!r}")
+
+    if "geometry" not in metadata:
+        # Idefix < 0.8, or PLUTO
+        if geometry is None:
+            raise ValueError(
+                "Geometry couldn't be parsed from file. "
+                "The 'geometry' keyword argument must be specified."
+            )
+        metadata["geometry"] = geometry
 
     return metadata
 
@@ -240,6 +243,11 @@ def read_field_offset_index(fh: BinaryIO, shape: Shape) -> dict[str, int]:
             break
         s = line.decode()
         datatype, varname, dtype = s.split()
+
+        # some versions of Pluto define field names in lower case
+        # so we normalize to upper case to avoid duplicating data
+        # in IdefixVtkFieldInfo.known_other_fields
+        varname = varname.upper()
 
         if datatype == "SCALARS":
             next(fh)

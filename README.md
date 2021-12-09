@@ -1,7 +1,7 @@
 
 # yt_idefix
 [![PyPI](https://img.shields.io/pypi/v/yt-idefix.svg?logo=pypi&logoColor=white&label=PyPI)](https://pypi.org/project/yt_idefix/)
-[![PyPI](https://img.shields.io/pypi/pyversions/yt-idefix/0.7.3?logo=python&logoColor=white&label=Python)](https://pypi.org/project/yt_idefix/)
+[![PyPI](https://img.shields.io/pypi/pyversions/yt-idefix/0.8.0?logo=python&logoColor=white&label=Python)](https://pypi.org/project/yt_idefix/)
 [![yt-project](https://img.shields.io/static/v1?label="works%20with"&message="yt"&color="blueviolet")](https://yt-project.org)
 
 <!--- Tests and style --->
@@ -12,6 +12,8 @@
 
 A maturing yt frontend for Idefix, packaged as an extension for yt.
 This frontend is a candidate for integration in the core yt code base.
+
+Starting from version 0.8.0, Pluto vtk files are also supported by this frontend.
 
 ## Installation
 

@@ -5,6 +5,7 @@ from .data_structures import (
     IdefixGrid,
     IdefixVtkDataset,
     IdefixVtkHierarchy,
+    PlutoVtkDataset,
 )
 from .fields import IdefixDmpFieldInfo, IdefixVtkFieldInfo
 from .io import IdefixDmpIOHandler, IdefixVtkIOHandler

@@ -6,8 +6,9 @@ import numpy as np
 from packaging.version import Version
 
 import yt
+from yt.utilities.exceptions import YTUnidentifiedDataType
 from yt_idefix._io import vtk_io
-from yt_idefix.data_structures import IdefixVtkDataset
+from yt_idefix.data_structures import IdefixVtkDataset, PlutoVtkDataset
 
 YT_VERSION = Version(yt.__version__)
 
@@ -28,8 +29,12 @@ def load(fn, *args, **kwargs):
     if YT_VERSION < Version("4.0.2") and fn.endswith(".vtk"):
         if any(wildcard in fn for wildcard in "[]?!*"):
             return IdefixVtkDatasetSeries(fn, *args, **kwargs)
-        else:
+        elif IdefixVtkDataset._is_valid(fn, *args, **kwargs):
             return IdefixVtkDataset(fn, *args, **kwargs)
+        elif PlutoVtkDataset._is_valid(fn, *args, **kwargs):
+            return PlutoVtkDataset(fn, *args, **kwargs)
+        else:
+            raise YTUnidentifiedDataType(fn, *args, **kwargs)
     else:
         return yt.load(fn, *args, **kwargs)
 
@@ -45,8 +50,13 @@ def load_stretched(fn, *, geometry: str | None = None, **kwargs):
     """
 
     # brute force validation
-    if not IdefixVtkDataset._is_valid(fn, geometry=geometry):
-        raise TypeError("yt_idefix.load_stretched only supports Idefix vtk files")
+    if not (
+        IdefixVtkDataset._is_valid(fn, geometry=geometry)
+        or PlutoVtkDataset._is_valid(fn, geometry=geometry)
+    ):
+        raise TypeError(
+            "yt_idefix.load_stretched only supports Idefix and Pluto vtk files"
+        )
 
     # actual parsing
     with open(fn, "rb") as fh:

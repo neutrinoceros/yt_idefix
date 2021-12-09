@@ -18,8 +18,6 @@ from ._io import dmp_io, vtk_io
 from ._io.commons import IdefixFieldProperties, IdefixMetadata
 from .fields import IdefixDmpFieldInfo, IdefixVtkFieldInfo
 
-_IDEFIX_VERSION_REGEXP = re.compile(r"v\d+\.\d+\.?\d*[-\w+]*")
-
 
 class IdefixGrid(AMRGridPatch):
     _id_offset = 0
@@ -107,6 +105,8 @@ class IdefixDmpHierarchy(IdefixHierarchy):
 class IdefixDataset(Dataset, ABC):
     """A common abstraction for IdefixDmpDataset and IdefixVtkDataset."""
 
+    _version_regexp = re.compile(r"v\d+\.\d+\.?\d*[-\w+]*")
+
     def __init__(
         self,
         filename,
@@ -138,7 +138,7 @@ class IdefixDataset(Dataset, ABC):
     def _parse_parameter_file(self):
         # base method, intended to be subclassed
         # parse the version hash
-        self.parameters["idefix version"] = self._get_idefix_version()
+        self.parameters["code version"] = self._get_code_version()
 
         # idefix is never cosmological
         self.cosmological_simulation = 0
@@ -195,25 +195,31 @@ class IdefixDataset(Dataset, ABC):
     def _get_header(self) -> str:
         pass
 
-    def _get_idefix_version(self) -> str:
-        header = self._get_header()
+    def _get_code_version(self) -> str:
+        # take the last line of the header
+        # - in Idefix dumps there's only one line
+        # - in Vtk files (Idefix or Pluto), there are two,
+        #   the first of which isn't code specific
+        header = self._get_header().splitlines()[-1]
 
-        match = re.search(_IDEFIX_VERSION_REGEXP, header)
+        regexp = self.__class__._version_regexp
+
+        match = re.search(regexp, header)
         version: str
         if match is None:
             warnings.warn(
-                f"Could not determine Idefix version from file header {header!r}"
+                f"Could not determine code version from file header {header!r}"
             )
-            version = "unknown"
-        else:
-            version = match.group()
-        return version
+            return "unknown"
+
+        return match.group()
 
 
 class IdefixVtkDataset(IdefixDataset):
     _index_class = IdefixVtkHierarchy
     _field_info_class = IdefixVtkFieldInfo
     _dataset_type = "idefix-vtk"
+    _required_header_keyword = "Idefix"
 
     @classmethod
     def _is_valid(cls, fn, *args, **kwargs) -> bool:
@@ -222,7 +228,7 @@ class IdefixVtkDataset(IdefixDataset):
         except Exception:
             return False
         else:
-            return "Idefix" in header
+            return cls._required_header_keyword in header
 
     def _get_header(self) -> str:
         return vtk_io.read_header(self.parameter_filename)
@@ -309,3 +315,8 @@ class IdefixDmpDataset(IdefixDataset):
 
         self._periodicity = tuple(bool(p) for p in fdata["periodicity"])
         self.geometry = fdata["geometry"]
+
+
+class PlutoVtkDataset(IdefixVtkDataset):
+    _version_regexp = re.compile(r"\d+\.\d+\.?\d*[-\w+]*")
+    _required_header_keyword = "PLUTO"
