@@ -11,11 +11,12 @@ import numpy as np
 
 from yt.data_objects.index_subobjects.grid_patch import AMRGridPatch
 from yt.data_objects.static_output import Dataset
-from yt.funcs import setdefaultattr
+from yt.funcs import mylog, setdefaultattr
 from yt.geometry.grid_geometry_handler import GridIndex
 
 from ._io import dmp_io, vtk_io
 from ._io.commons import IdefixFieldProperties, IdefixMetadata
+from .definitions import pluto_def_constants
 from .fields import IdefixDmpFieldInfo, IdefixVtkFieldInfo
 
 
@@ -320,3 +321,115 @@ class IdefixDmpDataset(IdefixDataset):
 class PlutoVtkDataset(IdefixVtkDataset):
     _version_regexp = re.compile(r"\d+\.\d+\.?\d*[-\w+]*")
     _required_header_keyword = "PLUTO"
+
+    def __init__(
+        self,
+        filename,
+        dataset_type=None,
+        unit_system="cgs",
+        units_override=None,
+        *,
+        geometry: str | None = None,
+        definitions_header: str | None = None,
+        inifile=None,
+    ):
+        self._definitions_header = definitions_header
+        super().__init__(
+            filename,
+            dataset_type=dataset_type,
+            unit_system=unit_system,
+            units_override=units_override,
+            geometry=geometry,
+            inifile=inifile,
+        )
+
+    def _parse_parameter_file(self):
+        self._parse_header_file()
+        super()._parse_parameter_file()
+        self._get_time()
+
+    def _parse_header_file(self):
+        """Read some metadata from header file 'definitions.h'."""
+        geom_regexp = re.compile(r"^\s*#define\s+GEOMETRY\s+([A-Z]+)")
+        unit_regexp = re.compile(r"^\s*#define\s+(UNIT_\w+)\s+(\S+)")
+        constexpr = re.compile(r"CONST_\w+")
+
+        # definitions.h is presumed to be along with data file
+        if self._definitions_header is None:
+            self._definitions_header = os.path.join(self.fullpath, "definitions.h")
+
+        if os.path.isfile(self._definitions_header):
+            with open(self._definitions_header) as fh:
+                for line in fh.readlines():
+                    geom_match = re.search(geom_regexp, line)
+                    unit_match = re.search(unit_regexp, line)
+                    if geom_match is None and unit_match is None:
+                        continue
+                    elif unit_match:
+                        unit = unit_match.group(1).lower()
+                        expr = unit_match.group(2)
+                        # The pre-defined constants in definitions should be
+                        # replace with its value
+                        expr = re.sub(constexpr, self._get_constants, expr)
+                        self.parameters[unit] = eval(expr)
+                    elif geom_match:
+                        self.geometry = geom_match.group(1).lower()
+        elif self.geometry is None:
+            raise FileNotFoundError(
+                f"Header file {self._definitions_header} couldn't be found. "
+                "The 'geometry' keyword argument must be specified."
+            )
+        else:
+            warnings.warn(
+                f"Header file {self._definitions_header} couldn't be found. "
+                "The code units are set to be 1.0 in cgs by default."
+            )
+
+    def _get_constants(self, matched):
+        """Replace matched constant string with its value"""
+        key = matched.group()
+        return str(pluto_def_constants[key])
+
+    def _get_time(self):
+        """Get current time from vtk.out."""
+        log_file = os.path.join(self.fullpath, "vtk.out")
+        match = re.search(r"\.(\d*)\.", self.parameter_filename)
+        if match is None:
+            raise RuntimeError(
+                f"Failed to parse output number from file name {self.parameter_filename}"
+            )
+        index = int(match.group(1))
+
+        self.current_time = -1
+        if os.path.isfile(log_file):
+            log_regexp = re.compile(fr"^{index}\s(\S+)")
+            with open(log_file) as fh:
+                for line in fh.readlines():
+                    log_match = re.search(log_regexp, line)
+                    if log_match:
+                        self.current_time = self.quan(
+                            float(log_match.group(1)), "code_time"
+                        )
+                        break
+                else:
+                    mylog.warning(
+                        "Failed to retrieve time from %s, setting current_time = -1",
+                        log_file,
+                    )
+        else:
+            mylog.warning("Missing log file %s, setting current_time = -1", log_file)
+
+    def _set_code_unit_attributes(self):
+        """Conversion between physical units and code units."""
+        length_unit = self.parameters.get("unit_length", 1.0)
+        velocity_unit = self.parameters.get("unit_velocity", 1.0)
+        density_unit = self.parameters.get("unit_density", 1.0)
+
+        self.length_unit = self.quan(length_unit, "cm")
+        self.velocity_unit = self.quan(velocity_unit, "cm/s")
+        density_unit = self.quan(density_unit, "g/cm**3")
+
+        self.mass_unit = density_unit * self.length_unit ** 3
+        self.time_unit = self.length_unit / self.velocity_unit
+        self.magnetic_unit = np.sqrt(4.0 * np.pi * density_unit) * self.velocity_unit
+        self.magnetic_unit.convert_to_units("gauss")

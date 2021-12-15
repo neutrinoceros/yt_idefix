@@ -3,8 +3,8 @@ from yt.fields.magnetic_field import setup_magnetic_field_aliases
 
 
 class IdefixVtkFieldInfo(FieldInfoContainer):
-    known_other_fields = (  # type: ignore
-        ("RHO", ("code_mass / code_length**3", ["density"], None)),
+    known_other_fields = (
+        ("RHO", ("code_mass / code_length**3", ["density"], None)),  # type: ignore
         ("VX1", ("code_length / code_time", ["velocity_x"], None)),
         ("VX2", ("code_length / code_time", ["velocity_y"], None)),
         ("VX3", ("code_length / code_time", ["velocity_z"], None)),
@@ -21,8 +21,8 @@ class IdefixVtkFieldInfo(FieldInfoContainer):
 
 
 class IdefixDmpFieldInfo(FieldInfoContainer):
-    known_other_fields = (  # type: ignore
-        ("Vc-RHO", ("code_mass / code_length**3", ["density"], None)),
+    known_other_fields = (
+        ("Vc-RHO", ("code_mass / code_length**3", ["density"], None)),  # type: ignore
         ("Vc-VX1", ("code_length / code_time", ["velocity_x"], None)),
         ("Vc-VX2", ("code_length / code_time", ["velocity_y"], None)),
         ("Vc-VX3", ("code_length / code_time", ["velocity_z"], None)),
