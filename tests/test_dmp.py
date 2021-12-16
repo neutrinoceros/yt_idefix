@@ -4,9 +4,9 @@ import numpy as np
 from numpy.testing import assert_equal
 
 import yt
-import yt.extensions.idefix
-from yt.extensions.idefix.api import IdefixDmpDataset
+import yt_idefix  # noqa: F401
 from yt_idefix._io.dmp_io import read_idefix_dmpfile
+from yt_idefix.api import IdefixDmpDataset
 
 DATA_DIR = Path(__file__).parent / "data"
 idefix_khi = DATA_DIR.joinpath("khi", "dump.0100.dmp")

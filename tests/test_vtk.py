@@ -5,7 +5,7 @@ from packaging.version import Version
 
 import yt
 import yt_idefix
-from yt.extensions.idefix.api import IdefixVtkDataset, PlutoVtkDataset
+from yt_idefix.api import IdefixVtkDataset, PlutoVtkDataset
 
 YT_VERSION = Version(yt.__version__)
 
