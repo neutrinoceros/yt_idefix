@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import re
 import warnings
@@ -11,13 +12,15 @@ import numpy as np
 
 from yt.data_objects.index_subobjects.grid_patch import AMRGridPatch
 from yt.data_objects.static_output import Dataset
-from yt.funcs import mylog, setdefaultattr
+from yt.funcs import setdefaultattr
 from yt.geometry.grid_geometry_handler import GridIndex
 
 from ._io import dmp_io, vtk_io
 from ._io.commons import IdefixFieldProperties, IdefixMetadata
 from .definitions import pluto_def_constants
 from .fields import IdefixDmpFieldInfo, IdefixVtkFieldInfo
+
+ytLogger = logging.getLogger("yt")
 
 
 class IdefixGrid(AMRGridPatch):
@@ -262,7 +265,8 @@ class IdefixVtkDataset(IdefixDataset):
         self.domain_right_edge = dre
 
         # time wasn't stored in vtk files before Idefix 0.8
-        self.current_time = md.get("time", -1)
+        self.current_time = self.quan(md.get("time", -1), "code_time")
+
         # periodicity was not stored in vtk files before Idefix 0.9
         self._periodicity = md.get("periodicity", (True, True, True))
         self.geometry = md["geometry"]
@@ -400,7 +404,7 @@ class PlutoVtkDataset(IdefixVtkDataset):
             )
         index = int(match.group(1))
 
-        self.current_time = -1
+        self.current_time = self.quan(-1, "code_time")
         if os.path.isfile(log_file):
             log_regexp = re.compile(fr"^{index}\s(\S+)")
             with open(log_file) as fh:
@@ -412,12 +416,12 @@ class PlutoVtkDataset(IdefixVtkDataset):
                         )
                         break
                 else:
-                    mylog.warning(
+                    ytLogger.warning(
                         "Failed to retrieve time from %s, setting current_time = -1",
                         log_file,
                     )
         else:
-            mylog.warning("Missing log file %s, setting current_time = -1", log_file)
+            ytLogger.warning("Missing log file %s, setting current_time = -1", log_file)
 
     def _set_code_unit_attributes(self):
         """Conversion between physical units and code units."""
