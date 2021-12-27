@@ -1,0 +1,8 @@
+# small spherical 3D test case
+id: spherical_disk
+attrs:
+  path: data.0010.vtk
+  has_geometry: True
+  geometry: spherical
+  dimensionality: 3
+  kind: idefix

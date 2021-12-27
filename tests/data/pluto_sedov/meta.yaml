@@ -1,0 +1,13 @@
+id: sedov
+attrs:
+  path: data.0018.vtk
+  has_geometry: True
+  geometry: cartesian
+  dimensionality: 3
+  kind: pluto
+  units:
+    length: "3.08567758e21 cm"
+    velocity: "1e5 cm/s"
+    mass: "4.91416082e40 g"
+    time: "3.08567758e16 s"
+    magnetic: "4.58462477e-07 G"
