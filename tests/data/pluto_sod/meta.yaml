@@ -1,0 +1,8 @@
+id: sod
+attrs:
+  path: data.0001.vtk
+  has_geometry: true
+  geometry: cartesian
+  dimensionality: 1
+  kind: pluto
+  current_time: null

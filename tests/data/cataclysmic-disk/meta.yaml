@@ -1,0 +1,9 @@
+# contributed by Marc Van den Bossche
+# this dataset is stretched in the radial direction
+id: cataclysmic_disk
+attrs:
+  path: data.0086.vtk
+  has_geometry: False
+  geometry: polar
+  dimensionality: 2
+  kind: idefix

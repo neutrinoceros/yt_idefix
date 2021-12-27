@@ -1,0 +1,8 @@
+# KHI in cartesian coordinates, geom included in datafile, no streching
+id: khi
+attrs:
+  path: data.0100.vtk
+  has_geometry: true
+  geometry: cartesian
+  dimensionality: 2
+  kind: idefix

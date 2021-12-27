@@ -27,7 +27,7 @@ repos:
     - id: trailing-whitespace
     - id: end-of-file-fixer
     - id: no-commit-to-branch
-      args: [--branch, main]
+    - id: check-yaml
 -   repo: https://github.com/neutrinoceros/inifix.git
     rev: v0.10.0
     hooks:
@@ -74,3 +74,6 @@ repos:
     rev: v0.930
     hooks:
     -   id: mypy
+        additional_dependencies: [
+            'types-PyYAML',
+        ]
