@@ -1,6 +1,9 @@
 #define  PHYSICS                        HD
 #define  DIMENSIONS                     3
 #define  GEOMETRY                       CARTESIAN
+/* This comment is meant to challenge geometry parsing tests
+#define  GEOMETRY                       SPHERICAL
+*/
 #define  BODY_FORCE                     NO
 #define  COOLING                        NO
 #define  RECONSTRUCTION                 LINEAR
