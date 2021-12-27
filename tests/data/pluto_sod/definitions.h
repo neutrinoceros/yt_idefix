@@ -1,5 +1,5 @@
 #define  PHYSICS                        HD
-#define  DIMENSIONS                     3
+#define  DIMENSIONS                     1
 #define  GEOMETRY                       CARTESIAN
 #define  BODY_FORCE                     NO
 #define  COOLING                        NO
@@ -7,7 +7,7 @@
 #define  TIME_STEPPING                  RK2
 #define  NTRACER                        0
 #define  PARTICLES                      NO
-#define  USER_DEF_PARAMETERS            3
+#define  USER_DEF_PARAMETERS            1
 
 /* -- physics dependent declarations -- */
 
@@ -20,16 +20,9 @@
 
 /* -- user-defined parameters (labels) -- */
 
-#define  ENRG0                          0
-#define  DNST0                          1
-#define  GAMMA                          2
+#define  SCRH                           0
 
 /* [Beg] user-defined constants (do not change this line) */
 
-#define  INITIAL_SMOOTHING              YES
-// Define the code units below in cgs, some pre-defined constants can be used
-#define  UNIT_LENGTH                    1000*CONST_pc
-#define  UNIT_VELOCITY                  1e5
-#define  UNIT_DENSITY                   CONST_mp
 
 /* [End] user-defined constants (do not change this line) */
