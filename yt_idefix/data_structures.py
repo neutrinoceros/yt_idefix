@@ -265,7 +265,8 @@ class IdefixVtkDataset(IdefixDataset):
         self.domain_right_edge = dre
 
         # time wasn't stored in vtk files before Idefix 0.8
-        self.current_time = md.get("time", -1)
+        self.current_time = self.quan(md.get("time", -1), "code_time")
+
         # periodicity was not stored in vtk files before Idefix 0.9
         self._periodicity = md.get("periodicity", (True, True, True))
         self.geometry = md["geometry"]
@@ -403,7 +404,7 @@ class PlutoVtkDataset(IdefixVtkDataset):
             )
         index = int(match.group(1))
 
-        self.current_time = -1
+        self.current_time = self.quan(-1, "code_time")
         if os.path.isfile(log_file):
             log_regexp = re.compile(fr"^{index}\s(\S+)")
             with open(log_file) as fh:
