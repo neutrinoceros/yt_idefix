@@ -15,7 +15,7 @@ from yt.data_objects.static_output import Dataset
 from yt.funcs import setdefaultattr
 from yt.geometry.grid_geometry_handler import GridIndex
 
-from ._io import dmp_io, vtk_io
+from ._io import C_io, dmp_io, vtk_io
 from ._io.commons import IdefixFieldProperties, IdefixMetadata
 from .definitions import pluto_def_constants
 from .fields import IdefixDmpFieldInfo, IdefixVtkFieldInfo
@@ -364,20 +364,22 @@ class PlutoVtkDataset(IdefixVtkDataset):
 
         if os.path.isfile(self._definitions_header):
             with open(self._definitions_header) as fh:
-                for line in fh.readlines():
-                    geom_match = re.search(geom_regexp, line)
-                    unit_match = re.search(unit_regexp, line)
-                    if geom_match is None and unit_match is None:
-                        continue
-                    elif unit_match:
-                        unit = unit_match.group(1).lower()
-                        expr = unit_match.group(2)
-                        # The pre-defined constants in definitions should be
-                        # replace with its value
-                        expr = re.sub(constexpr, self._get_constants, expr)
-                        self.parameters[unit] = eval(expr)
-                    elif geom_match:
-                        self.geometry = geom_match.group(1).lower()
+                body = fh.read()
+            lines = C_io.strip_comments(body).split("\n")
+
+            for line in lines:
+                geom_match = re.fullmatch(geom_regexp, line)
+                if geom_match is not None:
+                    self.geometry = geom_match.group(1).lower()
+                    continue
+
+                unit_match = re.fullmatch(unit_regexp, line)
+                if unit_match is not None:
+                    unit = unit_match.group(1).lower()
+                    expr = unit_match.group(2)
+                    expr = re.sub(constexpr, self._get_constants, expr)
+                    self.parameters[unit] = eval(expr)
+
         elif self.geometry is None:
             raise FileNotFoundError(
                 f"Header file {self._definitions_header} couldn't be found. "
@@ -389,9 +391,9 @@ class PlutoVtkDataset(IdefixVtkDataset):
                 "The code units are set to be 1.0 in cgs by default."
             )
 
-    def _get_constants(self, matched):
+    def _get_constants(self, match: re.Match) -> str:
         """Replace matched constant string with its value"""
-        key = matched.group()
+        key = match.group()
         return str(pluto_def_constants[key])
 
     def _get_time(self):
