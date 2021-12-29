@@ -25,6 +25,8 @@ def load(fn, *args, **kwargs):
     (recognized as Athena format with yt < 4.0.2)
     """
     fn = os.path.expanduser(fn)
+    if not os.path.exists(fn):
+        raise FileNotFoundError(fn)
 
     if YT_VERSION < Version("4.0.2") and fn.endswith(".vtk"):
         if any(wildcard in fn for wildcard in "[]?!*"):
