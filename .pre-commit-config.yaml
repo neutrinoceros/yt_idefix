@@ -29,7 +29,7 @@ repos:
     - id: no-commit-to-branch
     - id: check-yaml
 -   repo: https://github.com/neutrinoceros/inifix.git
-    rev: v0.10.0
+    rev: v0.11.2
     hooks:
     - id: inifix-format
 -   repo: https://github.com/asottile/pyupgrade
@@ -71,7 +71,7 @@ repos:
 
 # additional hooks not from yt
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.930
+    rev: v0.931
     hooks:
     -   id: mypy
         additional_dependencies: [
