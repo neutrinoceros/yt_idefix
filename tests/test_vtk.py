@@ -102,6 +102,27 @@ def test_load_parseable_geometry_metadata(vtk_file_with_geom):
     assert ds.geometry == file["geometry"]
 
 
+def test_derived_field(vtk_file):
+    file = vtk_file
+    ds = yt_idefix.load(file["path"], geometry=file["geometry"])
+    # this derived field is compatible for all current test data
+    # it'll be replaced once a better universal field is defined internally.
+
+    def mom_den(field, data):
+        return data["idefix-vtk", "RHO"] * data["idefix-vtk", "VX1"]
+
+    ds.add_field(
+        name=("gas", "momentum_density"),
+        function=mom_den,
+        units="g*cm**-2/s",
+        sampling_type="cell",
+    )
+    ad = ds.all_data()
+    test = ad["gas", "momentum_density"]
+    expect = ad["idefix-vtk", "RHO"] * ad["idefix-vtk", "VX1"]
+    assert_allclose_units(test, expect)
+
+
 # TODO: make this a pytest-mpl test
 def test_slice_plot(vtk_file):
     file = vtk_file

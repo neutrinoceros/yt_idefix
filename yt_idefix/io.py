@@ -19,17 +19,21 @@ class IdefixIOHandler(BaseIOHandler, ABC):
 
     def _read_fluid_selection(self, chunks, selector, fields, size):
         data = {}
-        offset = 0
+
+        for field in fields:
+            data[field] = np.empty(size, dtype="float64")
 
         with open(self._data_file, mode="rb") as fh:
-            for field in fields:
-                ftype, fname = field
-                data[ftype, fname] = np.empty(size, dtype="float64")
-                for chunk in chunks:
-                    for grid in chunk.objs:
+            ind = 0
+            for chunk in chunks:
+                for grid in chunk.objs:
+                    nd = 0
+                    for field in fields:
+                        ftype, fname = field
                         foffset = grid._index._field_offsets[fname]
                         values = self._read_single_field(fh, foffset)
-                        offset += grid.select(selector, values, data[field], offset)
+                        nd = grid.select(selector, values, data[field], ind)
+                    ind += nd
         return data
 
     def _read_particle_coords(self, chunks, ptf):
