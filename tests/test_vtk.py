@@ -62,8 +62,12 @@ def test_pluto_units_override(pluto_vtk_file):
         uo = {}
         for unit in comb:
             uo[unit] = ug[unit]
-
-        if set(uo) not in invalid:
+        if set(uo) in invalid:
+            with pytest.raises(ValueError, match=r".* cannot derive all units\n.*"):
+                yt_idefix.load(
+                    file["path"], geometry=file["geometry"], units_override=uo
+                )
+        else:
             ds = yt_idefix.load(
                 file["path"], geometry=file["geometry"], units_override=uo
             )
