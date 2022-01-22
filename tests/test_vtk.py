@@ -1,6 +1,7 @@
 import os
 
 import pytest
+from more_itertools import distinct_combinations
 from packaging.version import Version
 from unyt import assert_allclose_units
 
@@ -43,6 +44,32 @@ def test_pluto_units(pluto_vtk_file):
         return
     for u, expected in file["units"].items():
         assert_allclose_units(getattr(ds, f"{u}_unit"), expected)
+
+
+def test_pluto_units_override(pluto_vtk_file):
+    file = pluto_vtk_file
+    ug = {
+        "time_unit": (2.0, "s"),
+        "length_unit": (4.0, "cm"),
+        "mass_unit": (5.0, "kg"),
+        "density_unit": (0.078125, "kg/cm**3"),
+        "velocity_unit": (2.0, "cm/s"),
+        "magnetic_unit": (62.66570686577499, "gauss"),
+    }
+    unit_combs = distinct_combinations(ug, 3)
+    invalid = yt_idefix.PlutoVtkDataset.invalid_unit_combinations
+    for comb in unit_combs:
+        uo = {}
+        for unit in comb:
+            uo[unit] = ug[unit]
+
+        if set(uo) not in invalid:
+            ds = yt_idefix.load(
+                file["path"], geometry=file["geometry"], units_override=uo
+            )
+            assert_allclose_units(ds.length_unit, ds.quan(*ug["length_unit"]))
+            assert_allclose_units(ds.mass_unit, ds.quan(*ug["mass_unit"]))
+            assert_allclose_units(ds.time_unit, ds.quan(*ug["time_unit"]))
 
 
 def test_pluto_wrong_definitions_header(pluto_vtk_file):
