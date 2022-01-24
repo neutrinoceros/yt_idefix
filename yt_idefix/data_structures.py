@@ -428,35 +428,33 @@ class PlutoVtkDataset(IdefixVtkDataset):
     def _set_code_unit_attributes(self):
         """Conversion between physical units and code units."""
 
-        # Overriding units are preferred to PLUTO's base units
+        # User-passed units are preferred to PLUTO's base units for deriving all units
         pluto_units = {
             "length_unit": "cm",
             "velocity_unit": "cm/s",
             "density_unit": "g/cm**3",
         }
         spu = set(pluto_units)
-        if len(self.units_override) < 3:
-            if len(self.units_override):
-                ytLogger.info(
-                    "Less than 3 units were specified in units_override (%s). "
-                    "Need to rely on PLUTO's internal units to derive other units",
-                    len(self.units_override),
-                )
-
-            spu.difference_update(set(self.units_override))
-            for unit in spu:
-                self.units_override[unit] = self.quan(
-                    self.parameters.get(unit, 1.0), pluto_units[unit]
-                )
-                try:
-                    self._validate_units_override_keys(self.units_override)
-                    ytLogger.info("Relying on %s: %s.", unit, self.units_override[unit])
-                except ValueError:
-                    del self.units_override[unit]
-                if len(self.units_override) == 3:
-                    break
-
         uo = self.units_override.copy()
+        if len(uo) < 3:
+            if len(uo) > 0:
+                ytLogger.info(
+                    "Less than 3 units were specified in units_override (got %s). "
+                    "Need to rely on PLUTO's internal units to derive other units",
+                    len(uo),
+                )
+            # Remove those already in units_override
+            spu.difference_update(uo)
+            for unit in spu:
+                uo[unit] = self.quan(self.parameters.get(unit, 1.0), pluto_units[unit])
+                if len(self.units_override) > 0:
+                    try:
+                        self._validate_units_override_keys(uo)
+                        ytLogger.info("Relying on %s: %s.", unit, uo[unit])
+                    except ValueError:
+                        del uo[unit]
+                if len(uo) == 3:
+                    break
 
         # Then we calculate base units via the units in units_override
         # The condition statements are essential to prevent getting stuck in infinite recursion
@@ -578,11 +576,11 @@ class PlutoVtkDataset(IdefixVtkDataset):
 
         if "temperature_unit" in units_override:
             raise ValueError(
-                "Temperature is not allowed in units_override,"
+                "Temperature is not allowed in units_override, "
                 "since it's always in Kelvin in PLUTO"
             )
 
-        # Three units are enough for deriving others, more will cause conflict
+        # Three units are enough for deriving others, more will likely cause conflict
         if len(units_override) > 3:
             raise ValueError(
                 "More than 3 degrees of freedom were specified "
