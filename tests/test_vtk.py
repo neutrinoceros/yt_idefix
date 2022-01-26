@@ -1,4 +1,5 @@
 import os
+import re
 
 import pytest
 from more_itertools import distinct_combinations
@@ -61,27 +62,31 @@ def test_pluto_units(pluto_vtk_file):
 def test_pluto_complete_units_override(pluto_vtk_file):
     su = SAMPLE_UNITS
     unit_combs = distinct_combinations(su, 3)
-    invalid = PlutoVtkDataset.invalid_unit_combinations
     for comb in unit_combs:
         uo = {}
         for unit in comb:
             uo[unit] = su[unit]
-        if set(uo) not in invalid:
-            ds = yt_idefix.load(
-                pluto_vtk_file["path"], geometry="cartesian", units_override=uo
-            )
-            assert_allclose_units(ds.length_unit, ds.quan(*su["length_unit"]))
-            assert_allclose_units(ds.mass_unit, ds.quan(*su["mass_unit"]))
-            assert_allclose_units(ds.time_unit, ds.quan(*su["time_unit"]))
-            assert_allclose_units(ds.density_unit, ds.quan(*su["density_unit"]))
-            assert_allclose_units(ds.velocity_unit, ds.quan(*su["velocity_unit"]))
-            assert_allclose_units(ds.magnetic_unit, ds.quan(*su["magnetic_unit"]))
+        if set(uo) in PlutoVtkDataset.invalid_unit_combinations:
+            continue
+        ds = yt_idefix.load(
+            pluto_vtk_file["path"],
+            geometry=pluto_vtk_file["geometry"],
+            units_override=uo,
+        )
+        assert_allclose_units(ds.length_unit, ds.quan(*su["length_unit"]))
+        assert_allclose_units(ds.mass_unit, ds.quan(*su["mass_unit"]))
+        assert_allclose_units(ds.time_unit, ds.quan(*su["time_unit"]))
+        assert_allclose_units(ds.density_unit, ds.quan(*su["density_unit"]))
+        assert_allclose_units(ds.velocity_unit, ds.quan(*su["velocity_unit"]))
+        assert_allclose_units(ds.magnetic_unit, ds.quan(*su["magnetic_unit"]))
 
 
 def test_pluto_one_unit_override(pluto_vtk_file):
     # Pluto's length_unit and density_unit will be combined with
     uo = {"time_unit": (2.0, "yr")}
-    ds = yt_idefix.load(pluto_vtk_file["path"], geometry="cartesian", units_override=uo)
+    ds = yt_idefix.load(
+        pluto_vtk_file["path"], geometry=pluto_vtk_file["geometry"], units_override=uo
+    )
     expect_velocity = ds.length_unit / ds.quan(*uo["time_unit"])
     assert_allclose_units(ds.velocity_unit, expect_velocity)
 
@@ -89,7 +94,9 @@ def test_pluto_one_unit_override(pluto_vtk_file):
 def test_pluto_two_unit_override(pluto_vtk_file):
     # Pluto's length_unit will be combined with
     uo = {"time_unit": (2.0, "yr"), "density_unit": (32.0, "g/cm**3")}
-    ds = yt_idefix.load(pluto_vtk_file["path"], geometry="cartesian", units_override=uo)
+    ds = yt_idefix.load(
+        pluto_vtk_file["path"], geometry=pluto_vtk_file["geometry"], units_override=uo
+    )
     expect_velocity = ds.length_unit / ds.quan(*uo["time_unit"])
     expect_mass = ds.quan(*uo["density_unit"]) * ds.length_unit ** 3
     assert_allclose_units(ds.velocity_unit, expect_velocity)
@@ -97,11 +104,12 @@ def test_pluto_two_unit_override(pluto_vtk_file):
 
 
 def test_pluto_invalid_units_override(pluto_vtk_file):
-    invalid = PlutoVtkDataset.invalid_unit_combinations
-    for uo in invalid:
+    for uo in PlutoVtkDataset.invalid_unit_combinations:
         with pytest.raises(ValueError, match=r".* cannot derive all units\n.*"):
             yt_idefix.load(
-                pluto_vtk_file["path"], geometry="cartesian", units_override=uo
+                pluto_vtk_file["path"],
+                geometry=pluto_vtk_file["geometry"],
+                units_override=uo,
             )
 
 
@@ -119,7 +127,9 @@ def test_pluto_temperature_unit_override(pluto_vtk_file):
         ),
     ):
         yt_idefix.load(
-            pluto_vtk_file["path"], geometry="cartesian", units_override=sample
+            pluto_vtk_file["path"],
+            geometry=pluto_vtk_file["geometry"],
+            units_override=sample,
         )
 
 
@@ -127,12 +137,16 @@ def test_pluto_over_units_override(pluto_vtk_file):
     with pytest.raises(
         ValueError,
         match=(
-            "More than 3 degrees of freedom were specified "
-            "in units_override \\(6 given\\)"
+            re.escape(
+                "More than 3 degrees of freedom were specified "
+                "in units_override (6 given)"
+            )
         ),
     ):
         yt_idefix.load(
-            pluto_vtk_file["path"], geometry="cartesian", units_override=SAMPLE_UNITS
+            pluto_vtk_file["path"],
+            geometry=pluto_vtk_file["geometry"],
+            units_override=SAMPLE_UNITS,
         )
 
 

@@ -428,113 +428,139 @@ class PlutoVtkDataset(IdefixVtkDataset):
     def _set_code_unit_attributes(self):
         """Conversion between physical units and code units."""
 
-        # User-passed units are preferred to PLUTO's base units for deriving all units
+        # Pluto's base units are length, velocity and density, but here we consider
+        # length, mass and time as base units. Since it can make us easy to calculate
+        # all units when self.units_override is not None.
+
+        # Default values of Pluto's base units which are stored in self.parameters
+        # if they can be read from definitions.h
+        # Otherwise, they are set to unity in cgs.
         pluto_units = {
-            "length_unit": "cm",
-            "velocity_unit": "cm/s",
-            "density_unit": "g/cm**3",
+            "length_unit": self.quan(self.parameters.get("length_unit", 1.0), "cm"),
+            "velocity_unit": self.quan(
+                self.parameters.get("velocity_unit", 1.0), "cm/s"
+            ),
+            "density_unit": self.quan(
+                self.parameters.get("density_unit", 1.0), "g/cm**3"
+            ),
         }
-        spu = set(pluto_units)
-        uo = self.units_override.copy()
-        if len(uo) < 3:
-            if len(uo) > 0:
-                ytLogger.info(
-                    "Less than 3 units were specified in units_override (got %s). "
-                    "Need to rely on PLUTO's internal units to derive other units",
-                    len(uo),
-                )
-            # Remove those already in units_override
-            spu.difference_update(uo)
-            for unit in spu:
-                uo[unit] = self.quan(self.parameters.get(unit, 1.0), pluto_units[unit])
-                if len(self.units_override) > 0:
-                    try:
-                        self._validate_units_override_keys(uo)
-                        ytLogger.info("Relying on %s: %s.", unit, uo[unit])
-                    except ValueError:
-                        del uo[unit]
-                if len(uo) == 3:
-                    break
 
-        # Then we calculate base units via the units in units_override
+        uo_size = len(self.units_override)
+        if uo_size > 0 and uo_size < 3:
+            ytLogger.info(
+                "Less than 3 units were specified in units_override (got %s). "
+                "Need to rely on PLUTO's internal units to derive other units",
+                uo_size,
+            )
+
+        uo_cache = self.units_override.copy()
+        while len(uo_cache) < 3:
+            unit, value = pluto_units.popitem()
+            # If any Pluto's base unit is specified in units_override, it'll be preserved
+            if unit in uo_cache:
+                continue
+            uo_cache[unit] = value
+            # Make sure the combination of units are able to derive base units
+            # If self.units_override is empty, skip this part
+            if uo_size > 0:
+                try:
+                    self._validate_units_override_keys(uo_cache)
+                    ytLogger.info("Relying on %s: %s.", unit, uo_cache[unit])
+                except ValueError:
+                    # It means the combination is invalid
+                    del uo_cache[unit]
+
+        # Some unit_setup_functions
         # The condition statements are essential to prevent getting stuck in infinite recursion
-        # However they are fragile, you must be cautious to change them
-        def _time():
-            if "time_unit" not in uo:
-                uo["time_unit"] = uo["length_unit"] / uo["velocity_unit"]
+        # However they are fragile, one must be cautious to change them
+        def _setup_time_unit(cache):
+            if "time_unit" in cache:
+                return
+            time = cache["length_unit"] / cache["velocity_unit"]
+            return time
 
-        def _length():
-            if "length_unit" not in uo:
-                if "time_unit" in uo:
-                    uo["length_unit"] = uo["velocity_unit"] * uo["time_unit"]
-                else:
-                    uo["length_unit"] = (uo["mass_unit"] / uo["density_unit"]) ** (
-                        1 / 3
-                    )
+        def _setup_length_unit(cache):
+            if "length_unit" in cache:
+                return
+            if "time_unit" in cache:
+                length = cache["velocity_unit"] * cache["time_unit"]
+            else:
+                length = (cache["mass_unit"] / cache["density_unit"]) ** (1 / 3)
+            return length
 
-        def _mass():
-            if "mass_unit" not in uo:
-                if "density_unit" in uo:
-                    uo["mass_unit"] = uo["density_unit"] * uo["length_unit"] ** 3
-                else:
-                    uo["mass_unit"] = (
-                        (uo["magnetic_unit"] / uo["velocity_unit"]) ** 2
-                        / 4.0
-                        / np.pi
-                        * uo["length_unit"] ** 3
-                    )
+        def _setup_mass_unit(cache):
+            if "mass_unit" in cache:
+                return
+            if "density_unit" in cache:
+                mass = cache["density_unit"] * cache["length_unit"] ** 3
+            else:
+                mass = (
+                    (cache["magnetic_unit"] / cache["velocity_unit"]) ** 2
+                    / 4.0
+                    / np.pi
+                    * cache["length_unit"] ** 3
+                )
+            return mass
 
-        def _velocity():
-            if "velocity_unit" not in uo:
-                if "length_unit" in uo and "time_unit" in uo:
-                    uo["velocity_unit"] = uo["length_unit"] / uo["time_unit"]
-                if "magnetic_unit" in uo:
-                    uo["velocity_unit"] = uo["magnetic_unit"] / np.sqrt(
-                        4.0 * np.pi * uo["density_unit"]
-                    )
-                else:
-                    uo["velocity_unit"] = (uo["mass_unit"] / uo["density_unit"]) ** (
-                        1 / 3
-                    ) / uo["time_unit"]
+        def _setup_velocity_unit(cache):
+            if "velocity_unit" in cache:
+                return
+            if "length_unit" in cache and "time_unit" in cache:
+                velocity = cache["length_unit"] / cache["time_unit"]
+            elif "magnetic_unit" in cache:
+                velocity = cache["magnetic_unit"] / np.sqrt(
+                    4.0 * np.pi * cache["density_unit"]
+                )
+            else:
+                velocity = (cache["mass_unit"] / cache["density_unit"]) ** (
+                    1 / 3
+                ) / cache["time_unit"]
+            return velocity
 
-        def _density():
-            if "density_unit" not in uo:
-                if "length_unit" in uo:
-                    uo["density_unit"] = uo["mass_unit"] / uo["length_unit"] ** 3
-                elif "velocity_unit" in uo:
-                    uo["density_unit"] = (
-                        (uo["magnetic_unit"] / uo["velocity_unit"]) ** 2 / 4.0 / np.pi
-                    )
-                else:
-                    uo["density_unit"] = (
-                        (uo["magnetic_unit"] * uo["time_unit"]) ** 3 / uo["mass_unit"]
-                    ) ** 2 / (4.0 * np.pi) ** 3
+        def _setup_density_unit(cache):
+            if "density_unit" in cache:
+                return
+            if "length_unit" in cache:
+                density = cache["mass_unit"] / cache["length_unit"] ** 3
+            elif "velocity_unit" in cache:
+                density = (
+                    (cache["magnetic_unit"] / cache["velocity_unit"]) ** 2 / 4.0 / np.pi
+                )
+            else:
+                density = (
+                    (cache["magnetic_unit"] * cache["time_unit"]) ** 3
+                    / cache["mass_unit"]
+                ) ** 2 / (4.0 * np.pi) ** 3
+            return density
 
-        unit_deps = {
-            "length_unit": _length,
-            "mass_unit": _mass,
-            "time_unit": _time,
-            "velocity_unit": _velocity,
-            "density_unit": _density,
+        unit_setup_func = {
+            "length_unit": _setup_length_unit,
+            "mass_unit": _setup_mass_unit,
+            "time_unit": _setup_time_unit,
+            "velocity_unit": _setup_velocity_unit,
+            "density_unit": _setup_density_unit,
         }
 
-        def cal_unit(unit):
-            """Derived units by recursion"""
+        def setup_unit(unit, unit_cache):
+            """Calculate a unit according to the given unit_setup_functions"""
             try:
-                unit_deps[unit]()
+                value = unit_setup_func[unit](unit_cache)
+                unit_cache.setdefault(unit, value)
             except KeyError as err:
-                missed = err.args[0]
-                cal_unit(missed)
-                cal_unit(unit)
+                # If any unit in the function is missing, calculate that first,
+                # then come back and try it again.
+                missed_unit = err.args[0]
+                setup_unit(missed_unit, unit_cache)
+                setup_unit(unit, unit_cache)
 
-        # Derive base units, the order doesn't matter
-        cal_unit("mass_unit")
-        cal_unit("length_unit")
-        cal_unit("time_unit")
+        # Calculate base units, the order doesn't matter
+        setup_unit("mass_unit", uo_cache)
+        setup_unit("length_unit", uo_cache)
+        setup_unit("time_unit", uo_cache)
 
-        self.mass_unit = uo["mass_unit"]
-        self.length_unit = uo["length_unit"]
-        self.time_unit = uo["time_unit"]
+        self.mass_unit = uo_cache["mass_unit"]
+        self.length_unit = uo_cache["length_unit"]
+        self.time_unit = uo_cache["time_unit"]
 
         self.velocity_unit = self.length_unit / self.time_unit
         self.density_unit = self.mass_unit / self.length_unit ** 3
