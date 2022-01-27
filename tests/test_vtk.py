@@ -53,8 +53,6 @@ def test_parse_pluto_metadata(pluto_vtk_file):
 def test_pluto_units(pluto_vtk_file):
     file = pluto_vtk_file
     ds = yt_idefix.load(file["path"])
-    if "units" not in file:
-        return
     for u, expected in file["units"].items():
         assert_allclose_units(getattr(ds, f"{u}_unit"), expected)
 
@@ -73,30 +71,30 @@ def test_pluto_complete_units_override(pluto_vtk_file):
             geometry=pluto_vtk_file["geometry"],
             units_override=uo,
         )
-        assert_allclose_units(ds.length_unit, ds.quan(*su["length_unit"]))
-        assert_allclose_units(ds.mass_unit, ds.quan(*su["mass_unit"]))
-        assert_allclose_units(ds.time_unit, ds.quan(*su["time_unit"]))
-        assert_allclose_units(ds.density_unit, ds.quan(*su["density_unit"]))
-        assert_allclose_units(ds.velocity_unit, ds.quan(*su["velocity_unit"]))
-        assert_allclose_units(ds.magnetic_unit, ds.quan(*su["magnetic_unit"]))
+        for attr, value in su.items():
+            assert_allclose_units(getattr(ds, attr), ds.quan(*value))
 
 
 def test_pluto_one_unit_override(pluto_vtk_file):
+    file = pluto_vtk_file
     # Pluto's length_unit and density_unit will be combined with
     uo = {"time_unit": (2.0, "yr")}
-    ds = yt_idefix.load(
-        pluto_vtk_file["path"], geometry=pluto_vtk_file["geometry"], units_override=uo
-    )
+    ds = yt_idefix.load(file["path"], geometry=file["geometry"], units_override=uo)
+    # Pluto's length_unit should be preserved
+    assert_allclose_units(ds.length_unit, file["units"]["length"])
+    # Pluto's velocity_unit should be overrided
     expect_velocity = ds.length_unit / ds.quan(*uo["time_unit"])
     assert_allclose_units(ds.velocity_unit, expect_velocity)
 
 
-def test_pluto_two_unit_override(pluto_vtk_file):
+def test_pluto_two_units_override(pluto_vtk_file):
+    file = pluto_vtk_file
     # Pluto's length_unit will be combined with
     uo = {"time_unit": (2.0, "yr"), "density_unit": (32.0, "g/cm**3")}
-    ds = yt_idefix.load(
-        pluto_vtk_file["path"], geometry=pluto_vtk_file["geometry"], units_override=uo
-    )
+    ds = yt_idefix.load(file["path"], geometry=file["geometry"], units_override=uo)
+    # Pluto's length_unit should be preserved
+    assert_allclose_units(ds.length_unit, file["units"]["length"])
+    # Pluto's velocity_unit should be overrided
     expect_velocity = ds.length_unit / ds.quan(*uo["time_unit"])
     expect_mass = ds.quan(*uo["density_unit"]) * ds.length_unit ** 3
     assert_allclose_units(ds.velocity_unit, expect_velocity)
@@ -114,11 +112,6 @@ def test_pluto_invalid_units_override(pluto_vtk_file):
 
 
 def test_pluto_temperature_unit_override(pluto_vtk_file):
-    sample = {
-        "time_unit": (2.0, "s"),
-        "length_unit": (4.0, "cm"),
-        "temperature_unit": (2.0, "K"),
-    }
     with pytest.raises(
         ValueError,
         match=(
@@ -129,7 +122,7 @@ def test_pluto_temperature_unit_override(pluto_vtk_file):
         yt_idefix.load(
             pluto_vtk_file["path"],
             geometry=pluto_vtk_file["geometry"],
-            units_override=sample,
+            units_override={"temperature_unit": (2.0, "K")},
         )
 
 
