@@ -436,13 +436,13 @@ class PlutoVtkDataset(IdefixVtkDataset):
         # if they can be read from definitions.h
         # Otherwise, they are set to unity in cgs.
         pluto_units = {
-            "length_unit": self.quan(self.parameters.get("length_unit", 1.0), "cm"),
             "velocity_unit": self.quan(
                 self.parameters.get("velocity_unit", 1.0), "cm/s"
             ),
             "density_unit": self.quan(
                 self.parameters.get("density_unit", 1.0), "g/cm**3"
             ),
+            "length_unit": self.quan(self.parameters.get("length_unit", 1.0), "cm"),
         }
 
         uo_size = len(self.units_override)
@@ -455,112 +455,27 @@ class PlutoVtkDataset(IdefixVtkDataset):
 
         uo_cache = self.units_override.copy()
         while len(uo_cache) < 3:
+            # If less than 3 units were passed into units_override,
+            # the rest will be chosen from Pluto's units
             unit, value = pluto_units.popitem()
             # If any Pluto's base unit is specified in units_override, it'll be preserved
             if unit in uo_cache:
                 continue
             uo_cache[unit] = value
             # Make sure the combination of units are able to derive base units
-            # If self.units_override is empty, skip this part
+            # No need of validation and logging when no unit to be overrided
             if uo_size > 0:
                 try:
                     self._validate_units_override_keys(uo_cache)
-                    ytLogger.info("Relying on %s: %s.", unit, uo_cache[unit])
                 except ValueError:
                     # It means the combination is invalid
                     del uo_cache[unit]
+                else:
+                    ytLogger.info("Relying on %s: %s.", unit, uo_cache[unit])
 
-        # Some unit_setup_functions
-        # The condition statements are essential to prevent getting stuck in infinite recursion
-        # However they are fragile, one must be cautious to change them
-        def _setup_time_unit(cache):
-            if "time_unit" in cache:
-                return
-            time = cache["length_unit"] / cache["velocity_unit"]
-            return time
-
-        def _setup_length_unit(cache):
-            if "length_unit" in cache:
-                return
-            if "time_unit" in cache:
-                length = cache["velocity_unit"] * cache["time_unit"]
-            else:
-                length = (cache["mass_unit"] / cache["density_unit"]) ** (1 / 3)
-            return length
-
-        def _setup_mass_unit(cache):
-            if "mass_unit" in cache:
-                return
-            if "density_unit" in cache:
-                mass = cache["density_unit"] * cache["length_unit"] ** 3
-            else:
-                mass = (
-                    (cache["magnetic_unit"] / cache["velocity_unit"]) ** 2
-                    / 4.0
-                    / np.pi
-                    * cache["length_unit"] ** 3
-                )
-            return mass
-
-        def _setup_velocity_unit(cache):
-            if "velocity_unit" in cache:
-                return
-            if "length_unit" in cache and "time_unit" in cache:
-                velocity = cache["length_unit"] / cache["time_unit"]
-            elif "magnetic_unit" in cache:
-                velocity = cache["magnetic_unit"] / np.sqrt(
-                    4.0 * np.pi * cache["density_unit"]
-                )
-            else:
-                velocity = (cache["mass_unit"] / cache["density_unit"]) ** (
-                    1 / 3
-                ) / cache["time_unit"]
-            return velocity
-
-        def _setup_density_unit(cache):
-            if "density_unit" in cache:
-                return
-            if "length_unit" in cache:
-                density = cache["mass_unit"] / cache["length_unit"] ** 3
-            elif "velocity_unit" in cache:
-                density = (
-                    (cache["magnetic_unit"] / cache["velocity_unit"]) ** 2 / 4.0 / np.pi
-                )
-            else:
-                density = (
-                    (cache["magnetic_unit"] * cache["time_unit"]) ** 3
-                    / cache["mass_unit"]
-                ) ** 2 / (4.0 * np.pi) ** 3
-            return density
-
-        unit_setup_func = {
-            "length_unit": _setup_length_unit,
-            "mass_unit": _setup_mass_unit,
-            "time_unit": _setup_time_unit,
-            "velocity_unit": _setup_velocity_unit,
-            "density_unit": _setup_density_unit,
-        }
-
-        def setup_unit(unit, unit_cache):
-            """Calculate a unit according to the given unit_setup_functions"""
-            try:
-                value = unit_setup_func[unit](unit_cache)
-                unit_cache.setdefault(unit, value)
-            except KeyError as err:
-                # If any unit in the function is missing, calculate that first,
-                # then come back and try it again.
-                missed_unit = err.args[0]
-                setup_unit(missed_unit, unit_cache)
-                setup_unit(unit, unit_cache)
-
-        # Calculate base units, the order doesn't matter
-        setup_unit("mass_unit", uo_cache)
-        setup_unit("length_unit", uo_cache)
-        setup_unit("time_unit", uo_cache)
-
-        self.mass_unit = uo_cache["mass_unit"]
-        self.length_unit = uo_cache["length_unit"]
-        self.time_unit = uo_cache["time_unit"]
+        bu = self.__BaseUnits(uo_cache)
+        for unit, value in bu.base_units.items():
+            setattr(self, unit, value)
 
         self.velocity_unit = self.length_unit / self.time_unit
         self.density_unit = self.mass_unit / self.length_unit ** 3
@@ -623,3 +538,106 @@ class PlutoVtkDataset(IdefixVtkDataset):
             )
 
         super(cls, cls)._validate_units_override_keys(units_override)
+
+    class __BaseUnits:
+        """Derive base units from a given combination of units"""
+
+        _base_unit_list = ["mass_unit", "length_unit", "time_unit"]
+
+        def __init__(self, unit_combination: dict):
+            # Fow now, unit_combination has been validated before passed in
+            # But we still check it here in case one day it is called in other place
+            if len(unit_combination) < 3:
+                raise ValueError(
+                    "Less than 3 units were passed to __BaseUnits "
+                    f"({len(unit_combination)} given)"
+                )
+            PlutoVtkDataset._validate_units_override_keys(unit_combination)
+            self.unit_combination = unit_combination
+            self._unit_cache = self.unit_combination
+            self.setup_base_units()
+
+        def __getitem__(self, key):
+            return self.base_units[key]
+
+        # Some unit_setup_functions
+        # The condition statements are essential to prevent getting stuck in infinite recursion
+        # However they are fragile, one must be cautious to change them
+        def _setup_time_unit(self):
+            uc = self._unit_cache
+            if "time_unit" in uc:
+                return
+            time = uc["length_unit"] / uc["velocity_unit"]
+            uc["time_unit"] = time
+
+        def _setup_length_unit(self):
+            uc = self._unit_cache
+            if "length_unit" in uc:
+                return
+            if "time_unit" in uc:
+                length = uc["velocity_unit"] * uc["time_unit"]
+            else:
+                length = (uc["mass_unit"] / uc["density_unit"]) ** (1 / 3)
+            uc["length_unit"] = length
+
+        def _setup_mass_unit(self):
+            uc = self._unit_cache
+            if "mass_unit" in uc:
+                return
+            if "density_unit" in uc:
+                mass = uc["density_unit"] * uc["length_unit"] ** 3
+            else:
+                mass = (
+                    (uc["magnetic_unit"] / uc["velocity_unit"]) ** 2
+                    / 4.0
+                    / np.pi
+                    * uc["length_unit"] ** 3
+                )
+            uc["mass_unit"] = mass
+
+        def _setup_velocity_unit(self):
+            uc = self._unit_cache
+            if "velocity_unit" in uc:
+                return
+            if "length_unit" in uc and "time_unit" in uc:
+                vel = uc["length_unit"] / uc["time_unit"]
+            elif "magnetic_unit" in uc:
+                vel = uc["magnetic_unit"] / np.sqrt(4.0 * np.pi * uc["density_unit"])
+            else:
+                vel = (uc["mass_unit"] / uc["density_unit"]) ** (1 / 3) / uc[
+                    "time_unit"
+                ]
+            uc["velocity_unit"] = vel
+
+        def _setup_density_unit(self):
+            uc = self._unit_cache
+            if "density_unit" in uc:
+                return
+            if "length_unit" in uc:
+                density = uc["mass_unit"] / uc["length_unit"] ** 3
+            elif "velocity_unit" in uc:
+                density = (uc["magnetic_unit"] / uc["velocity_unit"]) ** 2 / 4.0 / np.pi
+            else:
+                density = (
+                    (uc["magnetic_unit"] * uc["time_unit"]) ** 3 / uc["mass_unit"]
+                ) ** 2 / (4.0 * np.pi) ** 3
+            uc["density_unit"] = density
+
+        def _setup_unit(self, unit):
+            """Calculate a unit according to the given unit setup functions"""
+            f_name = "_setup_" + unit
+            f = getattr(self, f_name)
+            try:
+                f()
+            except KeyError as err:
+                # If any unit in the function is missing, calculate that first,
+                # then come back and try it again.
+                missing_unit = err.args[0]
+                self._setup_unit(missing_unit)
+                self._setup_unit(unit)
+
+        def setup_base_units(self):
+            self.base_units = {}
+            for unit in self._base_unit_list:
+                self._setup_unit(unit)
+                self.base_units[unit] = self._unit_cache[unit]
