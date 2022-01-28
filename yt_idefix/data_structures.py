@@ -474,7 +474,7 @@ class PlutoVtkDataset(IdefixVtkDataset):
                     ytLogger.info("Relying on %s: %s.", unit, uo_cache[unit])
 
         bu = _PlutoBaseUnits(uo_cache)
-        for unit, value in bu.base_units.items():
+        for unit, value in bu._data.items():
             setattr(self, unit, value)
 
         self.velocity_unit = self.length_unit / self.time_unit
