@@ -17,7 +17,7 @@ from yt.geometry.grid_geometry_handler import GridIndex
 
 from ._io import C_io, dmp_io, vtk_io
 from ._io.commons import IdefixFieldProperties, IdefixMetadata
-from .definitions import pluto_def_constants
+from .definitions import _BaseUnits, pluto_def_constants
 from .fields import IdefixDmpFieldInfo, IdefixVtkFieldInfo
 
 ytLogger = logging.getLogger("yt")
@@ -355,7 +355,7 @@ class PlutoVtkDataset(IdefixVtkDataset):
     def _parse_header_file(self):
         """Read some metadata from header file 'definitions.h'."""
         geom_regexp = re.compile(r"^\s*#define\s+GEOMETRY\s+([A-Z]+)")
-        unit_regexp = re.compile(r"^\s*#define\s+(UNIT_\w+)\s+(\S+)")
+        unit_regexp = re.compile(r"^\s*#define\s+UNIT_(\w+)\s+(\S+)")
         constexpr = re.compile(r"CONST_\w+")
 
         # definitions.h is presumed to be along with data file
@@ -375,7 +375,7 @@ class PlutoVtkDataset(IdefixVtkDataset):
 
                 unit_match = re.fullmatch(unit_regexp, line)
                 if unit_match is not None:
-                    unit = unit_match.group(1).lower()
+                    unit = unit_match.group(1).lower() + "_unit"
                     expr = unit_match.group(2)
                     expr = re.sub(constexpr, self._get_constants, expr)
                     self.parameters[unit] = eval(expr)
@@ -427,15 +427,114 @@ class PlutoVtkDataset(IdefixVtkDataset):
 
     def _set_code_unit_attributes(self):
         """Conversion between physical units and code units."""
-        length_unit = self.parameters.get("unit_length", 1.0)
-        velocity_unit = self.parameters.get("unit_velocity", 1.0)
-        density_unit = self.parameters.get("unit_density", 1.0)
 
-        self.length_unit = self.quan(length_unit, "cm")
-        self.velocity_unit = self.quan(velocity_unit, "cm/s")
-        density_unit = self.quan(density_unit, "g/cm**3")
+        # Pluto's base units are length, velocity and density, but here we consider
+        # length, mass and time as base units. Since it can make us easy to calculate
+        # all units when self.units_override is not None.
 
-        self.mass_unit = density_unit * self.length_unit ** 3
-        self.time_unit = self.length_unit / self.velocity_unit
-        self.magnetic_unit = np.sqrt(4.0 * np.pi * density_unit) * self.velocity_unit
+        # Default values of Pluto's base units which are stored in self.parameters
+        # if they can be read from definitions.h
+        # Otherwise, they are set to unity in cgs.
+        pluto_units = {
+            "velocity_unit": self.quan(
+                self.parameters.get("velocity_unit", 1.0), "cm/s"
+            ),
+            "density_unit": self.quan(
+                self.parameters.get("density_unit", 1.0), "g/cm**3"
+            ),
+            "length_unit": self.quan(self.parameters.get("length_unit", 1.0), "cm"),
+        }
+
+        uo_size = len(self.units_override)
+        if uo_size > 0 and uo_size < 3:
+            ytLogger.info(
+                "Less than 3 units were specified in units_override (got %s). "
+                "Need to rely on PLUTO's internal units to derive other units",
+                uo_size,
+            )
+
+        uo_cache = self.units_override.copy()
+        while len(uo_cache) < 3:
+            # If less than 3 units were passed into units_override,
+            # the rest will be chosen from Pluto's units
+            unit, value = pluto_units.popitem()
+            # If any Pluto's base unit is specified in units_override, it'll be preserved
+            if unit in uo_cache:
+                continue
+            uo_cache[unit] = value
+            # Make sure the combination of units are able to derive base units
+            # No need of validation and logging when no unit to be overrided
+            if uo_size > 0:
+                try:
+                    self._validate_units_override_keys(uo_cache)
+                except ValueError:
+                    # It means the combination is invalid
+                    del uo_cache[unit]
+                else:
+                    ytLogger.info("Relying on %s: %s.", unit, uo_cache[unit])
+
+        bu = _BaseUnits(uo_cache)
+        for unit, value in bu.base_units.items():
+            setattr(self, unit, value)
+
+        self.velocity_unit = self.length_unit / self.time_unit
+        self.density_unit = self.mass_unit / self.length_unit ** 3
+        self.magnetic_unit = (
+            np.sqrt(4.0 * np.pi * self.density_unit) * self.velocity_unit
+        )
         self.magnetic_unit.convert_to_units("gauss")
+        self.temperature_unit = self.quan(1.0, "K")
+
+    invalid_unit_combinations = [
+        {"magnetic_unit", "velocity_unit", "density_unit"},
+        {"velocity_unit", "time_unit", "length_unit"},
+        {"density_unit", "length_unit", "mass_unit"},
+    ]
+
+    default_units = {
+        "length_unit": "cm",
+        "time_unit": "s",
+        "mass_unit": "g",
+        "velocity_unit": "cm/s",
+        "magnetic_unit": "gauss",
+        "temperature_unit": "K",
+        # this is the one difference with Dataset.default_units:
+        # we accept density_unit as a valid override
+        "density_unit": "g/cm**3",
+    }
+
+    @classmethod
+    def _validate_units_override_keys(cls, units_override):
+        """Check that units in units_override are able to derive three base units:
+        mass, length and time
+        """
+
+        # YT supports overriding other normalisations, this method ensures consistency
+        # between supplied 'units_override' items and principles in PLUTO.
+
+        # PLUTO's normalisations/units have 3 degrees of freedom. Therefore, any combinations
+        # are valid other than the three cases listed explicitly.
+
+        if "temperature_unit" in units_override:
+            raise ValueError(
+                "Temperature is not allowed in units_override, "
+                "since it's always in Kelvin in PLUTO"
+            )
+
+        # Three units are enough for deriving others, more will likely cause conflict
+        if len(units_override) > 3:
+            raise ValueError(
+                "More than 3 degrees of freedom were specified "
+                f"in units_override ({len(units_override)} given)"
+            )
+
+        # check if provided overrides are allowed
+        suo = set(units_override)
+        if suo in cls.invalid_unit_combinations:
+            raise ValueError(
+                f"Combination {suo} passed to units_override "
+                "cannot derive all units\n"
+                f"Choose any other combinations, except for:\n {cls.invalid_unit_combinations}"
+            )
+
+        super(cls, cls)._validate_units_override_keys(units_override)

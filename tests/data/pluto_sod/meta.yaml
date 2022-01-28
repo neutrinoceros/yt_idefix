@@ -6,3 +6,10 @@ attrs:
   dimensionality: 1
   kind: pluto
   current_time: null
+  units:
+    length: "1.0 cm"
+    velocity: "1.0 cm/s"
+    density: "1.0 g/cm**3"
+    mass: "1.0 g"
+    time: "1.0 s"
+    magnetic: "3.5449077 G"

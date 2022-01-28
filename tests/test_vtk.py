@@ -1,6 +1,8 @@
 import os
+import re
 
 import pytest
+from more_itertools import distinct_combinations
 from packaging.version import Version
 from unyt import assert_allclose_units
 
@@ -9,6 +11,18 @@ import yt_idefix
 from yt_idefix.api import IdefixVtkDataset, PlutoVtkDataset
 
 YT_VERSION = Version(yt.__version__)
+
+# A sample list of units for test.
+# The first three values are chosen randomly
+# and others are calculated correspondingly.
+SAMPLE_UNITS = {
+    "time_unit": (2.0, "s"),
+    "length_unit": (4.0, "cm"),
+    "mass_unit": (5.0, "kg"),
+    "density_unit": (0.078125, "kg/cm**3"),
+    "velocity_unit": (2.0, "cm/s"),
+    "magnetic_unit": (62.66570686577499, "gauss"),
+}
 
 
 def test_class_validation(vtk_file):
@@ -39,10 +53,94 @@ def test_parse_pluto_metadata(pluto_vtk_file):
 def test_pluto_units(pluto_vtk_file):
     file = pluto_vtk_file
     ds = yt_idefix.load(file["path"])
-    if "units" not in file:
-        return
     for u, expected in file["units"].items():
         assert_allclose_units(getattr(ds, f"{u}_unit"), expected)
+
+
+def test_pluto_complete_units_override(pluto_vtk_file):
+    su = SAMPLE_UNITS
+    unit_combs = distinct_combinations(su, 3)
+    for comb in unit_combs:
+        uo = {}
+        for unit in comb:
+            uo[unit] = su[unit]
+        if set(uo) in PlutoVtkDataset.invalid_unit_combinations:
+            continue
+        ds = yt_idefix.load(
+            pluto_vtk_file["path"],
+            geometry=pluto_vtk_file["geometry"],
+            units_override=uo,
+        )
+        for attr, value in su.items():
+            assert_allclose_units(getattr(ds, attr), ds.quan(*value))
+
+
+def test_pluto_one_unit_override(pluto_vtk_file):
+    file = pluto_vtk_file
+    # Pluto's length_unit and density_unit will be combined with
+    uo = {"time_unit": (2.0, "yr")}
+    ds = yt_idefix.load(file["path"], geometry=file["geometry"], units_override=uo)
+    # Pluto's length_unit should be preserved
+    assert_allclose_units(ds.length_unit, file["units"]["length"])
+    # Pluto's velocity_unit should be overrided
+    expect_velocity = ds.length_unit / ds.quan(*uo["time_unit"])
+    assert_allclose_units(ds.velocity_unit, expect_velocity)
+
+
+def test_pluto_two_units_override(pluto_vtk_file):
+    file = pluto_vtk_file
+    # Pluto's length_unit will be combined with
+    uo = {"time_unit": (2.0, "yr"), "density_unit": (32.0, "g/cm**3")}
+    ds = yt_idefix.load(file["path"], geometry=file["geometry"], units_override=uo)
+    # Pluto's length_unit should be preserved
+    assert_allclose_units(ds.length_unit, file["units"]["length"])
+    # Pluto's velocity_unit should be overrided
+    expect_velocity = ds.length_unit / ds.quan(*uo["time_unit"])
+    expect_mass = ds.quan(*uo["density_unit"]) * ds.length_unit ** 3
+    assert_allclose_units(ds.velocity_unit, expect_velocity)
+    assert_allclose_units(ds.mass_unit, expect_mass)
+
+
+def test_pluto_invalid_units_override(pluto_vtk_file):
+    for uo in PlutoVtkDataset.invalid_unit_combinations:
+        with pytest.raises(ValueError, match=r".* cannot derive all units\n.*"):
+            yt_idefix.load(
+                pluto_vtk_file["path"],
+                geometry=pluto_vtk_file["geometry"],
+                units_override=uo,
+            )
+
+
+def test_pluto_temperature_unit_override(pluto_vtk_file):
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Temperature is not allowed in units_override, "
+            "since it's always in Kelvin in PLUTO"
+        ),
+    ):
+        yt_idefix.load(
+            pluto_vtk_file["path"],
+            geometry=pluto_vtk_file["geometry"],
+            units_override={"temperature_unit": (2.0, "K")},
+        )
+
+
+def test_pluto_over_units_override(pluto_vtk_file):
+    with pytest.raises(
+        ValueError,
+        match=(
+            re.escape(
+                "More than 3 degrees of freedom were specified "
+                "in units_override (6 given)"
+            )
+        ),
+    ):
+        yt_idefix.load(
+            pluto_vtk_file["path"],
+            geometry=pluto_vtk_file["geometry"],
+            units_override=SAMPLE_UNITS,
+        )
 
 
 def test_pluto_wrong_definitions_header(pluto_vtk_file):
