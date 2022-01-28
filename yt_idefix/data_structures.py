@@ -17,7 +17,7 @@ from yt.geometry.grid_geometry_handler import GridIndex
 
 from ._io import C_io, dmp_io, vtk_io
 from ._io.commons import IdefixFieldProperties, IdefixMetadata
-from .definitions import _BaseUnits, pluto_def_constants
+from .definitions import _PlutoBaseUnits, pluto_def_constants
 from .fields import IdefixDmpFieldInfo, IdefixVtkFieldInfo
 
 ytLogger = logging.getLogger("yt")
@@ -473,7 +473,7 @@ class PlutoVtkDataset(IdefixVtkDataset):
                 else:
                     ytLogger.info("Relying on %s: %s.", unit, uo_cache[unit])
 
-        bu = _BaseUnits(uo_cache)
+        bu = _PlutoBaseUnits(uo_cache)
         for unit, value in bu.base_units.items():
             setattr(self, unit, value)
 

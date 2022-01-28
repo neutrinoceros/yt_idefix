@@ -32,7 +32,7 @@ pluto_def_constants = {
 }
 
 
-class _BaseUnits:
+class _PlutoBaseUnits:
     """Derive base units from a given combination of units"""
 
     _base_unit_list = ["mass_unit", "length_unit", "time_unit"]
@@ -42,7 +42,7 @@ class _BaseUnits:
         # But we still need to check the number of units here for insurance
         if len(unit_combination) != 3:
             raise ValueError(
-                "_BaseUnits requires a combination of 3 units "
+                "_PlutoBaseUnits requires a combination of 3 units "
                 f"({len(unit_combination)} given)"
             )
         self.unit_combination = unit_combination
