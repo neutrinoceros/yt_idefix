@@ -48,8 +48,6 @@ class _PlutoBaseUnits:
         self.unit_combination = unit_combination
         self._unit_cache = self.unit_combination
         self.setup_base_units()
-        # setattr(self, "api", importlib.import_module("yt_idefix.definitions"))
-        # setattr(self, "__name__", "yt_idefix.definitions")
 
     def __getitem__(self, key):
         return self.base_units[key]
