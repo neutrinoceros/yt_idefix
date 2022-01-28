@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 import numpy as np
 
 # Physical constants in c.g.s units defined in $PLUTO_DIR/Src/pluto.h
@@ -32,27 +34,29 @@ pluto_def_constants = {
 }
 
 
-class _BaseUnits:
+class _PlutoBaseUnits:
     """Derive base units from a given combination of units"""
 
-    _base_unit_list = ["mass_unit", "length_unit", "time_unit"]
+    _base_unit_list = ("mass_unit", "length_unit", "time_unit")
 
-    def __init__(self, unit_combination: dict):
+    def __init__(self, unit_combination: Dict[str, Any]):
         # Fow now, unit_combination has been validated before passed in
         # But we still need to check the number of units here for insurance
         if len(unit_combination) != 3:
             raise ValueError(
-                "_BaseUnits requires a combination of 3 units "
+                "_PlutoBaseUnits requires a combination of 3 units "
                 f"({len(unit_combination)} given)"
             )
         self.unit_combination = unit_combination
         self._unit_cache = self.unit_combination
-        self.setup_base_units()
-        # setattr(self, "api", importlib.import_module("yt_idefix.definitions"))
-        # setattr(self, "__name__", "yt_idefix.definitions")
+        _data = {}
+        for unit in self._base_unit_list:
+            self._setup_unit(unit)
+            _data[unit] = self._unit_cache[unit]
+        self._data = _data
 
     def __getitem__(self, key):
-        return self.base_units[key]
+        return self._data[key]
 
     # Some unit_setup_functions
     # The condition statements are essential to prevent getting stuck in infinite recursion
@@ -127,9 +131,3 @@ class _BaseUnits:
             missing_unit = err.args[0]
             self._setup_unit(missing_unit)
             self._setup_unit(unit)
-
-    def setup_base_units(self):
-        self.base_units = {}
-        for unit in self._base_unit_list:
-            self._setup_unit(unit)
-            self.base_units[unit] = self._unit_cache[unit]
