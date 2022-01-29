@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import BinaryIO
+from typing import BinaryIO, Tuple, cast
 
 import numpy as np
 
@@ -63,7 +63,8 @@ class IdefixVtkIOHandler(IdefixIOHandler):
     _dataset_type = "idefix-vtk"
 
     def _read_single_field(self, fh: BinaryIO, offset: int) -> np.ndarray:
-        return vtk_io.read_single_field(fh, offset, shape=self.ds.domain_dimensions)
+        shape = cast(Tuple[int, int, int], tuple(self.ds.domain_dimensions))
+        return vtk_io.read_single_field(fh, shape=shape, offset=offset, skip_data=False)
 
 
 class IdefixDmpIOHandler(IdefixIOHandler):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import struct
 import warnings
-from typing import Any, BinaryIO
+from typing import Any, BinaryIO, Literal, overload
 
 import numpy as np
 
@@ -16,13 +16,35 @@ def read_header(filename: str) -> str:
         return "".join(fh.readline(256).decode() for _ in range(2))
 
 
+@overload
 def read_single_field(
     fh: BinaryIO,
-    offset: int | None = None,
     *,
     shape: tuple[int, int, int],
-    skip_data: bool = False,
-) -> np.ndarray | None:
+    offset: int | None = None,
+    skip_data: Literal[False],
+) -> np.ndarray:
+    ...
+
+
+@overload
+def read_single_field(
+    fh: BinaryIO,
+    *,
+    shape: tuple[int, int, int],
+    offset: int | None = None,
+    skip_data: Literal[True],
+) -> None:
+    ...
+
+
+def read_single_field(
+    fh,
+    *,
+    shape,
+    offset=None,
+    skip_data=False,
+):
     count = np.prod(shape)
     if offset is not None and fh.tell() != offset:
         fh.seek(offset)

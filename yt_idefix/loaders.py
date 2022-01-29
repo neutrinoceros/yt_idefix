@@ -73,7 +73,9 @@ def load_stretched(fn, *, geometry: str | None = None, **kwargs):
     data: dict[str, np.ndarray] = {}
     with open(fn, "rb") as fh:
         for name, offset in field_offset_index.items():
-            data[name] = vtk_io.read_single_field(fh, offset, shape=shape)
+            data[name] = vtk_io.read_single_field(
+                fh, shape=shape, offset=offset, skip_data=False
+            )
 
     coordinates, connectivity = yt.hexahedral_connectivity(
         coords.x1, coords.x2, coords.x3

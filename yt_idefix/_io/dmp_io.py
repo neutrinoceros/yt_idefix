@@ -4,11 +4,11 @@ import re
 import struct
 import warnings
 from enum import IntEnum
-from typing import BinaryIO
+from typing import BinaryIO, Literal, cast, overload
 
 import numpy as np
 
-from .commons import ByteSize, IdefixFieldProperties, IdefixMetadata
+from .commons import ByteSize, Dim, IdefixFieldProperties, IdefixMetadata, Prec
 
 KNOWN_GEOMETRIES: dict[int, str] = {
     1: "cartesian",
@@ -26,12 +26,16 @@ class CharCount(IntEnum):
 
 # emulating C++
 # enum DataType {DoubleType, SingleType, IntegerType};
-DTYPES = {0: "d", 1: "f", 2: "i"}
-DTYPES_2_NUMPY = {"d": "=f8", "f": "=f4", "i": "=i4"}
-DTYPES_2_SIZE = {"i": ByteSize.INT, "f": ByteSize.FLOAT, "d": ByteSize.DOUBLE}
+DTYPES: dict[int, Prec] = {0: "d", 1: "f", 2: "i"}
+DTYPES_2_NUMPY: dict[Prec, str] = {"d": "=f8", "f": "=f4", "i": "=i4"}
+DTYPES_2_SIZE: dict[Prec, ByteSize] = {
+    "i": ByteSize.INT,
+    "f": ByteSize.FLOAT,
+    "d": ByteSize.DOUBLE,
+}
 
 
-def read_null_terminated_string(fh: BinaryIO, maxsize: int = CharCount.NAME):
+def read_null_terminated_string(fh: BinaryIO, maxsize: int = CharCount.NAME) -> str:
     """Read maxsize * ByteSize.CHAR bytes, but only parse non-null characters."""
     b = fh.read(maxsize * ByteSize.CHAR)
     s = b.decode("utf-8", errors="backslashreplace")
@@ -39,29 +43,86 @@ def read_null_terminated_string(fh: BinaryIO, maxsize: int = CharCount.NAME):
     return s
 
 
-def read_next_field_properties(fh: BinaryIO):
+def read_next_field_properties(
+    fh: BinaryIO,
+) -> tuple[str, Prec, Dim, np.ndarray]:
     """Emulate Idefix's OutputDump::ReadNextFieldProperty"""
     field_name = read_null_terminated_string(fh)
 
     fmt = "=i"
     dtype = DTYPES[struct.unpack(fmt, fh.read(struct.calcsize(fmt)))[0]]
     ndim = struct.unpack(fmt, fh.read(struct.calcsize(fmt)))[0]
-    if ndim > 3:
+    if not isinstance(ndim, int):
+        raise TypeError(ndim)
+    if not (1 <= ndim <= 3):
         raise ValueError(ndim)
+    ndim = cast(Dim, ndim)
     fmt = f"={ndim}i"
     dim = np.array(struct.unpack(fmt, fh.read(struct.calcsize(fmt))))
     return field_name, dtype, ndim, dim
 
 
+@overload
 def read_chunk(
     fh: BinaryIO,
     ndim: int,
     dim: list[int],
     dtype: str,
     *,
-    is_scalar: bool = False,
-    skip_data: bool = False,
-) -> np.ndarray | None:
+    is_scalar: bool,
+    skip_data: Literal[True],
+) -> None:
+    ...
+
+
+@overload
+def read_chunk(
+    fh: BinaryIO,
+    ndim: int,
+    dim: list[int],
+    dtype: str,
+    *,
+    is_scalar: Literal[True],
+    skip_data: Literal[False],
+) -> float:
+    ...
+
+
+@overload
+def read_chunk(
+    fh: BinaryIO,
+    ndim: int,
+    dim: list[int],
+    dtype: str,
+    *,
+    is_scalar: Literal[False],
+    skip_data: Literal[False],
+) -> np.ndarray:
+    ...
+
+
+@overload
+def read_chunk(
+    fh: BinaryIO,
+    ndim: int,
+    dim: list[int],
+    dtype: str,
+    *,
+    is_scalar: bool,
+    skip_data: bool,
+) -> float | np.ndarray | None:
+    ...
+
+
+def read_chunk(
+    fh,
+    ndim,
+    dim,
+    dtype,
+    *,
+    skip_data=False,
+    is_scalar=False,
+):
     # NOTE: ret type is only dependent on skip_data...
     # this could be better expressed in the type annotationation but it would make
     # more sense to just refactor this function to avoid the boolean trap, so I'll keep wonky
@@ -84,17 +145,57 @@ def read_chunk(
         return data.T
 
 
+@overload
 def read_serial(
-    fh: BinaryIO, ndim: int, dim: list[int], dtype: str, *, is_scalar: bool = False
-) -> np.ndarray | None:
+    fh: BinaryIO, ndim: int, dim: np.ndarray, dtype: str, *, is_scalar: Literal[True]
+) -> float:
+    ...
+
+
+@overload
+def read_serial(
+    fh: BinaryIO, ndim: int, dim: np.ndarray, dtype: str, *, is_scalar: Literal[False]
+) -> np.ndarray:
+    ...
+
+
+@overload
+def read_serial(
+    fh: BinaryIO, ndim: int, dim: np.ndarray, dtype: str, *, is_scalar: bool = False
+) -> float | np.ndarray:
+    ...
+
+
+def read_serial(fh, ndim, dim, dtype, *, is_scalar=False):
     """Emulate Idefix's OutputDump::ReadSerial"""
     assert ndim == 1  # corresponds to an error raised in IDEFIX
-    return read_chunk(fh, ndim=ndim, dim=dim, dtype=dtype, is_scalar=is_scalar)
+    return read_chunk(
+        fh, ndim=ndim, dim=dim, dtype=dtype, is_scalar=is_scalar, skip_data=False
+    )
 
 
+@overload
 def read_distributed(
-    fh: BinaryIO, dim: list[int], *, skip_data: bool = False
+    fh: BinaryIO, dim: np.ndarray, *, skip_data: Literal[False]
+) -> np.ndarray:
+    ...
+
+
+@overload
+def read_distributed(
+    fh: BinaryIO, dim: np.ndarray, *, skip_data: Literal[True]
+) -> None:
+    ...
+
+
+@overload
+def read_distributed(
+    fh: BinaryIO, dim: np.ndarray, *, skip_data: bool = False
 ) -> np.ndarray | None:
+    ...
+
+
+def read_distributed(fh, dim, *, skip_data):
     """Emulate Idefix's OutputDump::ReadDistributed"""
     # note: OutputDump::ReadDistributed only read doubles
     # because chucks written in integers are small enough
@@ -147,7 +248,7 @@ def read_single_field(fh: BinaryIO, field_offset: int) -> np.ndarray:
     """
     fh.seek(field_offset)
     field_name, dtype, ndim, dim = read_next_field_properties(fh)
-    data = read_distributed(fh, dim)
+    data = read_distributed(fh, dim, skip_data=False)
     return data
 
 
@@ -165,8 +266,9 @@ def read_idefix_dump_from_buffer(
     # skip header
     fh.seek(CharCount.HEADER * ByteSize.CHAR)
 
-    fprops = {}
-    fdata = {}
+    data: float | np.ndarray | None
+    fprops: IdefixFieldProperties = {}
+    fdata: IdefixMetadata = {}
     for _ in range(9):
         # read grid properties
         # (cell centers, left and right edges in 3D -> 9 arrays)
