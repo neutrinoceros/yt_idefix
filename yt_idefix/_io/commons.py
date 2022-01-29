@@ -1,19 +1,12 @@
 from __future__ import annotations
 
-import sys
 from enum import IntEnum
-from typing import Any, Dict, NamedTuple, Tuple
+from typing import Any, Dict, Literal, NamedTuple, Tuple
 
 import numpy as np
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-
-    Prec = Literal["d", "f", "i"]
-    Dim = Literal[1, 2, 3]
-else:
-    Prec = str
-    Dim = int
+Prec = Literal["d", "f", "i"]
+Dim = Literal[1, 2, 3]
 
 
 class Shape(NamedTuple):
