@@ -408,7 +408,7 @@ class PlutoVtkDataset(IdefixVtkDataset):
 
         self.current_time = self.quan(-1, "code_time")
         if os.path.isfile(log_file):
-            log_regexp = re.compile(fr"^{index}\s(\S+)")
+            log_regexp = re.compile(rf"^{index}\s(\S+)")
             with open(log_file) as fh:
                 for line in fh.readlines():
                     log_match = re.search(log_regexp, line)
@@ -478,7 +478,7 @@ class PlutoVtkDataset(IdefixVtkDataset):
             setattr(self, unit, value)
 
         self.velocity_unit = self.length_unit / self.time_unit
-        self.density_unit = self.mass_unit / self.length_unit ** 3
+        self.density_unit = self.mass_unit / self.length_unit**3
         self.magnetic_unit = (
             np.sqrt(4.0 * np.pi * self.density_unit) * self.velocity_unit
         )

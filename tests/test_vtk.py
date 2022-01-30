@@ -96,7 +96,7 @@ def test_pluto_two_units_override(pluto_vtk_file):
     assert_allclose_units(ds.length_unit, file["units"]["length"])
     # Pluto's velocity_unit should be overrided
     expect_velocity = ds.length_unit / ds.quan(*uo["time_unit"])
-    expect_mass = ds.quan(*uo["density_unit"]) * ds.length_unit ** 3
+    expect_mass = ds.quan(*uo["density_unit"]) * ds.length_unit**3
     assert_allclose_units(ds.velocity_unit, expect_velocity)
     assert_allclose_units(ds.mass_unit, expect_mass)
 
