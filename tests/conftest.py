@@ -20,7 +20,7 @@ def parse_quantity(s) -> un.unyt_quantity:
     # *all* greek letters are considered valid unit string elements.
     # This may be an overshoot. We rely on unyt.Unit to do the actual validation
     _UNIT_PATTERN = r"([α-ωΑ-Ωa-zA-Z]+(\*\*([+/-]?[0-9]+)|[*/])?)+"
-    _QUAN_PATTERN = fr"{_NUMB_PATTERN}\s*{_UNIT_PATTERN}"
+    _QUAN_PATTERN = rf"{_NUMB_PATTERN}\s*{_UNIT_PATTERN}"
     _NUMB_REGEXP = re.compile(_NUMB_PATTERN)
     _UNIT_REGEXP = re.compile(_UNIT_PATTERN)
     _QUAN_REGEXP = re.compile(_QUAN_PATTERN)
