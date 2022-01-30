@@ -75,7 +75,8 @@ filterwarnings = [
 
 [tool.mypy]
 python_version = 3.8
-ignore_missing_imports = true
+show_error_codes = true
+ignore_missing_imports = true # remove once yt 4.1.0 is released
 warn_unused_configs = true
 warn_unused_ignores = true
 warn_unreachable = true
