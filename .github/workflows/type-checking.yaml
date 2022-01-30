@@ -14,10 +14,6 @@ jobs:
     name: mypy
     timeout-minutes: 10
 
-    concurrency:
-      group: ${{ github.ref }}-dev
-      cancel-in-progress: true
-
     steps:
     - uses: actions/checkout@v2
       with:
