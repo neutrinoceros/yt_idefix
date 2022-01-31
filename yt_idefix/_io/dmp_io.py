@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 import struct
-import warnings
 from enum import IntEnum
 from typing import BinaryIO, Literal, cast, overload
 
@@ -292,10 +291,7 @@ def read_idefix_dump_from_buffer(
         fdata[field_name] = data
         field_name, dtype, ndim, dim = read_next_field_properties(fh)
 
-    if "geometry" not in fdata:
-        warnings.warn("Could not determine geometry, assuming cartesian.")
-        fdata["geometry"] = "cartesian"
-    elif isinstance(fdata["geometry"], int):
+    if isinstance(fdata["geometry"], int):
         fdata["geometry"] = KNOWN_GEOMETRIES[fdata["geometry"]]
     else:
         raise RuntimeError(

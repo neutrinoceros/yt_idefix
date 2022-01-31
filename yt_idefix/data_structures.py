@@ -121,16 +121,18 @@ class IdefixDataset(Dataset, ABC):
         geometry: str | None = None,
         inifile=None,
     ):
+        self._geometry_from_user: str | None = geometry
+
         dt = type(self)._dataset_type
         self.fluid_types += (dt,)
 
-        self.geometry = geometry
         super().__init__(
             filename,
             dataset_type=dt,
             units_override=units_override,
             unit_system=unit_system,
         )
+
         self.inifile = inifile
         self._parse_inifile()
 
@@ -150,6 +152,30 @@ class IdefixDataset(Dataset, ABC):
         self.omega_lambda = 0.0
         self.omega_matter = 0.0
         self.hubble_constant = 0.0
+
+        self._setup_geometry()
+
+    def _setup_geometry(self) -> None:
+        from_file = self.parameters.get("geometry")
+        from_user = self._geometry_from_user
+        if from_file is None and from_user is None:
+            raise ValueError(
+                "Geometry couldn't be parsed from file. "
+                "The 'geometry' keyword argument must be specified."
+            )
+        elif from_user is not None:
+            if from_file is not None and from_user != from_user:
+                warnings.warn(
+                    f"Got inconsistent geometry flags:\n"
+                    f" - {from_file!r} (from file)\n"
+                    f" - {from_user!r} (from user)\n"
+                    "user-input prevails to allow working around hypothetical parsing bugs, "
+                    "but it is very likely to result in an error in the general case."
+                )
+            self.geometry = from_user
+        else:
+            assert from_file is not None
+            self.geometry = from_file
 
     def _parse_inifile(self) -> None:
         if self.inifile is None:
@@ -238,26 +264,28 @@ class IdefixVtkDataset(IdefixDataset):
         return vtk_io.read_header(self.parameter_filename)
 
     def _parse_parameter_file(self):
+
+        # parse metadata
+        with open(self.parameter_filename, "rb") as fh:
+            md = vtk_io.read_metadata(fh)
+        self.parameters.update(md)
+
         super()._parse_parameter_file()
+        # from here self.geometry is assumed to be set
 
         # parse the grid
         with open(self.parameter_filename, "rb") as fh:
-            # at this point, self.geometry represents the user input (possibly None)
-            md = vtk_io.read_metadata(fh, geometry=self.geometry)
-            coords = vtk_io.read_grid_coordinates(fh, md)
+            coords = vtk_io.read_grid_coordinates(fh, geometry=self.geometry)
             self._field_offset_index = vtk_io.read_field_offset_index(
-                fh, md["array_shape"]
+                fh, coords.array_shape
             )
-
-        self.parameters.update(md)
-
         self._detected_field_list = list(self._field_offset_index.keys())
 
-        self.domain_dimensions = np.array(md["array_shape"])
+        self.domain_dimensions = np.array(coords.array_shape)
         self.dimensionality = np.count_nonzero(self.domain_dimensions - 1)
 
-        dle = np.array([arr.min() for arr in coords], dtype="float64")
-        dre = np.array([arr.max() for arr in coords], dtype="float64")
+        dle = np.array([arr.min() for arr in coords.arrays], dtype="float64")
+        dre = np.array([arr.max() for arr in coords.arrays], dtype="float64")
 
         # temporary hack to prevent 0-width dimensions for 2D data
         dre = np.where(dre == dle, dle + 1, dre)
@@ -269,7 +297,6 @@ class IdefixVtkDataset(IdefixDataset):
 
         # periodicity was not stored in vtk files before Idefix 0.9
         self._periodicity = md.get("periodicity", (True, True, True))
-        self.geometry = md["geometry"]
 
 
 class IdefixDmpDataset(IdefixDataset):
@@ -296,9 +323,10 @@ class IdefixDmpDataset(IdefixDataset):
         return dmp_io.read_header(self.parameter_filename)
 
     def _parse_parameter_file(self):
-        super()._parse_parameter_file()
 
         fprops, fdata = self._get_fields_metadata()
+        self.parameters.update(fdata)
+
         self._detected_field_list = [k for k in fprops if re.match(r"^V[sc]-", k)]
 
         # parse the grid
@@ -319,7 +347,8 @@ class IdefixDmpDataset(IdefixDataset):
         self.current_time = fdata["time"]
 
         self._periodicity = tuple(bool(p) for p in fdata["periodicity"])
-        self.geometry = fdata["geometry"]
+
+        super()._parse_parameter_file()
 
 
 class PlutoVtkDataset(IdefixVtkDataset):
@@ -337,7 +366,12 @@ class PlutoVtkDataset(IdefixVtkDataset):
         definitions_header: str | None = None,
         inifile=None,
     ):
-        self._definitions_header = definitions_header
+        self._definitions_header: str | None
+        if definitions_header is not None:
+            self._definitions_header = os.fspath(definitions_header)
+        else:
+            self._definitions_header = None
+
         super().__init__(
             filename,
             dataset_type=dataset_type,
@@ -361,6 +395,8 @@ class PlutoVtkDataset(IdefixVtkDataset):
         # definitions.h is presumed to be along with data file
         if self._definitions_header is None:
             self._definitions_header = os.path.join(self.fullpath, "definitions.h")
+        elif not os.path.isfile(self._definitions_header):
+            raise FileNotFoundError(f"No such file {self._definitions_header!r}")
 
         if os.path.isfile(self._definitions_header):
             with open(self._definitions_header) as fh:
@@ -370,7 +406,7 @@ class PlutoVtkDataset(IdefixVtkDataset):
             for line in lines:
                 geom_match = re.fullmatch(geom_regexp, line)
                 if geom_match is not None:
-                    self.geometry = geom_match.group(1).lower()
+                    self.parameters["geometry"] = geom_match.group(1).lower()
                     continue
 
                 unit_match = re.fullmatch(unit_regexp, line)
@@ -379,12 +415,6 @@ class PlutoVtkDataset(IdefixVtkDataset):
                     expr = unit_match.group(2)
                     expr = re.sub(constexpr, self._get_constants, expr)
                     self.parameters[unit] = eval(expr)
-
-        elif self.geometry is None:
-            raise FileNotFoundError(
-                f"Header file {self._definitions_header} couldn't be found. "
-                "The 'geometry' keyword argument must be specified."
-            )
         else:
             warnings.warn(
                 f"Header file {self._definitions_header} couldn't be found. "
