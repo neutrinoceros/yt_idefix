@@ -226,9 +226,9 @@ class IdefixVtkDataset(IdefixDataset):
     _required_header_keyword = "Idefix"
 
     @classmethod
-    def _is_valid(cls, fn, *args, **kwargs) -> bool:
+    def _is_valid(cls, filename, *args, **kwargs) -> bool:
         try:
-            header = vtk_io.read_header(fn)
+            header = vtk_io.read_header(filename)
         except Exception:
             return False
         else:
@@ -278,12 +278,12 @@ class IdefixDmpDataset(IdefixDataset):
     _dataset_type = "idefix-dmp"
 
     @classmethod
-    def _is_valid(cls, fn, *args, **kwargs):
+    def _is_valid(cls, filename, *args, **kwargs):
         ok = bool(
-            re.match(r"^(dump)\.\d{4}(\.dmp)$", os.path.basename(fn))
+            re.match(r"^(dump)\.\d{4}(\.dmp)$", os.path.basename(filename))
         )  # this is possibly too restrictive
         try:
-            ok &= "Idefix" in dmp_io.read_header(fn)
+            ok &= "Idefix" in dmp_io.read_header(filename)
         except Exception:
             ok = False
         return ok
