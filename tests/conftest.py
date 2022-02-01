@@ -2,12 +2,24 @@ from __future__ import annotations
 
 import os
 import re
+import sys
 from pathlib import Path
 from typing import Any
 
 import pytest
 import unyt as un
 import yaml
+
+
+def pytest_configure(config):
+    if sys.version_info >= (3, 10):
+        # from numpy, still visible in 1.22.x
+        config.addinivalue_line(
+            "filterwarnings",
+            (
+                "ignore:The distutils.sysconfig module is deprecated, use sysconfig instead:DeprecationWarning"
+            ),
+        )
 
 
 def parse_quantity(s) -> un.unyt_quantity:

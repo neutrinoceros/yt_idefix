@@ -36,7 +36,7 @@ def test_class_validation(vtk_file):
 
 def test_parse_pluto_metadata(pluto_vtk_file):
     file = pluto_vtk_file
-    ds = yt_idefix.load(file["path"])
+    ds = yt.load(file["path"])
     assert os.path.samefile(
         ds._definitions_header, file["path"].parent / "definitions.h"
     )
@@ -52,7 +52,7 @@ def test_parse_pluto_metadata(pluto_vtk_file):
 
 def test_pluto_units(pluto_vtk_file):
     file = pluto_vtk_file
-    ds = yt_idefix.load(file["path"])
+    ds = yt.load(file["path"])
     for u, expected in file["units"].items():
         assert_allclose_units(getattr(ds, f"{u}_unit"), expected)
 
@@ -66,7 +66,7 @@ def test_pluto_complete_units_override(pluto_vtk_file):
             uo[unit] = su[unit]
         if set(uo) in PlutoVtkDataset.invalid_unit_combinations:
             continue
-        ds = yt_idefix.load(
+        ds = yt.load(
             pluto_vtk_file["path"],
             geometry=pluto_vtk_file["geometry"],
             units_override=uo,
@@ -79,7 +79,7 @@ def test_pluto_one_unit_override(pluto_vtk_file):
     file = pluto_vtk_file
     # Pluto's length_unit and density_unit will be combined with
     uo = {"time_unit": (2.0, "yr")}
-    ds = yt_idefix.load(file["path"], geometry=file["geometry"], units_override=uo)
+    ds = yt.load(file["path"], geometry=file["geometry"], units_override=uo)
     # Pluto's length_unit should be preserved
     assert_allclose_units(ds.length_unit, file["units"]["length"])
     # Pluto's velocity_unit should be overrided
@@ -91,7 +91,7 @@ def test_pluto_two_units_override(pluto_vtk_file):
     file = pluto_vtk_file
     # Pluto's length_unit will be combined with
     uo = {"time_unit": (2.0, "yr"), "density_unit": (32.0, "g/cm**3")}
-    ds = yt_idefix.load(file["path"], geometry=file["geometry"], units_override=uo)
+    ds = yt.load(file["path"], geometry=file["geometry"], units_override=uo)
     # Pluto's length_unit should be preserved
     assert_allclose_units(ds.length_unit, file["units"]["length"])
     # Pluto's velocity_unit should be overrided
@@ -104,7 +104,7 @@ def test_pluto_two_units_override(pluto_vtk_file):
 def test_pluto_invalid_units_override(pluto_vtk_file):
     for uo in PlutoVtkDataset.invalid_unit_combinations:
         with pytest.raises(ValueError, match=r".* cannot derive all units\n.*"):
-            yt_idefix.load(
+            yt.load(
                 pluto_vtk_file["path"],
                 geometry=pluto_vtk_file["geometry"],
                 units_override=uo,
@@ -119,7 +119,7 @@ def test_pluto_temperature_unit_override(pluto_vtk_file):
             "since it's always in Kelvin in PLUTO"
         ),
     ):
-        yt_idefix.load(
+        yt.load(
             pluto_vtk_file["path"],
             geometry=pluto_vtk_file["geometry"],
             units_override={"temperature_unit": (2.0, "K")},
@@ -136,7 +136,7 @@ def test_pluto_over_units_override(pluto_vtk_file):
             )
         ),
     ):
-        yt_idefix.load(
+        yt.load(
             pluto_vtk_file["path"],
             geometry=pluto_vtk_file["geometry"],
             units_override=SAMPLE_UNITS,
@@ -151,7 +151,7 @@ def test_pluto_wrong_definitions_header(pluto_vtk_file):
             "The 'geometry' keyword argument must be specified."
         ),
     ):
-        yt_idefix.load(pluto_vtk_file["path"], definitions_header="definitions2.h")
+        yt.load(pluto_vtk_file["path"], definitions_header="definitions2.h")
 
 
 def test_pluto_wrong_definitions_header_with_geometry(pluto_vtk_file):
@@ -162,7 +162,7 @@ def test_pluto_wrong_definitions_header_with_geometry(pluto_vtk_file):
             "The code units are set to be 1.0 in cgs by default."
         ),
     ):
-        yt_idefix.load(
+        yt.load(
             pluto_vtk_file["path"],
             definitions_header="definitions2.h",
             geometry="cartesian",
@@ -171,14 +171,14 @@ def test_pluto_wrong_definitions_header_with_geometry(pluto_vtk_file):
 
 def test_data_access(vtk_file):
     file = vtk_file
-    ds = yt_idefix.load(file["path"], geometry=file["geometry"])
+    ds = yt.load(file["path"], geometry=file["geometry"])
     ad = ds.all_data()
     ad["gas", "density"]
 
 
 def test_load_user_passed_geometry(vtk_file):
     file = vtk_file
-    ds = yt_idefix.load(file["path"], geometry=file["geometry"])
+    ds = yt.load(file["path"], geometry=file["geometry"])
     assert ds.geometry == file["geometry"]
     assert ds.dimensionality == file["dimensionality"]
 
@@ -191,18 +191,18 @@ def test_load_missing_geometry_metadata(vtk_file_no_geom):
             "The 'geometry' keyword argument must be specified."
         ),
     ):
-        yt_idefix.load(vtk_file_no_geom["path"])
+        yt.load(vtk_file_no_geom["path"])
 
 
 def test_load_parseable_geometry_metadata(vtk_file_with_geom):
     file = vtk_file_with_geom
-    ds = yt_idefix.load(file["path"])
+    ds = yt.load(file["path"])
     assert ds.geometry == file["geometry"]
 
 
 def test_derived_field(vtk_file):
     file = vtk_file
-    ds = yt_idefix.load(file["path"], geometry=file["geometry"])
+    ds = yt.load(file["path"], geometry=file["geometry"])
     # this derived field is compatible for all current test data
     # it'll be replaced once a better universal field is defined internally.
 
@@ -224,24 +224,19 @@ def test_derived_field(vtk_file):
 # TODO: make this a pytest-mpl test
 def test_slice_plot(vtk_file):
     file = vtk_file
-    ds = yt_idefix.load(file["path"], geometry=file["geometry"], unit_system="code")
-    if YT_VERSION <= Version("4.0.1"):
+    ds = yt.load(file["path"], geometry=file["geometry"], unit_system="code")
+    if YT_VERSION <= Version("4.1.dev0"):
         if ds.geometry == "spherical":
             normal = "phi"
         else:
             normal = "z"
         yt.SlicePlot(ds, normal=normal, fields=("gas", "density"))
     else:
-        # this should work but it's broken with yt 4.0.1
+        # this should work but it's broken with yt 4.0.x
         # it is fixed in https://github.com/yt-project/yt/pull/3489
         yt.SlicePlot(ds, normal=(0, 0, 1), fields=("gas", "density"))
 
 
-@pytest.mark.xfail(
-    YT_VERSION < Version("4.0.2"),
-    reason="all .vtk files are detected as Athena-compatible, "
-    "hence dataformat is considered ambiguous before yt 4.0.2",
-)
 def test_load_magic(vtk_file):
     ds = yt.load(vtk_file["path"], geometry=vtk_file["geometry"])
     assert isinstance(ds, IdefixVtkDataset)
