@@ -146,27 +146,9 @@ def test_pluto_over_units_override(pluto_vtk_file):
 def test_pluto_wrong_definitions_header(pluto_vtk_file):
     with pytest.raises(
         FileNotFoundError,
-        match=(
-            "Header file definitions2.h couldn't be found. "
-            "The 'geometry' keyword argument must be specified."
-        ),
+        match=("No such file 'definitions2.h'"),
     ):
         yt.load(pluto_vtk_file["path"], definitions_header="definitions2.h")
-
-
-def test_pluto_wrong_definitions_header_with_geometry(pluto_vtk_file):
-    with pytest.warns(
-        UserWarning,
-        match=(
-            "Header file definitions2.h couldn't be found. "
-            "The code units are set to be 1.0 in cgs by default."
-        ),
-    ):
-        yt.load(
-            pluto_vtk_file["path"],
-            definitions_header="definitions2.h",
-            geometry=pluto_vtk_file["geometry"],
-        )
 
 
 def test_data_access(vtk_file):

@@ -48,10 +48,13 @@ def load_stretched(fn, *, geometry: str | None = None, **kwargs):
 
     # actual parsing
     with open(fn, "rb") as fh:
-        md = vtk_io.read_metadata(fh, geometry=geometry)
-        coords = vtk_io.read_grid_coordinates(fh, md).padded()
-        shape = md["array_shape"]
-        field_offset_index = vtk_io.read_field_offset_index(fh, shape=shape)
+        md = vtk_io.read_metadata(fh)
+        coords = vtk_io.read_grid_coordinates(
+            fh, geometry=geometry or md.get("geometry")
+        ).padded()
+        field_offset_index = vtk_io.read_field_offset_index(
+            fh, shape=coords.array_shape
+        )
 
     if geometry is None:
         geometry = md["geometry"]
@@ -60,7 +63,7 @@ def load_stretched(fn, *, geometry: str | None = None, **kwargs):
     with open(fn, "rb") as fh:
         for name, offset in field_offset_index.items():
             data[name] = vtk_io.read_single_field(
-                fh, shape=shape, offset=offset, skip_data=False
+                fh, shape=coords.array_shape, offset=offset, skip_data=False
             )
 
     coordinates, connectivity = yt.hexahedral_connectivity(

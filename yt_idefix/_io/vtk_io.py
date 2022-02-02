@@ -73,7 +73,7 @@ def parse_shape(s: str, md: dict[str, Any]) -> None:
 
 
 # this may not be kept in the following form
-def read_metadata(fh: BinaryIO, *, geometry: str | None = None) -> dict[str, Any]:
+def read_metadata(fh: BinaryIO) -> dict[str, Any]:
 
     fh.seek(0)
     # skip over the first 4 lines which normally contains
@@ -98,13 +98,6 @@ def read_metadata(fh: BinaryIO, *, geometry: str | None = None) -> dict[str, Any
                     warnings.warn(
                         f"Unknown geometry enum value {geom_flag}, please report this."
                     )
-                elif geometry not in (None, geometry_from_data):
-                    warnings.warn(
-                        f"Got inconsistent geometries:\n"
-                        f" - {geometry_from_data!r} (from file)\n"
-                        f" - {geometry!r} (from user)\n"
-                        "Ignoring user input"
-                    )
                 metadata["geometry"] = geometry_from_data
             elif d.startswith("TIME"):
                 metadata["time"] = struct.unpack(">f", fh.read(4))[0]
@@ -123,28 +116,21 @@ def read_metadata(fh: BinaryIO, *, geometry: str | None = None) -> dict[str, Any
     else:
         raise RuntimeError(f"Failed to parse {line!r}")
 
-    if "geometry" not in metadata:
-        # Idefix < 0.8, or PLUTO
-        if geometry is None:
-            raise ValueError(
-                "Geometry couldn't be parsed from file. "
-                "The 'geometry' keyword argument must be specified."
-            )
-        metadata["geometry"] = geometry
-
     return metadata
 
 
 def read_grid_coordinates(
-    fh: BinaryIO, md: dict[str, Any] | None = None
+    fh: BinaryIO,
+    *,
+    geometry: str | None = None,
 ) -> Coordinates:
     # Return cell edges coordinates
 
-    if md is None:
-        fh.seek(0)
-        md = read_metadata(fh)
+    fh.seek(0)
+    md = read_metadata(fh)
 
-    geometry = md["geometry"]
+    geometry = md.get("geometry", geometry)
+
     shape = md["shape"]
     coords: list[np.ndarray] = []
     # now assuming that fh is positioned at the end of metadata
@@ -159,7 +145,7 @@ def read_grid_coordinates(
         point_type, npoints = (t(_) for t, _ in zip((str, int), line.split()))
         next(fh)
         if point_type == "CELL_DATA":
-            md["array_shape"] = shape.to_cell_centered()
+            array_shape = shape.to_cell_centered()
         else:
             if point_type == "POINT_DATA":
                 # raw data is cell center coords, extrapolation would be needed here
@@ -175,7 +161,7 @@ def read_grid_coordinates(
                     f"Got unexpected value point_type={point_type!r}. "
                     "Results are not guaranteed."
                 )
-            md["array_shape"] = shape
+            array_shape = shape
 
     elif geometry in ("polar", "spherical"):
         rshape = Shape(*reversed(shape))
@@ -247,12 +233,12 @@ def read_grid_coordinates(
         else:
             raise RuntimeError("This should be logically impossible.")
 
-        md["array_shape"] = shape.to_cell_centered()
+        array_shape = shape.to_cell_centered()
 
     else:
         raise RuntimeError(f"Found unknown geometry {geometry!r}")
 
-    return Coordinates(*coords)
+    return Coordinates(coords[0], coords[1], coords[2], array_shape)
 
 
 def read_field_offset_index(fh: BinaryIO, shape: Shape) -> dict[str, int]:

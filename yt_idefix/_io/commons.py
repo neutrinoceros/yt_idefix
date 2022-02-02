@@ -26,20 +26,26 @@ class Shape(NamedTuple):
 
 
 class Coordinates(NamedTuple):
+    # Store 3 1D coordinates arrays and one 'array_shape'
     x1: np.ndarray
     x2: np.ndarray
     x3: np.ndarray
+    array_shape: Shape  # the 3D shape that 1D arrays should be broadcasted to
 
     @property
     def shape(self) -> Shape:
         return Shape(len(self.x1), len(self.x2), len(self.x3))
 
+    @property
+    def arrays(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        return self.x1, self.x2, self.x3
+
     def padded(self) -> Coordinates:
-        arrs = list(self)
-        for i, arr in enumerate(arrs):
+        arrs = [_.copy() for _ in self.arrays]
+        for i, arr in enumerate(self.arrays):
             if arr.size == 1:
                 arrs[i] = np.array((arr[0], arr[0] + 1))
-        return Coordinates(*arrs)
+        return Coordinates(arrs[0], arrs[1], arrs[2], self.array_shape)
 
 
 # map field name to numpy array init data:
