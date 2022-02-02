@@ -1,0 +1,14 @@
+id: disk_planet
+attrs:
+  path: data.0010.vtk
+  has_geometry: True
+  geometry: spherical
+  dimensionality: 3
+  kind: pluto
+  units:
+    length: "7.77909038e13 cm"
+    velocity: "208457.8557 cm/s"
+    density: "4.24857748e-09 g/cm**3"
+    mass: "2.e33 g"
+    time: "3.7317329e8 s"
+    magnetic: "48.166486696 G"
