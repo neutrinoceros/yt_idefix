@@ -165,7 +165,7 @@ def test_pluto_wrong_definitions_header_with_geometry(pluto_vtk_file):
         yt.load(
             pluto_vtk_file["path"],
             definitions_header="definitions2.h",
-            geometry="cartesian",
+            geometry=pluto_vtk_file["geometry"],
         )
 
 
