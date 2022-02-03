@@ -1,30 +1,64 @@
 from __future__ import annotations
 
+import os
 import warnings
 
 import numpy as np
+from packaging.version import Version
 
 import yt
+from yt.utilities.exceptions import YTUnidentifiedDataType
 from yt_idefix._io import vtk_io
 from yt_idefix.data_structures import IdefixVtkDataset, PlutoVtkDataset
 
 __all__ = ["load", "load_stretched"]
 
 
+YT_VERSION = Version(yt.__version__)
+
+
 class VisibleDeprecationWarning(Warning):
     pass
 
 
+class IdefixVtkDatasetSeries(yt.DatasetSeries):
+    _dataset_cls = IdefixVtkDataset
+
+
 def load(fn, *args, **kwargs):
-    warnings.warn(
-        "yt_idefix.load is now a strict alias to yt.load, "
-        "please use yt.load directly. "
+    msg = (
+        "yt_idefix.load is a diminished wrapper for to yt.load, "
+        "and is not necessary with yt > 4.0.2\nplease "
+    )
+
+    if YT_VERSION <= Version("4.0.2"):
+        msg += "upgrade yt and "
+    msg += "use yt.load instead"
+    msg += (
         "yt_idefix.load was deprecated in version 0.11.0 "
-        "and will be removed no later than version 0.13.0",
+        "and will be removed completely in a future version"
+    )
+    warnings.warn(
+        msg,
         category=VisibleDeprecationWarning,
         stacklevel=2,
     )
-    return yt.load(fn, *args, **kwargs)
+
+    fn = os.path.expanduser(fn)
+    if not os.path.exists(fn):
+        raise FileNotFoundError(fn)
+
+    if YT_VERSION < Version("4.0.2") and fn.endswith(".vtk"):
+        if any(wildcard in fn for wildcard in "[]?!*"):
+            return IdefixVtkDatasetSeries(fn, *args, **kwargs)
+        elif IdefixVtkDataset._is_valid(fn, *args, **kwargs):
+            return IdefixVtkDataset(fn, *args, **kwargs)
+        elif PlutoVtkDataset._is_valid(fn, *args, **kwargs):
+            return PlutoVtkDataset(fn, *args, **kwargs)
+        else:
+            raise YTUnidentifiedDataType(fn, *args, **kwargs)
+    else:
+        return yt.load(fn, *args, **kwargs)
 
 
 def load_stretched(fn, *, geometry: str | None = None, **kwargs):
