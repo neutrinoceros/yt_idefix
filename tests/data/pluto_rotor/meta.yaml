@@ -5,6 +5,7 @@ attrs:
   geometry: polar
   dimensionality: 2
   kind: pluto
+  def_units: False
   units:
     length: "1.0 cm"
     velocity: "1.0 cm/s"

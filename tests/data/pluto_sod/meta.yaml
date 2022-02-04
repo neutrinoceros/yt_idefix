@@ -6,6 +6,7 @@ attrs:
   dimensionality: 1
   kind: pluto
   current_time: null
+  def_units: False
   units:
     length: "1.0 cm"
     velocity: "1.0 cm/s"

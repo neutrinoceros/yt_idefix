@@ -5,6 +5,7 @@ attrs:
   geometry: spherical
   dimensionality: 3
   kind: pluto
+  def_units: True
   units:
     length: "7.77909038e13 cm"
     velocity: "208457.8557 cm/s"

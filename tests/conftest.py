@@ -137,3 +137,17 @@ PLUTO_VTK_FILES = {k: v for k, v in VTK_FILES.items() if v["kind"] == "pluto"}
 )
 def pluto_vtk_file(request):
     return request.param
+
+
+PLUTO_VTK_FILES_DEF_UNITS = {
+    k: v for k, v in PLUTO_VTK_FILES.items() if v["def_units"] is True
+}
+
+
+@pytest.fixture(
+    params=PLUTO_VTK_FILES_DEF_UNITS.values(),
+    ids=PLUTO_VTK_FILES_DEF_UNITS.keys(),
+    scope="session",
+)
+def pluto_vtk_file_def_units(request):
+    return request.param
