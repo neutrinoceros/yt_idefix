@@ -5,7 +5,7 @@ attrs:
   geometry: cartesian
   dimensionality: 3
   kind: pluto
-  def_units: True
+  has_units: True
   units:
     length: "3.08567758e21 cm"
     velocity: "1e5 cm/s"

@@ -119,6 +119,18 @@ def vtk_file_with_geom(request):
     return request.param
 
 
+VTK_FILES_WITH_UNITS = {k: v for k, v in VTK_FILES.items() if v["has_units"] is True}
+
+
+@pytest.fixture(
+    params=VTK_FILES_WITH_UNITS.values(),
+    ids=VTK_FILES_WITH_UNITS.keys(),
+    scope="session",
+)
+def vtk_file_with_units(request):
+    return request.param
+
+
 IDEFIX_VTK_FILES = {k: v for k, v in VTK_FILES.items() if v["kind"] == "idefix"}
 
 
@@ -136,18 +148,4 @@ PLUTO_VTK_FILES = {k: v for k, v in VTK_FILES.items() if v["kind"] == "pluto"}
     params=PLUTO_VTK_FILES.values(), ids=PLUTO_VTK_FILES.keys(), scope="session"
 )
 def pluto_vtk_file(request):
-    return request.param
-
-
-PLUTO_VTK_FILES_DEF_UNITS = {
-    k: v for k, v in PLUTO_VTK_FILES.items() if v["def_units"] is True
-}
-
-
-@pytest.fixture(
-    params=PLUTO_VTK_FILES_DEF_UNITS.values(),
-    ids=PLUTO_VTK_FILES_DEF_UNITS.keys(),
-    scope="session",
-)
-def pluto_vtk_file_def_units(request):
     return request.param

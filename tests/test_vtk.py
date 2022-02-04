@@ -151,8 +151,8 @@ def test_pluto_wrong_definitions_header(pluto_vtk_file):
         yt.load(pluto_vtk_file["path"], definitions_header="definitions2.h")
 
 
-def test_pluto_code_time(pluto_vtk_file_def_units):
-    ds = yt.load(pluto_vtk_file_def_units["path"])
+def test_code_time(vtk_file_with_units):
+    ds = yt.load(vtk_file_with_units["path"])
     code_time = Unit("code_time", registry=ds.unit_registry)
     assert_allclose_units(ds.time_unit, 1.0 * code_time)
     assert_allclose_units(ds.current_time.in_cgs(), ds.current_time.value * code_time)
