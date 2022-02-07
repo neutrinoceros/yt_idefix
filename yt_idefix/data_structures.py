@@ -293,7 +293,7 @@ class IdefixVtkDataset(IdefixDataset):
         self.domain_right_edge = dre
 
         # time wasn't stored in vtk files before Idefix 0.8
-        self.current_time = md.get("time", -1)
+        self.current_time = self.quan(md.get("time", -1), "code_time")
 
         # periodicity was not stored in vtk files before Idefix 0.9
         self._periodicity = md.get("periodicity", (True, True, True))
@@ -344,7 +344,7 @@ class IdefixDmpDataset(IdefixDataset):
             [fdata[f"xr{idir}"][-1] for idir in "123"], dtype="float64"
         )
 
-        self.current_time = fdata["time"]
+        self.current_time = self.quan(fdata["time"], "code_time")
 
         self._periodicity = tuple(bool(p) for p in fdata["periodicity"])
 
@@ -441,14 +441,16 @@ class PlutoVtkDataset(IdefixVtkDataset):
             )
         index = int(match.group(1))
 
-        self.current_time = -1
+        self.current_time = self.quan(-1, "code_time")
         if os.path.isfile(log_file):
             log_regexp = re.compile(rf"^{index}\s(\S+)")
             with open(log_file) as fh:
                 for line in fh.readlines():
                     log_match = re.search(log_regexp, line)
                     if log_match:
-                        self.current_time = float(log_match.group(1))
+                        self.current_time = self.quan(
+                            float(log_match.group(1)), "code_time"
+                        )
                         break
                 else:
                     ytLogger.warning(
@@ -457,6 +459,18 @@ class PlutoVtkDataset(IdefixVtkDataset):
                     )
         else:
             ytLogger.warning("Missing log file %s, setting current_time = -1", log_file)
+
+    def set_code_units(self):
+        super().set_code_units()
+        # Here we need to clean the unit cache
+        # to remove any cached code units with default conversion factor
+        self.unit_registry._unit_object_cache.clear()
+
+    def _set_derived_attrs(self):
+        super()._set_derived_attrs()
+        # Some attrs were initialized with code units but with default conversion factor,
+        # we need to update them after the code units are modified in self.set_code_units()
+        self.current_time = self.quan(self.current_time, "code_time")
 
     def _set_code_unit_attributes(self):
         """Conversion between physical units and code units."""
