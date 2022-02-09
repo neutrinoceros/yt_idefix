@@ -6,6 +6,7 @@ import re
 import warnings
 import weakref
 from abc import ABC, abstractmethod
+from typing import Literal
 
 import inifix
 import numpy as np
@@ -14,6 +15,7 @@ from yt.data_objects.index_subobjects.grid_patch import AMRGridPatch
 from yt.data_objects.static_output import Dataset
 from yt.funcs import setdefaultattr
 from yt.geometry.grid_geometry_handler import GridIndex
+from yt_idefix._typing import UnitLike
 
 from ._io import C_io, dmp_io, vtk_io
 from ._io.commons import IdefixFieldProperties, IdefixMetadata
@@ -114,15 +116,18 @@ class IdefixDataset(Dataset, ABC):
     def __init__(
         self,
         filename,
-        dataset_type=None,
-        unit_system="cgs",
-        units_override=None,
         *,
-        geometry: str | None = None,
-        inifile=None,
-        default_species_fields=None,
+        dataset_type: str | None = None,  # deleguated to child classes
+        file_style: str | None = None,
+        units_override: dict[str, UnitLike] | None = None,
+        unit_system: Literal["cgs", "mks", "code"] = "cgs",
+        default_species_fields: Literal["neutral", "ionized"] | None = None,
+        # from here, frontend-specific arguments
+        geometry: Literal["cartesian", "spherical", "cylindrical", "polar"]
+        | None = None,
+        inifile: str | os.PathLike[str] | None = None,
     ):
-        self._geometry_from_user: str | None = geometry
+        self._geometry_from_user = geometry
 
         dt = type(self)._dataset_type
         self.fluid_types += (dt,)
@@ -130,6 +135,7 @@ class IdefixDataset(Dataset, ABC):
         super().__init__(
             filename,
             dataset_type=dt,
+            file_style=file_style,
             units_override=units_override,
             unit_system=unit_system,
             default_species_fields=default_species_fields,
@@ -360,14 +366,17 @@ class PlutoVtkDataset(IdefixVtkDataset):
     def __init__(
         self,
         filename,
-        dataset_type=None,
-        unit_system="cgs",
-        units_override=None,
         *,
-        geometry: str | None = None,
+        dataset_type: str | None = None,  # deleguated to child classes
+        file_style: str | None = None,  # unused
+        units_override: dict[str, UnitLike] | None = None,
+        unit_system: Literal["cgs", "mks", "code"] = "cgs",
+        default_species_fields: Literal["neutral", "ionized"] | None = None,
+        # from here, frontend-specific arguments
+        geometry: Literal["cartesian", "spherical", "cylindrical", "polar"]
+        | None = None,
+        inifile: str | os.PathLike[str] | None = None,
         definitions_header: str | None = None,
-        inifile=None,
-        default_species_fields=None,
     ):
         self._definitions_header: str | None
         if definitions_header is not None:
@@ -384,8 +393,9 @@ class PlutoVtkDataset(IdefixVtkDataset):
         super().__init__(
             filename,
             dataset_type=dataset_type,
-            unit_system=unit_system,
+            file_style=file_style,
             units_override=units_override,
+            unit_system=unit_system,
             geometry=geometry,
             inifile=inifile,
             default_species_fields=default_species_fields,
