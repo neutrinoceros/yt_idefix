@@ -375,10 +375,11 @@ class PlutoVtkDataset(IdefixVtkDataset):
         else:
             self._definitions_header = None
 
+        # https://github.com/neutrinoceros/yt_idefix/issues/88
+        # https://github.com/neutrinoceros/yt_idefix/issues/91
         # this could be patched in yt itself, but not done as of yt 4.0.2
         # a tentative upstream fix https://github.com/yt-project/yt/pull/3772
-        # see https://github.com/neutrinoceros/yt_idefix/issues/88
-        filename = os.path.abspath(filename)
+        filename = os.path.abspath(os.path.expanduser(filename))
 
         super().__init__(
             filename,
