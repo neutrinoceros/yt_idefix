@@ -120,6 +120,7 @@ class IdefixDataset(Dataset, ABC):
         *,
         geometry: str | None = None,
         inifile=None,
+        default_species_fields=None,
     ):
         self._geometry_from_user: str | None = geometry
 
@@ -131,6 +132,7 @@ class IdefixDataset(Dataset, ABC):
             dataset_type=dt,
             units_override=units_override,
             unit_system=unit_system,
+            default_species_fields=default_species_fields,
         )
 
         self.inifile = inifile
@@ -365,6 +367,7 @@ class PlutoVtkDataset(IdefixVtkDataset):
         geometry: str | None = None,
         definitions_header: str | None = None,
         inifile=None,
+        default_species_fields=None,
     ):
         self._definitions_header: str | None
         if definitions_header is not None:
@@ -384,6 +387,7 @@ class PlutoVtkDataset(IdefixVtkDataset):
             units_override=units_override,
             geometry=geometry,
             inifile=inifile,
+            default_species_fields=default_species_fields,
         )
 
     def _parse_parameter_file(self):
