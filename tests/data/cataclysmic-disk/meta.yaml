@@ -7,3 +7,4 @@ attrs:
   geometry: polar
   dimensionality: 2
   kind: idefix
+  has_units: False

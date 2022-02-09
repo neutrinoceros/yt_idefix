@@ -119,6 +119,18 @@ def vtk_file_with_geom(request):
     return request.param
 
 
+VTK_FILES_WITH_UNITS = {k: v for k, v in VTK_FILES.items() if v["has_units"] is True}
+
+
+@pytest.fixture(
+    params=VTK_FILES_WITH_UNITS.values(),
+    ids=VTK_FILES_WITH_UNITS.keys(),
+    scope="session",
+)
+def vtk_file_with_units(request):
+    return request.param
+
+
 IDEFIX_VTK_FILES = {k: v for k, v in VTK_FILES.items() if v["kind"] == "idefix"}
 
 

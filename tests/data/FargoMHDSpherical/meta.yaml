@@ -6,3 +6,4 @@ attrs:
   geometry: spherical
   dimensionality: 3
   kind: idefix
+  has_units: False

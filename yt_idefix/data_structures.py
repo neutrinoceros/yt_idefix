@@ -301,7 +301,7 @@ class IdefixVtkDataset(IdefixDataset):
         self.domain_right_edge = dre
 
         # time wasn't stored in vtk files before Idefix 0.8
-        self.current_time = self.quan(md.get("time", -1), "code_time")
+        self.current_time = md.get("time", -1)
 
         # periodicity was not stored in vtk files before Idefix 0.9
         self._periodicity = md.get("periodicity", (True, True, True))
@@ -456,16 +456,15 @@ class PlutoVtkDataset(IdefixVtkDataset):
             )
         index = int(match.group(1))
 
-        self.current_time = self.quan(-1, "code_time")
+        # will be converted to actual unyt_quantity in _set_derived_attrs
+        self.current_time = -1
         if os.path.isfile(log_file):
             log_regexp = re.compile(rf"^{index}\s(\S+)")
             with open(log_file) as fh:
                 for line in fh.readlines():
                     log_match = re.search(log_regexp, line)
                     if log_match:
-                        self.current_time = self.quan(
-                            float(log_match.group(1)), "code_time"
-                        )
+                        self.current_time = float(log_match.group(1))
                         break
                 else:
                     ytLogger.warning(
