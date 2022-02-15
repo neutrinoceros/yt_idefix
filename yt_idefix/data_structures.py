@@ -10,7 +10,9 @@ from typing import Literal
 
 import inifix
 import numpy as np
+from packaging.version import Version
 
+import yt
 from yt.data_objects.index_subobjects.grid_patch import AMRGridPatch
 from yt.data_objects.static_output import Dataset
 from yt.funcs import setdefaultattr
@@ -23,6 +25,9 @@ from .definitions import _PlutoBaseUnits, pluto_def_constants
 from .fields import IdefixDmpFieldInfo, IdefixVtkFieldInfo
 
 ytLogger = logging.getLogger("yt")
+
+
+YT_VERSION = Version(yt.__version__)
 
 
 class IdefixGrid(AMRGridPatch):
@@ -384,11 +389,9 @@ class PlutoVtkDataset(IdefixVtkDataset):
         else:
             self._definitions_header = None
 
-        # https://github.com/neutrinoceros/yt_idefix/issues/88
-        # https://github.com/neutrinoceros/yt_idefix/issues/91
-        # this could be patched in yt itself, but not done as of yt 4.0.2
-        # a tentative upstream fix https://github.com/yt-project/yt/pull/3772
-        filename = os.path.abspath(os.path.expanduser(filename))
+        if YT_VERSION < Version("4.1.dev0"):
+            # https://github.com/yt-project/yt/pull/3772
+            filename = os.path.abspath(os.path.expanduser(filename))
 
         super().__init__(
             filename,
@@ -414,7 +417,7 @@ class PlutoVtkDataset(IdefixVtkDataset):
 
         # definitions.h is presumed to be along with data file
         if self._definitions_header is None:
-            self._definitions_header = os.path.join(self.fullpath, "definitions.h")
+            self._definitions_header = os.path.join(self.directory, "definitions.h")
         elif not os.path.isfile(self._definitions_header):
             raise FileNotFoundError(f"No such file {self._definitions_header!r}")
 
@@ -448,7 +451,7 @@ class PlutoVtkDataset(IdefixVtkDataset):
 
     def _get_time(self):
         """Get current time from vtk.out."""
-        log_file = os.path.join(self.fullpath, "vtk.out")
+        log_file = os.path.join(self.directory, "vtk.out")
         match = re.search(r"\.(\d*)\.", self.parameter_filename)
         if match is None:
             raise RuntimeError(
