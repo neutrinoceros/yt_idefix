@@ -130,6 +130,10 @@ def read_grid_coordinates(
     md = read_metadata(fh)
 
     geometry = md.get("geometry", geometry)
+    if geometry not in (valid_geometries := tuple(KNOWN_GEOMETRIES.values())):
+        raise ValueError(
+            f"Got unknown geometry {geometry!r}, expected one of {valid_geometries}"
+        )
 
     shape = md["shape"]
     coords: list[np.ndarray] = []
@@ -163,7 +167,8 @@ def read_grid_coordinates(
                 )
             array_shape = shape
 
-    elif geometry in ("polar", "spherical"):
+    else:
+        assert geometry in ("polar", "spherical")
         rshape = Shape(*reversed(shape))
         npoints = int(next(fh).decode().split()[1])  # POINTS NXNYNZ float
         assert shape.size == npoints
@@ -192,13 +197,13 @@ def read_grid_coordinates(
             z = zcart[0, 0, :]
 
             data_type = next(fh).decode().split()[0]  # CELL_DATA (NX-1)(NY-1)(NZ-1)
-            assert data_type == "CELL_DATA"
             next(fh)
 
             # manually changing phase origin (theta) to match
             # results from Idefix's pytools
             coords = [r, theta + np.pi, z]
-        elif geometry == "spherical":
+        else:
+            assert geometry == "spherical"
             # Reconstruct the spherical coordinate system
             if shape.n3 == 1:
                 r = np.sqrt(xcart[:, 0, 0] ** 2 + ycart[:, 0, 0] ** 2)
@@ -227,16 +232,10 @@ def read_grid_coordinates(
             coords = [r, theta, phi]
 
             data_type = next(fh).decode().split()[0]  # CELL_DATA (NX-1)(NY-1)(NZ-1)
-            if data_type != "CELL_DATA":
-                raise RuntimeError
             next(fh)
-        else:
-            raise RuntimeError("This should be logically impossible.")
 
         array_shape = shape.to_cell_centered()
-
-    else:
-        raise RuntimeError(f"Found unknown geometry {geometry!r}")
+        assert data_type == "CELL_DATA"
 
     return Coordinates(coords[0], coords[1], coords[2], array_shape)
 
