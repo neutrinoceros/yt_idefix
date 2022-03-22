@@ -11,7 +11,7 @@ from .commons import ByteSize, Dim, IdefixFieldProperties, IdefixMetadata, Prec
 
 KNOWN_GEOMETRIES: dict[int, str] = {
     1: "cartesian",
-    2: "cylindrial",
+    2: "cylindrical",
     3: "polar",
     4: "spherical",
 }
