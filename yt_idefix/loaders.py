@@ -112,7 +112,7 @@ def load_stretched(fn, *, geometry: str | None = None, **kwargs):
         ]
     )
 
-    return yt.load_hexahedral_mesh(
+    ds = yt.load_hexahedral_mesh(
         data,
         coordinates=coordinates,
         connectivity=connectivity,
@@ -120,3 +120,9 @@ def load_stretched(fn, *, geometry: str | None = None, **kwargs):
         geometry=geometry,
         **kwargs,
     )
+    try:
+        ds.current_time = md["time"] * ds.time_unit
+    except KeyError:
+        # old Idefix vtk and Pluto vtks don't contain a "time" field
+        pass
+    return ds
