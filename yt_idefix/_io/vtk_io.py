@@ -199,9 +199,7 @@ def read_grid_coordinates(
             data_type = next(fh).decode().split()[0]  # CELL_DATA (NX-1)(NY-1)(NZ-1)
             next(fh)
 
-            # manually changing phase origin (theta) to match
-            # results from Idefix's pytools
-            coords = [r, theta + np.pi, z]
+            coords = [r, theta, z]
         else:
             assert geometry == "spherical"
             # Reconstruct the spherical coordinate system
