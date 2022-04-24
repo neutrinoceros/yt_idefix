@@ -8,7 +8,12 @@ import numpy as np
 
 from .commons import ByteSize, Coordinates, Shape
 
-KNOWN_GEOMETRIES = {0: "cartesian", 1: "polar", 2: "spherical", 3: "cylindrical"}
+KNOWN_GEOMETRIES: dict[int, str] = {
+    0: "cartesian",
+    1: "polar",
+    2: "spherical",
+    3: "cylindrical",
+}
 
 
 def read_header(filename: str) -> str:
