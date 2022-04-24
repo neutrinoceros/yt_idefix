@@ -196,8 +196,8 @@ def read_distributed(
 
 def read_distributed(fh, dim, *, skip_data):
     """Emulate Idefix's OutputDump::ReadDistributed"""
-    # note: OutputDump::ReadDistributed only read doubles
-    # because chucks written in integers are small enough
+    # note: OutputDump::ReadDistributed only reads doubles
+    # because chunks written as integers are small enough
     # that parallelization is counter productive.
     # This a design choice on idefix's size.
     return read_chunk(fh, ndim=len(dim), dim=dim, dtype="d", skip_data=skip_data)
