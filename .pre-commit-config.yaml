@@ -29,7 +29,7 @@ repos:
     - id: no-commit-to-branch
     - id: check-yaml
 -   repo: https://github.com/neutrinoceros/inifix.git
-    rev: v2.0.0
+    rev: v2.1.0
     hooks:
     - id: inifix-format
 -   repo: https://github.com/asottile/pyupgrade
