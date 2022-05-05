@@ -175,32 +175,32 @@ def read_serial(fh, ndim, dim, dtype, *, is_scalar=False):
 
 @overload
 def read_distributed(
-    fh: BinaryIO, dim: np.ndarray, *, skip_data: Literal[False]
+    fh: BinaryIO, dim: np.ndarray, *, dtype: str, skip_data: Literal[False]
 ) -> np.ndarray:
     ...
 
 
 @overload
 def read_distributed(
-    fh: BinaryIO, dim: np.ndarray, *, skip_data: Literal[True]
+    fh: BinaryIO, dim: np.ndarray, *, dtype: str, skip_data: Literal[True]
 ) -> None:
     ...
 
 
 @overload
 def read_distributed(
-    fh: BinaryIO, dim: np.ndarray, *, skip_data: bool = False
+    fh: BinaryIO, dim: np.ndarray, *, dtype: str, skip_data: bool = False
 ) -> np.ndarray | None:
     ...
 
 
-def read_distributed(fh, dim, *, skip_data):
+def read_distributed(fh, dim, *, dtype, skip_data):
     """Emulate Idefix's OutputDump::ReadDistributed"""
     # note: OutputDump::ReadDistributed only reads doubles
     # because chunks written as integers are small enough
     # that parallelization is counter productive.
     # This a design choice on idefix's size.
-    return read_chunk(fh, ndim=len(dim), dim=dim, dtype="d", skip_data=skip_data)
+    return read_chunk(fh, ndim=len(dim), dim=dim, dtype=dtype, skip_data=skip_data)
 
 
 # The following functions are originally designed for yt
@@ -234,7 +234,7 @@ def get_field_offset_index(fh: BinaryIO) -> dict[str, int]:
         if not re.match("^V[cs]-", field_name):
             break
         field_index[field_name] = offset
-        read_distributed(fh, dim, skip_data=True)
+        read_distributed(fh, dim, dtype=dtype, skip_data=True)
 
     return field_index
 
@@ -247,7 +247,7 @@ def read_single_field(fh: BinaryIO, field_offset: int) -> np.ndarray:
     """
     fh.seek(field_offset)
     field_name, dtype, ndim, dim = read_next_field_properties(fh)
-    data = read_distributed(fh, dim, skip_data=False)
+    data = read_distributed(fh, dim, dtype=dtype, skip_data=False)
     return data
 
 
@@ -283,7 +283,7 @@ def read_idefix_dump_from_buffer(
         # would be splitted into 2 parts (I don't the sentinel pattern works with tuples)
         fprops[field_name] = dtype, ndim, dim
         if field_name.startswith(("Vc-", "Vs-")):
-            data = read_distributed(fh, dim, skip_data=skip_data)
+            data = read_distributed(fh, dim, dtype=dtype, skip_data=skip_data)
         else:
             is_scalar = ndim == 1 and dim[0] == 1
             is_scalar &= field_name not in ("x1", "x2", "x3")
