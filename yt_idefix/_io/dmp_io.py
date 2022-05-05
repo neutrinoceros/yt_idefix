@@ -282,7 +282,7 @@ def read_idefix_dump_from_buffer(
         # `iter` with a sentinel value, to the condition that read_next_field_properties
         # would be splitted into 2 parts (I don't the sentinel pattern works with tuples)
         fprops[field_name] = dtype, ndim, dim
-        if field_name.startswith("Vc-") or field_name.startswith("Vs-"):
+        if field_name.startswith(("Vc-", "Vs-")):
             data = read_distributed(fh, dim, skip_data=skip_data)
         else:
             is_scalar = ndim == 1 and dim[0] == 1
