@@ -123,7 +123,7 @@ def read_chunk(
     is_scalar=False,
 ):
     # NOTE: ret type is only dependent on skip_data...
-    # this could be better expressed in the type annotationation but it would make
+    # this could be better expressed in the type annotations but it would make
     # more sense to just refactor this function to avoid the boolean trap, so I'll keep wonky
     # type hints for now
     assert ndim == len(dim)
