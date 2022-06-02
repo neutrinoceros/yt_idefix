@@ -22,7 +22,11 @@ from yt_idefix._typing import UnitLike
 from ._io import C_io, dmp_io, vtk_io
 from ._io.commons import IdefixFieldProperties, IdefixMetadata
 from .definitions import _PlutoBaseUnits, pluto_def_constants
-from .fields import IdefixDmpFieldInfo, IdefixVtkFieldInfo
+from .fields import IdefixDmpFields, IdefixVtkFields, PlutoVtkFields
+
+# import IO classes to ensure they are properly registered,
+# even though we don't call them directly
+from .io import IdefixDmpIO, IdefixVtkIO, PlutoVtkIO  # noqa
 
 ytLogger = logging.getLogger("yt")
 
@@ -260,7 +264,7 @@ class IdefixDataset(Dataset, ABC):
 
 class IdefixVtkDataset(IdefixDataset):
     _index_class = IdefixVtkHierarchy
-    _field_info_class = IdefixVtkFieldInfo
+    _field_info_class = IdefixVtkFields
     _dataset_type = "idefix-vtk"
     _required_header_keyword = "Idefix"
 
@@ -314,7 +318,7 @@ class IdefixVtkDataset(IdefixDataset):
 
 class IdefixDmpDataset(IdefixDataset):
     _index_class = IdefixDmpHierarchy
-    _field_info_class = IdefixDmpFieldInfo
+    _field_info_class = IdefixDmpFields
     _dataset_type = "idefix-dmp"
 
     @classmethod
@@ -365,6 +369,8 @@ class IdefixDmpDataset(IdefixDataset):
 
 
 class PlutoVtkDataset(IdefixVtkDataset):
+    _field_info_class = PlutoVtkFields
+    _dataset_type = "pluto-vtk"
     _version_regexp = re.compile(r"\d+\.\d+\.?\d*[-\w+]*")
     _required_header_keyword = "PLUTO"
 
