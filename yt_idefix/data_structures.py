@@ -198,7 +198,8 @@ class IdefixDataset(Dataset, ABC):
         if self.inifile is None:
             return
 
-        self.parameters.update(inifix.load(self.inifile))
+        with open(self.inifile, "rb") as fh:
+            self.parameters.update(inifix.load(fh))
         grid_ini = self.parameters["Grid"]
 
         msg_elems: list[str] = []
