@@ -198,7 +198,7 @@ def test_derived_field(vtk_file):
     # it'll be replaced once a better universal field is defined internally.
 
     def mom_den(field, data):
-        return data["idefix-vtk", "RHO"] * data["idefix-vtk", "VX1"]
+        return data["RHO"] * data["VX1"]
 
     ds.add_field(
         name=("gas", "momentum_density"),
@@ -208,7 +208,7 @@ def test_derived_field(vtk_file):
     )
     ad = ds.all_data()
     test = ad["gas", "momentum_density"]
-    expect = ad["idefix-vtk", "RHO"] * ad["idefix-vtk", "VX1"]
+    expect = ad["RHO"] * ad["VX1"]
     assert_allclose_units(test, expect)
 
 

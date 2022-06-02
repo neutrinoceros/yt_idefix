@@ -2,7 +2,7 @@ from yt.fields.field_info_container import FieldInfoContainer
 from yt.fields.magnetic_field import setup_magnetic_field_aliases
 
 
-class IdefixVtkFieldInfo(FieldInfoContainer):
+class BaseVtkFields(FieldInfoContainer):
     known_other_fields = (
         ("RHO", ("code_mass / code_length**3", ["density"], None)),  # type: ignore
         ("VX1", ("code_length / code_time", ["velocity_x"], None)),
@@ -14,13 +14,20 @@ class IdefixVtkFieldInfo(FieldInfoContainer):
         ("PRS", ("code_pressure", ["pressure"], None)),
     )
 
+
+class IdefixVtkFields(BaseVtkFields):
     def setup_fluid_fields(self):
         setup_magnetic_field_aliases(
             self, "idefix-vtk", [f"BX{idir}" for idir in "123"]
         )
 
 
-class IdefixDmpFieldInfo(FieldInfoContainer):
+class PlutoVtkFields(BaseVtkFields):
+    def setup_fluid_fields(self):
+        setup_magnetic_field_aliases(self, "pluto-vtk", [f"BX{idir}" for idir in "123"])
+
+
+class IdefixDmpFields(FieldInfoContainer):
     known_other_fields = (
         ("Vc-RHO", ("code_mass / code_length**3", ["density"], None)),  # type: ignore
         ("Vc-VX1", ("code_length / code_time", ["velocity_x"], None)),
