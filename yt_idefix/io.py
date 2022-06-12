@@ -112,8 +112,33 @@ class IdefixDmpIO(SingleGridIO, BaseParticleIOHandler):
         # This needs to *yield* a series of tuples of (ptype, (x, y, z)).
         # chunks is a list of chunks, and ptf is a dict where the keys are
         # ptypes and the values are lists of fields.
-        raise NotImplementedError("Particles are not currently supported for Idefix")
+        # This will read chunks and yield the results.
+        ptype = "dust"
+
+        if "PX1" not in grid._index._field_offsets:
+            return
+
+        # TODO: define particle count
+        if particle_count == 0:
+            return
+
+        cl = self.ds.quan(1, "code_length")
+        with open(self._data_file, mode="rb") as fh:
+            foffset = grid._index._field_offsets["PX1"]
+            x = self._read_single_field(fh, foffset) * cl
+            if self.ds.dimensionality >= 2:
+                foffset = grid._index._field_offsets["PX2"]
+                y = self._read_single_field(fh, foffset) * cl
+            else:
+                y = np.full_like(x, self.ds.domain_center[1])
+            if self.ds.dimensionality == 3:
+                foffset = grid._index._field_offsets["PX3"]
+                z = self._read_single_field(fh, foffset) * cl
+            else:
+                z = np.full_like(x, self.ds.domain_center[2])
+
+        yield ptype, (x, y, z), 0.0
 
     def _read_particle_fields(self, chunks, ptf, selector):
         # idefix doesn't have particles (yet)
-        raise NotImplementedError("Particles are not currently supported for Idefix")
+        raise NotImplementedError("Particles fields are not implemented yet")
