@@ -3,14 +3,11 @@ import re
 
 import pytest
 from more_itertools import distinct_combinations
-from packaging.version import Version
 from unyt import Unit, assert_allclose_units
 
 import yt
 import yt_idefix
 from yt_idefix.api import IdefixVtkDataset, PlutoVtkDataset
-
-YT_VERSION = Version(yt.__version__)
 
 # A sample list of units for test.
 # The first three values are chosen randomly
