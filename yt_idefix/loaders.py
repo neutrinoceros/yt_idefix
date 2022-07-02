@@ -70,6 +70,13 @@ def load_stretched(fn, *, geometry: str | None = None, **kwargs):
     - no lazy-loading (all data has to reside in memory)
     - only supports vtk outputs (not dumps)
     """
+    warnings.warn(
+        "yt_idefix.load_strecthed is deprecated "
+        "and will be removed completely in a future version. "
+        "Please use yt.load instead.",
+        category=VisibleDeprecationWarning,
+        stacklevel=2,
+    )
 
     # brute force validation
     if not (

@@ -31,6 +31,22 @@ Now `yt.load` will be able to read Pluto/Idefix `.vtk` output files, as well as 
 
 ### Strecthed grids support
 
+## yt_idefix 0.12.0 and newer
+
+version 0.12.0 brings experimental support for streched grids, which is under
+active development upstream, in yt itself.
+
+Slices should now work seamlessly even with older versions of yt, however
+yt 4.1 (to be released) will be required to perform projections correctly.
+
+In the meantime, I recommend installing yt from source. At the time of writing,
+the branch attached to the following branch is required for projections with
+stretched grids:
+
+https://github.com/yt-project/yt/pull/2998
+
+## yt_idefix 0.11 and older (deprecated)
+
 yt_idefix ships a specialized loader function for datasets with streched grids
 `yt_idefix.load_stretched`. This function is experimental. Here are its known
 limitations.
