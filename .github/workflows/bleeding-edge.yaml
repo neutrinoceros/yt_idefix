@@ -9,11 +9,13 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    paths:
+      - .github/workflows/bleefding-edge.yaml
   schedule:
     # run this every day at 3 am UTC
     - cron: '0 3 * * *'
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
