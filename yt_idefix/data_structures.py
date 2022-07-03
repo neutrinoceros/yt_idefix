@@ -45,7 +45,11 @@ class IdefixGrid(AMRGridPatch):
         self.ActiveDimensions = dims
 
     def __repr__(self):
-        return "IdefixGrid_%04i (%s)" % (self.id, self.ActiveDimensions)
+        if YT_VERSION >= Version("4.1"):
+            # https://github.com/yt-project/yt/pull/3936
+            return super().__repr__()
+        else:
+            return "IdefixGrid_%04i (%s)" % (self.id, self.ActiveDimensions)
 
 
 class IdefixHierarchy(GridIndex, ABC):
