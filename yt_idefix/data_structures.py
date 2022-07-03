@@ -6,7 +6,7 @@ import re
 import warnings
 import weakref
 from abc import ABC, abstractmethod
-from typing import Literal
+from typing import Literal, Sequence
 
 import inifix
 import numpy as np
@@ -126,6 +126,30 @@ class IdefixHierarchy(GridIndex, ABC):
         # with unit "code_length" and dtype float64
         ...
 
+    @abstractmethod
+    def _get_cell_centers(self):
+        # must return a 3-tuple of 1D unyt_array
+        # with unit "code_length" and dtype float64
+        ...
+
+    def _icoords_to_fcoords(self, icoords, ires, axes: Sequence[int] = (0, 1, 2)):
+        # this is needed to support projections
+        grid_cell_widths = self._get_cell_widths()
+        grid_cell_centers = self._get_cell_centers()
+
+        coords = []
+        cell_widths = []
+        for i in range(icoords.shape[0]):
+            coords.append(
+                [grid_cell_centers[ax][icoords[i, _]] for _, ax in enumerate(axes)]
+            )
+            cell_widths.append(
+                [grid_cell_widths[ax][icoords[i, _]] for _, ax in enumerate(axes)]
+            )
+        coords = np.array(coords).T
+        cell_widths = np.array(cell_widths).T
+        return coords, cell_widths
+
 
 class IdefixVtkHierarchy(IdefixHierarchy):
     def _get_field_offset_index(self) -> dict[str, int]:
@@ -140,10 +164,25 @@ class IdefixVtkHierarchy(IdefixHierarchy):
         for idir, edges in enumerate(cell_edges[:3]):
             ncells = self.ds.domain_dimensions[idir]
             if ncells > 1:
-                cell_widths.append(np.diff(edges).astype("float64") * length_unit)
+                cell_widths.append(np.ediff1d(edges).astype("float64") * length_unit)
             else:
                 cell_widths.append(np.array([self.ds.domain_width[idir]]) * length_unit)
         return tuple(cell_widths)
+
+    def _get_cell_centers(self):
+        with open(self.index_filename, "rb") as fh:
+            cell_edges = vtk_io.read_grid_coordinates(fh, geometry=self.ds.geometry)
+
+        cell_centers: list[np.ndarray] = []
+        length_unit = self.ds.quan(1, "code_length")
+        for idir, edges in enumerate(cell_edges[:3]):
+            ncells = self.ds.domain_dimensions[idir]
+            if ncells > 1:
+                e64 = edges.astype("float64")
+                cell_centers.append(0.5 * (e64[1:] + e64[:-1]) * length_unit)
+            else:
+                cell_centers.append(np.array([edges[0]]) * length_unit)
+        return tuple(cell_centers)
 
 
 class IdefixDmpHierarchy(IdefixHierarchy):
@@ -155,6 +194,11 @@ class IdefixDmpHierarchy(IdefixHierarchy):
         _fprops, fdata = dmp_io.read_idefix_dmpfile(self.index_filename, skip_data=True)
         length_unit = self.ds.quan(1, "code_length")
         return tuple((fdata[f"xr{d}"] - fdata[f"xl{d}"]) * length_unit for d in "123")
+
+    def _get_cell_centers(self):
+        _fprops, fdata = dmp_io.read_idefix_dmpfile(self.index_filename, skip_data=True)
+        length_unit = self.ds.quan(1, "code_length")
+        return tuple(fdata[f"x{d}"] * length_unit for d in "123")
 
 
 class IdefixDataset(Dataset, ABC):
