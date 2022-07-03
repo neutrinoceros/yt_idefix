@@ -6,6 +6,7 @@ import re
 import warnings
 import weakref
 from abc import ABC, abstractmethod
+from functools import cached_property
 from typing import Literal, Sequence
 
 import inifix
@@ -95,8 +96,6 @@ class IdefixHierarchy(GridIndex, ABC):
         # This is handled by the frontend because often the children must be identified.
         self.grids = np.empty(self.num_grids, dtype="object")
 
-        cell_widths = self._get_cell_widths()
-
         assert self.num_grids == 1
 
         i = 0
@@ -104,7 +103,7 @@ class IdefixHierarchy(GridIndex, ABC):
             id=i,
             index=self,
             filename=self.index_filename,
-            cell_widths=cell_widths,
+            cell_widths=self._cell_widths,
             level=self.grid_levels.flat[i],
             dims=self.grid_dimensions[i],
         )
@@ -121,30 +120,29 @@ class IdefixHierarchy(GridIndex, ABC):
         return field_index  # type: ignore
 
     @abstractmethod
-    def _get_cell_widths(self):
+    @cached_property
+    def _cell_widths(self):
         # must return a 3-tuple of 1D unyt_array
         # with unit "code_length" and dtype float64
         ...
 
     @abstractmethod
-    def _get_cell_centers(self):
+    @cached_property
+    def _cell_centers(self):
         # must return a 3-tuple of 1D unyt_array
         # with unit "code_length" and dtype float64
         ...
 
     def _icoords_to_fcoords(self, icoords, ires, axes: Sequence[int] = (0, 1, 2)):
         # this is needed to support projections
-        grid_cell_widths = self._get_cell_widths()
-        grid_cell_centers = self._get_cell_centers()
-
         coords = []
         cell_widths = []
         for i in range(icoords.shape[0]):
             coords.append(
-                [grid_cell_centers[ax][icoords[i, _]] for _, ax in enumerate(axes)]
+                [self._cell_centers[ax][icoords[i, _]] for _, ax in enumerate(axes)]
             )
             cell_widths.append(
-                [grid_cell_widths[ax][icoords[i, _]] for _, ax in enumerate(axes)]
+                [self._cell_widths[ax][icoords[i, _]] for _, ax in enumerate(axes)]
             )
         coords = np.array(coords).T
         cell_widths = np.array(cell_widths).T
@@ -155,7 +153,8 @@ class IdefixVtkHierarchy(IdefixHierarchy):
     def _get_field_offset_index(self) -> dict[str, int]:
         return self.ds._field_offset_index
 
-    def _get_cell_widths(self):
+    @cached_property
+    def _cell_widths(self):
         with open(self.index_filename, "rb") as fh:
             cell_edges = vtk_io.read_grid_coordinates(fh, geometry=self.ds.geometry)
 
@@ -169,7 +168,8 @@ class IdefixVtkHierarchy(IdefixHierarchy):
                 cell_widths.append(np.array([self.ds.domain_width[idir]]) * length_unit)
         return tuple(cell_widths)
 
-    def _get_cell_centers(self):
+    @cached_property
+    def _cell_centers(self):
         with open(self.index_filename, "rb") as fh:
             cell_edges = vtk_io.read_grid_coordinates(fh, geometry=self.ds.geometry)
 
@@ -190,12 +190,14 @@ class IdefixDmpHierarchy(IdefixHierarchy):
         with open(self.index_filename, "rb") as fh:
             return dmp_io.get_field_offset_index(fh)
 
-    def _get_cell_widths(self):
+    @cached_property
+    def _cell_widths(self):
         _fprops, fdata = dmp_io.read_idefix_dmpfile(self.index_filename, skip_data=True)
         length_unit = self.ds.quan(1, "code_length")
         return tuple((fdata[f"xr{d}"] - fdata[f"xl{d}"]) * length_unit for d in "123")
 
-    def _get_cell_centers(self):
+    @cached_property
+    def _cell_centers(self):
         _fprops, fdata = dmp_io.read_idefix_dmpfile(self.index_filename, skip_data=True)
         length_unit = self.ds.quan(1, "code_length")
         return tuple(fdata[f"x{d}"] * length_unit for d in "123")
