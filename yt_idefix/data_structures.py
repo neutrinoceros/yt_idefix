@@ -22,12 +22,12 @@ from yt_idefix._typing import UnitLike
 from ._io import C_io, dmp_io, vtk_io
 from ._io.commons import IdefixFieldProperties, IdefixMetadata
 from .definitions import _PlutoBaseUnits, pluto_def_constants
-from .fields import IdefixDmpFields, IdefixVtkFields, PlutoVtkFields
+from .fields import BaseVtkFields, IdefixDmpFields, IdefixVtkFields, PlutoVtkFields
 
 try:
     from yt.data_objects.index_subobjects.stretched_grid import StretchedGrid
 except ImportError:
-    from ._vendors.streched_grids import StretchedGrid
+    from ._vendors.streched_grids import StretchedGrid  # type: ignore [no-redef]
 
 # import IO classes to ensure they are properly registered,
 # even though we don't call them directly
@@ -144,9 +144,7 @@ class IdefixHierarchy(GridIndex, ABC):
             cell_widths.append(
                 [self._cell_widths[ax][icoords[i, _]] for _, ax in enumerate(axes)]
             )
-        coords = np.array(coords).T
-        cell_widths = np.array(cell_widths).T
-        return coords, cell_widths
+        return np.array(coords).T, np.array(cell_widths).T
 
 
 class IdefixVtkHierarchy(IdefixHierarchy):
@@ -207,6 +205,7 @@ class IdefixDataset(Dataset, ABC):
     """A common abstraction for IdefixDmpDataset and IdefixVtkDataset."""
 
     _version_regexp = re.compile(r"v\d+\.\d+\.?\d*[-\w+]*")
+    _dataset_type: str  # defined in subclasses
 
     def __init__(
         self,
@@ -342,7 +341,7 @@ class IdefixDataset(Dataset, ABC):
 
 class IdefixVtkDataset(IdefixDataset):
     _index_class = IdefixVtkHierarchy
-    _field_info_class = IdefixVtkFields
+    _field_info_class: type[BaseVtkFields] = IdefixVtkFields
     _dataset_type = "idefix-vtk"
     _required_header_keyword = "Idefix"
 

@@ -79,6 +79,6 @@ python_version = 3.8
 show_error_codes = true
 ignore_missing_imports = true # remove once yt 4.1.0 is released
 warn_unused_configs = true
-warn_unused_ignores = true
+# warn_unused_ignores = true # uncomment when minimal supported version is yt 4.1 or newer
 warn_unreachable = true
 show_error_context = true

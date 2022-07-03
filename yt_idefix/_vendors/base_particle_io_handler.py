@@ -4,7 +4,7 @@ from yt.utilities.io_handler import BaseIOHandler
 
 
 # this class is vendored from yt 4.1dev
-class BaseParticleIOHandler(BaseIOHandler):  # type:ignore [no-redef]
+class BaseParticleIOHandler(BaseIOHandler):
     def _sorted_chunk_iterator(self, chunks):
         chunks = list(chunks)
         data_files = set()
