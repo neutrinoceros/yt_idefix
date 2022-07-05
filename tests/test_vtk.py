@@ -222,7 +222,7 @@ def test_normal_plot(vtk_file, plot_method):
             normal = "phi"
         else:
             normal = "z"
-        plot_method(ds, normal=normal, fields=("gas", "density"))
+        plot_method(ds, normal, fields=("gas", "density"))
     else:
         # this should work but it's broken with yt 4.0.x
         # it is fixed in https://github.com/yt-project/yt/pull/3489
