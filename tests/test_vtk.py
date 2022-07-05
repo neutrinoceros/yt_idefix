@@ -213,7 +213,8 @@ def test_derived_field(vtk_file):
 
 
 # TODO: make this a pytest-mpl test
-def test_slice_plot(vtk_file):
+@pytest.mark.parametrize("plot_method", [yt.SlicePlot, yt.ProjectionPlot])
+def test_normal_plot(vtk_file, plot_method):
     file = vtk_file
     ds = yt.load(file["path"], geometry=file["geometry"], unit_system="code")
     if YT_VERSION <= Version("4.1.dev0"):
@@ -221,11 +222,11 @@ def test_slice_plot(vtk_file):
             normal = "phi"
         else:
             normal = "z"
-        yt.SlicePlot(ds, normal=normal, fields=("gas", "density"))
+        plot_method(ds, normal=normal, fields=("gas", "density"))
     else:
         # this should work but it's broken with yt 4.0.x
         # it is fixed in https://github.com/yt-project/yt/pull/3489
-        yt.SlicePlot(ds, normal=(0, 0, 1), fields=("gas", "density"))
+        plot_method(ds, normal=(0, 0, 1), fields=("gas", "density"))
 
 
 def test_load_magic(vtk_file):
