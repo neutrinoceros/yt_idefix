@@ -6,14 +6,14 @@ import re
 import warnings
 import weakref
 from abc import ABC, abstractmethod
-from typing import Literal
+from functools import cached_property
+from typing import Literal, Sequence
 
 import inifix
 import numpy as np
 from packaging.version import Version
 
 import yt
-from yt.data_objects.index_subobjects.grid_patch import AMRGridPatch
 from yt.data_objects.static_output import Dataset
 from yt.funcs import setdefaultattr
 from yt.geometry.grid_geometry_handler import GridIndex
@@ -22,7 +22,12 @@ from yt_idefix._typing import UnitLike
 from ._io import C_io, dmp_io, vtk_io
 from ._io.commons import IdefixFieldProperties, IdefixMetadata
 from .definitions import _PlutoBaseUnits, pluto_def_constants
-from .fields import IdefixDmpFields, IdefixVtkFields, PlutoVtkFields
+from .fields import BaseVtkFields, IdefixDmpFields, IdefixVtkFields, PlutoVtkFields
+
+try:
+    from yt.data_objects.index_subobjects.stretched_grid import StretchedGrid
+except ImportError:
+    from ._vendors.streched_grids import StretchedGrid  # type: ignore [no-redef]
 
 # import IO classes to ensure they are properly registered,
 # even though we don't call them directly
@@ -30,15 +35,14 @@ from .io import IdefixDmpIO, IdefixVtkIO, PlutoVtkIO  # noqa
 
 ytLogger = logging.getLogger("yt")
 
-
 YT_VERSION = Version(yt.__version__)
 
 
-class IdefixGrid(AMRGridPatch):
+class IdefixGrid(StretchedGrid):
     _id_offset = 0
 
-    def __init__(self, id, index, level, dims):
-        super().__init__(id, filename=index.index_filename, index=index)
+    def __init__(self, id, cell_widths, filename, index, level, dims):
+        super().__init__(id=id, filename=filename, index=index, cell_widths=cell_widths)
         self.Parent = None
         self.Children = []
         self.Level = level
@@ -95,11 +99,21 @@ class IdefixHierarchy(GridIndex, ABC):
         #   g.Parent   <= parent grid
         # This is handled by the frontend because often the children must be identified.
         self.grids = np.empty(self.num_grids, dtype="object")
-        for i in range(self.num_grids):
-            g = self.grid(i, self, self.grid_levels.flat[i], self.grid_dimensions[i])
-            g._prepare_grid()
-            g._setup_dx()
-            self.grids[i] = g
+
+        assert self.num_grids == 1
+
+        i = 0
+        g = self.grid(
+            id=i,
+            index=self,
+            filename=self.index_filename,
+            cell_widths=self._cell_widths,
+            level=self.grid_levels.flat[i],
+            dims=self.grid_dimensions[i],
+        )
+        g._prepare_grid()
+        g._setup_dx()
+        self.grids[i] = g
 
     @abstractmethod
     def _get_field_offset_index(self) -> dict[str, int]:
@@ -109,10 +123,68 @@ class IdefixHierarchy(GridIndex, ABC):
             field_index = ...
         return field_index  # type: ignore
 
+    @abstractmethod
+    @cached_property
+    def _cell_widths(self):
+        # must return a 3-tuple of 1D unyt_array
+        # with unit "code_length" and dtype float64
+        ...
+
+    @abstractmethod
+    @cached_property
+    def _cell_centers(self):
+        # must return a 3-tuple of 1D unyt_array
+        # with unit "code_length" and dtype float64
+        ...
+
+    def _icoords_to_fcoords(self, icoords, ires, axes: Sequence[int] = (0, 1, 2)):
+        # this is needed to support projections
+        coords = []
+        cell_widths = []
+        for i in range(icoords.shape[0]):
+            coords.append(
+                [self._cell_centers[ax][icoords[i, _]] for _, ax in enumerate(axes)]
+            )
+            cell_widths.append(
+                [self._cell_widths[ax][icoords[i, _]] for _, ax in enumerate(axes)]
+            )
+        return np.array(coords).T, np.array(cell_widths).T
+
 
 class IdefixVtkHierarchy(IdefixHierarchy):
     def _get_field_offset_index(self) -> dict[str, int]:
         return self.ds._field_offset_index
+
+    @cached_property
+    def _cell_widths(self):
+        with open(self.index_filename, "rb") as fh:
+            cell_edges = vtk_io.read_grid_coordinates(fh, geometry=self.ds.geometry)
+
+        cell_widths: list[np.ndarray] = []
+        length_unit = self.ds.quan(1, "code_length")
+        for idir, edges in enumerate(cell_edges[:3]):
+            ncells = self.ds.domain_dimensions[idir]
+            if ncells > 1:
+                cell_widths.append(np.ediff1d(edges).astype("float64") * length_unit)
+            else:
+                cell_widths.append(np.array([self.ds.domain_width[idir]]) * length_unit)
+        return tuple(cell_widths)
+
+    @cached_property
+    def _cell_centers(self):
+        with open(self.index_filename, "rb") as fh:
+            cell_edges = vtk_io.read_grid_coordinates(fh, geometry=self.ds.geometry)
+
+        cell_centers: list[np.ndarray] = []
+        length_unit = self.ds.quan(1, "code_length")
+        for idir, edges in enumerate(cell_edges[:3]):
+            ncells = self.ds.domain_dimensions[idir]
+            if ncells > 1:
+                e64 = edges.astype("float64")
+                cell_centers.append(0.5 * (e64[1:] + e64[:-1]) * length_unit)
+            else:
+                cell_centers.append(np.array([edges[0]]) * length_unit)
+        return tuple(cell_centers)
 
 
 class IdefixDmpHierarchy(IdefixHierarchy):
@@ -120,11 +192,24 @@ class IdefixDmpHierarchy(IdefixHierarchy):
         with open(self.index_filename, "rb") as fh:
             return dmp_io.get_field_offset_index(fh)
 
+    @cached_property
+    def _cell_widths(self):
+        _fprops, fdata = dmp_io.read_idefix_dmpfile(self.index_filename, skip_data=True)
+        length_unit = self.ds.quan(1, "code_length")
+        return tuple((fdata[f"xr{d}"] - fdata[f"xl{d}"]) * length_unit for d in "123")
+
+    @cached_property
+    def _cell_centers(self):
+        _fprops, fdata = dmp_io.read_idefix_dmpfile(self.index_filename, skip_data=True)
+        length_unit = self.ds.quan(1, "code_length")
+        return tuple(fdata[f"x{d}"] * length_unit for d in "123")
+
 
 class IdefixDataset(Dataset, ABC):
     """A common abstraction for IdefixDmpDataset and IdefixVtkDataset."""
 
     _version_regexp = re.compile(r"v\d+\.\d+\.?\d*[-\w+]*")
+    _dataset_type: str  # defined in subclasses
 
     def __init__(
         self,
@@ -214,15 +299,6 @@ class IdefixDataset(Dataset, ABC):
                 msg_elems.append(f"found multiple blocks in direction {ax}; got {vals}")
             if any(_ != "u" for _ in vals[3::3]):
                 msg_elems.append(f"found non-uniform block(s) in direction {ax}")
-        if len(msg_elems) > 0:
-            msg = (
-                "Streched grid detected !\n"
-                + "- "
-                + "\n- ".join(msg_elems)
-                + "\nThe grid will be treated as uniformly spaced in every direction. "
-                "yt_idefix.load_stretched may be a better alternative loader for these data"
-            )
-            warnings.warn(msg)
 
     def _set_code_unit_attributes(self):
         # This is where quantities are created that represent the various
@@ -269,7 +345,7 @@ class IdefixDataset(Dataset, ABC):
 
 class IdefixVtkDataset(IdefixDataset):
     _index_class = IdefixVtkHierarchy
-    _field_info_class = IdefixVtkFields
+    _field_info_class: type[BaseVtkFields] = IdefixVtkFields
     _dataset_type = "idefix-vtk"
     _required_header_keyword = "Idefix"
 

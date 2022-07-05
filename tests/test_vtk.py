@@ -9,6 +9,7 @@ from unyt import Unit, assert_allclose_units
 import yt
 import yt_idefix
 from yt_idefix.api import IdefixVtkDataset, PlutoVtkDataset
+from yt_idefix.loaders import VisibleDeprecationWarning
 
 YT_VERSION = Version(yt.__version__)
 
@@ -234,4 +235,10 @@ def test_load_magic(vtk_file):
 
 
 def test_load_stretched(vtk_file):
-    yt_idefix.load_stretched(vtk_file["path"], geometry=vtk_file["geometry"])
+    with pytest.raises(
+        VisibleDeprecationWarning,
+        match=r"yt_idefix.load_strecthed is deprecated "
+        r"and will be removed completely in a future version\. "
+        r"Please use yt.load instead\.",
+    ):
+        yt_idefix.load_stretched(vtk_file["path"], geometry=vtk_file["geometry"])
