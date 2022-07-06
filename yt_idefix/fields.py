@@ -39,9 +39,19 @@ class IdefixDmpFields(FieldInfoContainer):
         ("Vc-PRS", ("code_pressure", ["pressure"], None)),
     )
     # note that velocity '_x', '_y' and '_z' aliases are meant to be
-    # overwriten according to geometry in self.setup_fluid_aliases
+    # overwritten according to geometry in self.setup_fluid_aliases
 
-    known_particle_fields = ()
+    # note: I'm not sure about the note above anymore
+    # TODO: check that velocity reading works in non-cartesian geometries
+    # for now I'm making similar assumptions for particles
+    known_particle_fields = (
+        ("PX1", ("code_length", ["particle_position_x"], None)),
+        ("PX2", ("code_length", ["particle_position_y"], None)),
+        ("PX3", ("code_length", ["particle_position_z"], None)),
+        ("PVX1", ("code_length / code_time", ["particle_velocity_x"], None)),
+        ("PVX2", ("code_length / code_time", ["particle_velocity_y"], None)),
+        ("PVX3", ("code_length / code_time", ["particle_velocity_z"], None)),
+    )
 
     def setup_fluid_fields(self):
         setup_magnetic_field_aliases(
