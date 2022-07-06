@@ -40,7 +40,7 @@ Slices should now work seamlessly even with older versions of yt, however
 yt 4.1 (to be released) will be required to perform projections correctly.
 
 In the meantime, I recommend installing yt from source. At the time of writing,
-the branch attached to the following branch is required for projections with
+the branch attached to the following pull request is required for projections with
 stretched grids:
 
 https://github.com/yt-project/yt/pull/2998
