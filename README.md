@@ -29,11 +29,11 @@ import yt_idefix
 Now `yt.load` will be able to read Pluto/Idefix `.vtk` output files, as well as Idefix `.dmp` dump files.
 
 
-### Strecthed grids support
+## Strecthed grids support
 
-## yt_idefix 0.12.0 and newer
+### yt_idefix 0.12.0 and newer
 
-version 0.12.0 brings experimental support for streched grids, which is under
+version 0.12.0 brings experimental *native* support for streched grids, which is under
 active development upstream, in yt itself.
 
 Slices should now work seamlessly even with older versions of yt, however
@@ -45,11 +45,10 @@ stretched grids:
 
 https://github.com/yt-project/yt/pull/2998
 
-## yt_idefix 0.11 and older (deprecated)
+### yt_idefix 0.11 and older (deprecated)
 
 yt_idefix ships a specialized loader function for datasets with streched grids
-`yt_idefix.load_stretched`. This function is experimental. Here are its known
-limitations.
+`yt_idefix.load_stretched`. This function is only provided as a workaround 4.0.x limitations, but it's highly limited itself:
 - no field magic (no aliasing, or dimensionalization, or automatic derived field generation)
 - no lazy loading (all data has to reside in memory)
 - projections are not supported
