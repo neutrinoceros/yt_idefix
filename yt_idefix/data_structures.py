@@ -403,15 +403,12 @@ class IdefixDmpDataset(IdefixDataset):
     _dataset_type = "idefix-dmp"
 
     @classmethod
-    def _is_valid(cls, filename, *args, **kwargs):
-        ok = bool(
-            re.match(r"^(dump)\.\d{4}(\.dmp)$", os.path.basename(filename))
-        )  # this is possibly too restrictive
+    def _is_valid(cls, filename, *args, **kwargs) -> bool:
         try:
-            ok &= "Idefix" in dmp_io.read_header(filename)
+            header_string = dmp_io.read_header(filename)
+            return re.match(r"Idefix .* Dump Data", header_string) is not None
         except Exception:
-            ok = False
-        return ok
+            return False
 
     def _get_fields_metadata(self) -> tuple[IdefixFieldProperties, IdefixMetadata]:
         # read everything except large arrays
