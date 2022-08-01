@@ -48,7 +48,7 @@ jobs:
       # to use the dev version of numpy at build time.
       run: |
         python setup.py build_ext -q -j2
-        python -m pip install -e .[test] --no-build-isolation
+        python -m pip install  ".[test]" --no-build-isolation
 
     - name: Run Tests
       run: pytest -vvv
