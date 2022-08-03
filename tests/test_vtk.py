@@ -229,6 +229,30 @@ def test_slice_plot(vtk_file):
         yt.SlicePlot(ds, normal=(0, 0, 1), fields=("gas", "density"))
 
 
+try:
+    from yt.data_objects.index_subobjects.stretched_grid import StretchedGrid
+except ImportError:
+    HAS_STRETCHED_GRID_SUPPORT = False
+else:
+    del StretchedGrid
+    HAS_STRETCHED_GRID_SUPPORT = True
+
+
+@pytest.mark.skipif(
+    not HAS_STRETCHED_GRID_SUPPORT,
+    reason=(
+        "with yt 4.0.4, this test breaks pytest at collection because a ResourceWarning is emitted.\n"
+        "It is resolved upstream in yt-project/yt#3997\n"
+        "note that the heuristic we're using to discover if the installed version of yt is fine at runtime "
+        "is more restritive than this. When yt 4.1 becomes the minimal supported version this should be cleanable"
+    ),
+)
+def test_projection_plot(vtk_file):
+    file = vtk_file
+    ds = yt.load(file["path"], geometry=file["geometry"], unit_system="code")
+    yt.ProjectionPlot(ds, normal=(0, 0, 1), fields=("gas", "density"))
+
+
 def test_load_magic(vtk_file):
     ds = yt.load(vtk_file["path"], geometry=vtk_file["geometry"])
     assert isinstance(ds, IdefixVtkDataset)
