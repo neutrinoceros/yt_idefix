@@ -239,7 +239,12 @@ else:
 
 @pytest.mark.skipif(
     not HAS_STRETCHED_GRID_SUPPORT,
-    reason="blocking ResourceWarning is resolved upstream in yt-project/yt#3997",
+    reason=(
+        "with yt 4.0.4, this test breaks pytest at collection because a ResourceWarning is emitted.\n"
+        "It is resolved upstream in yt-project/yt#3997\n"
+        "note that the heuristic we're using to discover if the installed version of yt is fine at runtime "
+        "is more restritive than this. When yt 4.1 becomes the minimal supported version this should be cleanable"
+    ),
 )
 def test_projection_plot(vtk_file):
     file = vtk_file
