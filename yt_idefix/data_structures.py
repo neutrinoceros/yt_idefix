@@ -29,6 +29,13 @@ try:
 except ImportError:
     from ._vendors.streched_grids import StretchedGrid  # type: ignore [no-redef]
 
+try:
+    from yt.utilities.lib.misc_utilities import _obtain_coords_and_widths
+except ImportError:
+    from ._vendors.streched_grids import (
+        _obtain_coords_and_widths,  # type: ignore [no-redef]
+    )
+
 # import IO classes to ensure they are properly registered,
 # even though we don't call them directly
 from .io import IdefixDmpIO, IdefixVtkIO, PlutoVtkIO  # noqa
@@ -139,16 +146,16 @@ class IdefixHierarchy(GridIndex, ABC):
 
     def _icoords_to_fcoords(self, icoords, ires, axes: Sequence[int] = (0, 1, 2)):
         # this is needed to support projections
-        coords = []
-        cell_widths = []
-        for i in range(icoords.shape[0]):
-            coords.append(
-                [self._cell_centers[ax][icoords[i, _]] for _, ax in enumerate(axes)]
+        coords = np.empty(icoords.shape, dtype="f8")
+        cell_widths = np.empty(icoords.shape, dtype="f8")
+        for i, ax in enumerate(axes):
+            coords[:, i], cell_widths[:, i] = _obtain_coords_and_widths(
+                icoords[:, i],
+                ires,
+                self._cell_widths[ax],
+                self.ds.domain_left_edge[ax].d,
             )
-            cell_widths.append(
-                [self._cell_widths[ax][icoords[i, _]] for _, ax in enumerate(axes)]
-            )
-        return np.array(coords).T, np.array(cell_widths).T
+        return coords, cell_widths
 
 
 class IdefixVtkHierarchy(IdefixHierarchy):
