@@ -63,3 +63,21 @@ class StretchedGrid(AMRGridPatch):
             ]
         ).T
         return coords
+
+
+# a pure Python backport of a Cython routine
+def _obtain_coords_and_widths(icoords, ires, cell_widths, offset):
+    # This function only accepts *one* axis of icoords, because we will be
+    # looping over the axes in python.  This also simplifies cell_width
+    # allocation and computation.
+    fcoords = np.zeros(icoords.size, dtype="f8")
+    fwidth = np.zeros(icoords.size, dtype="f8")
+    cell_centers = np.zeros(cell_widths.size, dtype="f8")
+    pos = offset
+    for i in range(cell_widths.size):
+        cell_centers[i] = pos + 0.5 * cell_widths[i]
+        pos += cell_widths[i]
+    for i in range(icoords.size):
+        fcoords[i] = cell_centers[icoords[i]]
+        fwidth[i] = cell_widths[icoords[i]]
+    return fcoords, fwidth
