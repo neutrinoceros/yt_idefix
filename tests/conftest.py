@@ -1,19 +1,22 @@
 from __future__ import annotations
 
 import os
-import re
 import sys
+from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
 import pytest
 import unyt as un
 import yaml
+from packaging.version import Version
+
+UNYT_VERSION = Version(version("unyt"))
+NUMPY_VERSION = Version(version("numpy"))
 
 
 def pytest_configure(config):
-    if sys.version_info >= (3, 10):
-        # from numpy, still visible in 1.22.x
+    if sys.version_info >= (3, 10) and NUMPY_VERSION < Version("1.23"):
         config.addinivalue_line(
             "filterwarnings",
             (
@@ -22,36 +25,42 @@ def pytest_configure(config):
         )
 
 
-def parse_quantity(s) -> un.unyt_quantity:
-    # FUTURE: use unyt.unyt_quantity.from_string instead
-    # https://github.com/yt-project/unyt/pull/191
+if UNYT_VERSION >= Version("2.9.0"):
 
-    # This is partially adapted from the following SO thread
-    # https://stackoverflow.com/questions/41668588/regex-to-match-scientific-notation
-    _NUMB_PATTERN = r"^[+/-]?((?:0|[1-9]\d*)(?:\.\d*)?(?:[eE][+\-]?\d+)|\d*\.?\d+|\d+\.?\d*|nan\s|inf\s)"  # noqa: E501
-    # *all* greek letters are considered valid unit string elements.
-    # This may be an overshoot. We rely on unyt.Unit to do the actual validation
-    _UNIT_PATTERN = r"([α-ωΑ-Ωa-zA-Z]+(\*\*([+/-]?[0-9]+)|[*/])?)+"
-    _QUAN_PATTERN = rf"{_NUMB_PATTERN}\s*{_UNIT_PATTERN}"
-    _NUMB_REGEXP = re.compile(_NUMB_PATTERN)
-    _UNIT_REGEXP = re.compile(_UNIT_PATTERN)
-    _QUAN_REGEXP = re.compile(_QUAN_PATTERN)
+    def parse_quantity(s) -> un.unyt_quantity:
+        return un.unyt_quantity.from_string(s)
 
-    v = s.strip()
-    match = re.fullmatch(_NUMB_PATTERN, v)
-    if match is not None:
-        return float(match.group()) * un.Unit()
-    if not re.match(_QUAN_REGEXP, v):
-        raise ValueError(f"Received invalid quantity expression '{s}'.")
-    res = re.search(_NUMB_REGEXP, v)
-    if res is None:
-        raise ValueError
-    num = res.group()
-    res = re.search(_UNIT_REGEXP, v[res.span()[1] :])
-    if res is None:
-        raise ValueError
-    unit = res.group()
-    return float(num) * un.Unit(unit)
+else:
+
+    def parse_quantity(s) -> un.unyt_quantity:
+        import re
+
+        # This is partially adapted from the following SO thread
+        # https://stackoverflow.com/questions/41668588/regex-to-match-scientific-notation
+        _NUMB_PATTERN = r"^[+/-]?((?:0|[1-9]\d*)(?:\.\d*)?(?:[eE][+\-]?\d+)|\d*\.?\d+|\d+\.?\d*|nan\s|inf\s)"  # noqa: E501
+        # *all* greek letters are considered valid unit string elements.
+        # This may be an overshoot. We rely on unyt.Unit to do the actual validation
+        _UNIT_PATTERN = r"([α-ωΑ-Ωa-zA-Z]+(\*\*([+/-]?[0-9]+)|[*/])?)+"
+        _QUAN_PATTERN = rf"{_NUMB_PATTERN}\s*{_UNIT_PATTERN}"
+        _NUMB_REGEXP = re.compile(_NUMB_PATTERN)
+        _UNIT_REGEXP = re.compile(_UNIT_PATTERN)
+        _QUAN_REGEXP = re.compile(_QUAN_PATTERN)
+
+        v = s.strip()
+        match = re.fullmatch(_NUMB_PATTERN, v)
+        if match is not None:
+            return float(match.group()) * un.Unit()
+        if not re.match(_QUAN_REGEXP, v):
+            raise ValueError(f"Received invalid quantity expression '{s}'.")
+        res = re.search(_NUMB_REGEXP, v)
+        if res is None:
+            raise ValueError
+        num = res.group()
+        res = re.search(_UNIT_REGEXP, v[res.span()[1] :])
+        if res is None:
+            raise ValueError
+        unit = res.group()
+        return float(num) * un.Unit(unit)
 
 
 DATA_DIR = Path(__file__).parent / "data"
