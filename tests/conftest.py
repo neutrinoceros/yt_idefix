@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import re
 import sys
 from importlib.metadata import version
 from pathlib import Path
@@ -12,10 +11,12 @@ import unyt as un
 import yaml
 from packaging.version import Version
 
+UNYT_VERSION = Version(version("unyt"))
+NUMPY_VERSION = Version(version("numpy"))
+
 
 def pytest_configure(config):
-    if sys.version_info >= (3, 10):
-        # from numpy, still visible in 1.22.x
+    if sys.version_info >= (3, 10) and NUMPY_VERSION < Version("1.23"):
         config.addinivalue_line(
             "filterwarnings",
             (
@@ -24,7 +25,7 @@ def pytest_configure(config):
         )
 
 
-if Version(version("unyt")) >= Version("2.9.0"):
+if UNYT_VERSION >= Version("2.9.0"):
 
     def parse_quantity(s) -> un.unyt_quantity:
         return un.unyt_quantity.from_string(s)
@@ -32,6 +33,8 @@ if Version(version("unyt")) >= Version("2.9.0"):
 else:
 
     def parse_quantity(s) -> un.unyt_quantity:
+        import re
+
         # This is partially adapted from the following SO thread
         # https://stackoverflow.com/questions/41668588/regex-to-match-scientific-notation
         _NUMB_PATTERN = r"^[+/-]?((?:0|[1-9]\d*)(?:\.\d*)?(?:[eE][+\-]?\d+)|\d*\.?\d+|\d+\.?\d*|nan\s|inf\s)"  # noqa: E501
