@@ -223,7 +223,6 @@ class IdefixDataset(Dataset, ABC):
         filename,
         *,
         dataset_type: str | None = None,  # deleguated to child classes
-        file_style: str | None = None,
         units_override: dict[str, UnitLike] | None = None,
         unit_system: Literal["cgs", "mks", "code"] = "cgs",
         default_species_fields: Literal["neutral", "ionized"] | None = None,
@@ -240,7 +239,6 @@ class IdefixDataset(Dataset, ABC):
         super().__init__(
             filename,
             dataset_type=dt,
-            file_style=file_style,
             units_override=units_override,
             unit_system=unit_system,
             default_species_fields=default_species_fields,
@@ -464,7 +462,6 @@ class PlutoVtkDataset(IdefixVtkDataset):
         filename,
         *,
         dataset_type: str | None = None,  # deleguated to child classes
-        file_style: str | None = None,  # unused
         units_override: dict[str, UnitLike] | None = None,
         unit_system: Literal["cgs", "mks", "code"] = "cgs",
         default_species_fields: Literal["neutral", "ionized"] | None = None,
@@ -487,7 +484,6 @@ class PlutoVtkDataset(IdefixVtkDataset):
         super().__init__(
             filename,
             dataset_type=dataset_type,
-            file_style=file_style,
             units_override=units_override,
             unit_system=unit_system,
             geometry=geometry,
