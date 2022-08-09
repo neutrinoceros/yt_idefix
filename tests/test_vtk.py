@@ -217,40 +217,28 @@ def test_derived_field(vtk_file):
 def test_slice_plot(vtk_file):
     file = vtk_file
     ds = yt.load(file["path"], geometry=file["geometry"], unit_system="code")
-    if YT_VERSION <= Version("4.1.dev0"):
-        if ds.geometry == "spherical":
-            normal = "phi"
-        else:
-            normal = "z"
-        yt.SlicePlot(ds, normal=normal, fields=("gas", "density"))
+    if YT_VERSION < Version("4.1.dev0"):
+        yt.SlicePlot(ds, 2, fields=("gas", "density"))
     else:
         # this should work but it's broken with yt 4.0.x
         # it is fixed in https://github.com/yt-project/yt/pull/3489
         yt.SlicePlot(ds, normal=(0, 0, 1), fields=("gas", "density"))
 
 
-try:
-    from yt.data_objects.index_subobjects.stretched_grid import StretchedGrid
-except ImportError:
-    HAS_STRETCHED_GRID_SUPPORT = False
-else:
-    del StretchedGrid
-    HAS_STRETCHED_GRID_SUPPORT = True
-
-
 @pytest.mark.skipif(
-    not HAS_STRETCHED_GRID_SUPPORT,
+    YT_VERSION < Version("4.0.5"),
     reason=(
-        "with yt 4.0.4, this test breaks pytest at collection because a ResourceWarning is emitted.\n"
-        "It is resolved upstream in yt-project/yt#3997\n"
-        "note that the heuristic we're using to discover if the installed version of yt is fine at runtime "
-        "is more restritive than this. When yt 4.1 becomes the minimal supported version this should be cleanable"
+        "This test breaks at collection because a ResourceWarning is emitted.\n"
+        "It is resolved in yt 4.0.5"
     ),
 )
 def test_projection_plot(vtk_file):
     file = vtk_file
     ds = yt.load(file["path"], geometry=file["geometry"], unit_system="code")
-    yt.ProjectionPlot(ds, normal=(0, 0, 1), fields=("gas", "density"))
+    if YT_VERSION < Version("4.1.dev0"):
+        yt.ProjectionPlot(ds, 2, fields=("gas", "density"))
+    else:
+        yt.ProjectionPlot(ds, normal=(0, 0, 1), fields=("gas", "density"))
 
 
 def test_load_magic(vtk_file):
