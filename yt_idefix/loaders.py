@@ -1,64 +1,32 @@
 from __future__ import annotations
 
-import os
 import warnings
 
 import numpy as np
-from packaging.version import Version
 
-import yt
-from yt.utilities.exceptions import YTUnidentifiedDataType
 from yt_idefix._io import vtk_io
 from yt_idefix.data_structures import IdefixVtkDataset, PlutoVtkDataset
 
 __all__ = ["load", "load_stretched"]
 
 
-YT_VERSION = Version(yt.__version__)
-
-
 class VisibleDeprecationWarning(Warning):
     pass
 
 
-class IdefixVtkDatasetSeries(yt.DatasetSeries):
-    _dataset_cls = IdefixVtkDataset
-
-
 def load(fn, *args, **kwargs):
-    msg = (
-        "yt_idefix.load is a diminished wrapper for to yt.load, "
-        "and is not necessary with yt > 4.0.2\nplease "
-    )
+    import yt
 
-    if YT_VERSION <= Version("4.0.2"):
-        msg += "upgrade yt and "
-    msg += "use yt.load instead"
-    msg += (
-        "yt_idefix.load was deprecated in version 0.11.0 "
-        "and will be removed completely in a future version"
-    )
     warnings.warn(
-        msg,
+        "yt_idefix.load is a diminished wrapper for to yt.load, "
+        "please use yt.load instead.\n"
+        "yt_idefix.load was deprecated in version 0.11.0 "
+        "and will be removed completely in a future version",
         category=VisibleDeprecationWarning,
         stacklevel=2,
     )
 
-    fn = os.path.expanduser(fn)
-    if not os.path.exists(fn):
-        raise FileNotFoundError(fn)
-
-    if YT_VERSION < Version("4.0.2") and fn.endswith(".vtk"):
-        if any(wildcard in fn for wildcard in "[]?!*"):
-            return IdefixVtkDatasetSeries(fn, *args, **kwargs)
-        elif IdefixVtkDataset._is_valid(fn, *args, **kwargs):
-            return IdefixVtkDataset(fn, *args, **kwargs)
-        elif PlutoVtkDataset._is_valid(fn, *args, **kwargs):
-            return PlutoVtkDataset(fn, *args, **kwargs)
-        else:
-            raise YTUnidentifiedDataType(fn, *args, **kwargs)
-    else:
-        return yt.load(fn, *args, **kwargs)
+    return yt.load(fn, *args, **kwargs)
 
 
 def load_stretched(fn, *, geometry: str | None = None, **kwargs):
@@ -70,6 +38,8 @@ def load_stretched(fn, *, geometry: str | None = None, **kwargs):
     - no lazy-loading (all data has to reside in memory)
     - only supports vtk outputs (not dumps)
     """
+    import yt
+
     warnings.warn(
         "yt_idefix.load_strecthed is deprecated "
         "and will be removed completely in a future version. "
