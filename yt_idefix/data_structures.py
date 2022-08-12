@@ -7,13 +7,13 @@ import warnings
 import weakref
 from abc import ABC, abstractmethod
 from functools import cached_property
+from importlib.metadata import version
 from typing import Literal, Sequence
 
 import inifix
 import numpy as np
 from packaging.version import Version
 
-import yt
 from yt.data_objects.static_output import Dataset
 from yt.funcs import setdefaultattr
 from yt.geometry.grid_geometry_handler import GridIndex
@@ -42,7 +42,8 @@ from .io import IdefixDmpIO, IdefixVtkIO, PlutoVtkIO  # noqa
 
 ytLogger = logging.getLogger("yt")
 
-YT_VERSION = Version(yt.__version__)
+
+YT_VERSION = Version(version("yt"))
 
 
 class IdefixGrid(StretchedGrid):
