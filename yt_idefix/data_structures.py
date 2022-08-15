@@ -90,8 +90,10 @@ class IdefixHierarchy(GridIndex, ABC):
         self.grid_right_edge[0][:] = self.ds.domain_right_edge[:]
         self.grid_dimensions[0][:] = self.ds.domain_dimensions[:]
         self.grid_particle_count[0][0] = 0
-        self.grid_levels[0][0] = 1
-        self.max_level = 1
+
+        # Idefix/Pluto are not AMR
+        self.grid_levels[0][0] = 0
+        self.min_level = self.max_level = 0
 
         self._field_offsets = self._get_field_offset_index()
 
