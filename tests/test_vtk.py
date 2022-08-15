@@ -1,5 +1,6 @@
 import os
 import re
+from importlib.metadata import version
 
 import pytest
 from more_itertools import distinct_combinations
@@ -11,7 +12,7 @@ import yt_idefix
 from yt_idefix.api import IdefixVtkDataset, PlutoVtkDataset
 from yt_idefix.loaders import VisibleDeprecationWarning
 
-YT_VERSION = Version(yt.__version__)
+YT_VERSION = Version(version("yt"))
 
 # A sample list of units for test.
 # The first three values are chosen randomly
