@@ -32,7 +32,7 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Setup package
+    - name: Build
       run: |
         python3 -m pip install -U pip
         python3 -m pip install ".[test]"

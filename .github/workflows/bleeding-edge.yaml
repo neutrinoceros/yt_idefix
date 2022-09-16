@@ -42,13 +42,9 @@ jobs:
         python -m pip install --upgrade setuptools wheel
         python -m pip install git+https://github.com/yt-project/yt.git
 
-    - name: Build yt
-      # --no-build-isolation is used to guarantee that build time dependencies
-      # are not installed by pip as specified from pyproject.toml, hence we get
-      # to use the dev version of numpy at build time.
+    - name: Build
       run: |
-        python setup.py build_ext -q -j2
-        python -m pip install  ".[test]" --no-build-isolation
+        python -m pip install  ".[test]"
 
     - name: Run Tests
       run: pytest --color=yes
