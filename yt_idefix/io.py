@@ -3,16 +3,9 @@ from typing import BinaryIO, Tuple, cast
 
 import numpy as np
 
-from yt.utilities.io_handler import BaseIOHandler
+from yt.utilities.io_handler import BaseIOHandler, BaseParticleIOHandler
 
 from ._io import dmp_io, vtk_io
-
-try:
-    from yt.utilities.io_handler import BaseParticleIOHandler
-except ImportError:
-    from ._vendors.base_particle_io_handler import (
-        BaseParticleIOHandler,  # type: ignore [no-redef]
-    )
 
 
 class SingleGridIO(BaseIOHandler, ABC):
