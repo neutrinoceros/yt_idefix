@@ -25,44 +25,6 @@ def pytest_configure(config):
         )
 
 
-if UNYT_VERSION >= Version("2.9.0"):
-
-    def parse_quantity(s) -> un.unyt_quantity:
-        return un.unyt_quantity.from_string(s)
-
-else:
-
-    def parse_quantity(s) -> un.unyt_quantity:
-        import re
-
-        # This is partially adapted from the following SO thread
-        # https://stackoverflow.com/questions/41668588/regex-to-match-scientific-notation
-        _NUMB_PATTERN = r"^[+/-]?((?:0|[1-9]\d*)(?:\.\d*)?(?:[eE][+\-]?\d+)|\d*\.?\d+|\d+\.?\d*|nan\s|inf\s)"  # noqa: E501
-        # *all* greek letters are considered valid unit string elements.
-        # This may be an overshoot. We rely on unyt.Unit to do the actual validation
-        _UNIT_PATTERN = r"([α-ωΑ-Ωa-zA-Z]+(\*\*([+/-]?[0-9]+)|[*/])?)+"
-        _QUAN_PATTERN = rf"{_NUMB_PATTERN}\s*{_UNIT_PATTERN}"
-        _NUMB_REGEXP = re.compile(_NUMB_PATTERN)
-        _UNIT_REGEXP = re.compile(_UNIT_PATTERN)
-        _QUAN_REGEXP = re.compile(_QUAN_PATTERN)
-
-        v = s.strip()
-        match = re.fullmatch(_NUMB_PATTERN, v)
-        if match is not None:
-            return float(match.group()) * un.Unit()
-        if not re.match(_QUAN_REGEXP, v):
-            raise ValueError(f"Received invalid quantity expression '{s}'.")
-        res = re.search(_NUMB_REGEXP, v)
-        if res is None:
-            raise ValueError
-        num = res.group()
-        res = re.search(_UNIT_REGEXP, v[res.span()[1] :])
-        if res is None:
-            raise ValueError
-        unit = res.group()
-        return float(num) * un.Unit(unit)
-
-
 DATA_DIR = Path(__file__).parent / "data"
 
 VTK_FILES: dict[str, dict[str, Any]] = {}
@@ -76,7 +38,7 @@ def load_meta(pdir, meta_file):
     if "units" in metadata["attrs"]:
         keys = list(metadata["attrs"]["units"].keys())
         for u in keys:
-            metadata["attrs"]["units"][u] = parse_quantity(
+            metadata["attrs"]["units"][u] = un.unyt_quantity.from_string(
                 metadata["attrs"]["units"][u]
             )
     return metadata
