@@ -8,7 +8,7 @@ import weakref
 from abc import ABC, abstractmethod
 from functools import cached_property
 from importlib.metadata import version
-from typing import Literal, Sequence
+from typing import Literal
 
 import inifix
 import numpy as np
@@ -147,7 +147,14 @@ class IdefixHierarchy(GridIndex, ABC):
         # with unit "code_length" and dtype float64
         ...
 
-    def _icoords_to_fcoords(self, icoords, ires, axes: Sequence[int] = (0, 1, 2)):
+    def _icoords_to_fcoords(
+        self,
+        icoords: np.ndarray,
+        ires: np.ndarray,
+        axes: tuple[int, ...] | None = None,
+    ):
+        if axes is None:
+            axes = (0, 1, 2)
         # this is needed to support projections
         coords = np.empty(icoords.shape, dtype="f8")
         cell_widths = np.empty(icoords.shape, dtype="f8")
