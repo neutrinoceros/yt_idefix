@@ -37,13 +37,10 @@ version 0.12.0 brings experimental *native* support for streched grids, which is
 active development upstream, in yt itself.
 
 Slices should now work seamlessly even with older versions of yt, however
-yt 4.1 (to be released) will be required to perform projections correctly.
+yt 4.1 will be required to perform projections correctly.
 
-In the meantime, I recommend installing yt from source. At the time of writing,
-the branch attached to the following pull request is required for projections with
-stretched grids:
+**update**: yt_idefix 0.13.3 is the last release allowing yt 4.0.x, yt_idefix 0.14.0 requires yt 4.1
 
-https://github.com/yt-project/yt/pull/2998
 
 ### yt_idefix 0.11 and older (deprecated)
 

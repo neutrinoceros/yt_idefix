@@ -7,16 +7,16 @@ import warnings
 import weakref
 from abc import ABC, abstractmethod
 from functools import cached_property
-from importlib.metadata import version
 from typing import Literal
 
 import inifix
 import numpy as np
-from packaging.version import Version
 
+from yt.data_objects.index_subobjects.stretched_grid import StretchedGrid
 from yt.data_objects.static_output import Dataset
 from yt.funcs import setdefaultattr
 from yt.geometry.grid_geometry_handler import GridIndex
+from yt.utilities.lib.misc_utilities import _obtain_coords_and_widths
 from yt_idefix._typing import UnitLike
 
 from ._io import C_io, dmp_io, vtk_io
@@ -24,26 +24,11 @@ from ._io.commons import IdefixFieldProperties, IdefixMetadata
 from .definitions import _PlutoBaseUnits, pluto_def_constants
 from .fields import BaseVtkFields, IdefixDmpFields, IdefixVtkFields, PlutoVtkFields
 
-try:
-    from yt.data_objects.index_subobjects.stretched_grid import StretchedGrid
-except ImportError:
-    from ._vendors.streched_grids import StretchedGrid  # type: ignore [no-redef]
-
-try:
-    from yt.utilities.lib.misc_utilities import _obtain_coords_and_widths
-except ImportError:
-    from ._vendors.streched_grids import (
-        _obtain_coords_and_widths,  # type: ignore [no-redef]
-    )
-
 # import IO classes to ensure they are properly registered,
 # even though we don't call them directly
 from .io import IdefixDmpIO, IdefixVtkIO, PlutoVtkIO  # noqa
 
 ytLogger = logging.getLogger("yt")
-
-
-YT_VERSION = Version(version("yt"))
 
 
 class IdefixGrid(StretchedGrid):
@@ -55,13 +40,6 @@ class IdefixGrid(StretchedGrid):
         self.Children = []
         self.Level = level
         self.ActiveDimensions = dims
-
-    def __repr__(self):
-        if YT_VERSION >= Version("4.1"):
-            # https://github.com/yt-project/yt/pull/3936
-            return super().__repr__()
-        else:
-            return "IdefixGrid_%04i (%s)" % (self.id, self.ActiveDimensions)
 
 
 class IdefixHierarchy(GridIndex, ABC):
@@ -486,10 +464,6 @@ class PlutoVtkDataset(IdefixVtkDataset):
             self._definitions_header = os.fspath(definitions_header)
         else:
             self._definitions_header = None
-
-        if YT_VERSION < Version("4.1.dev0"):
-            # https://github.com/yt-project/yt/pull/3772
-            filename = os.path.abspath(os.path.expanduser(filename))
 
         super().__init__(
             filename,

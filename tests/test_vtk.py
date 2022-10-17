@@ -1,18 +1,14 @@
 import os
 import re
-from importlib.metadata import version
 
 import pytest
 from more_itertools import distinct_combinations
-from packaging.version import Version
 from unyt import Unit, assert_allclose_units
 
 import yt
 import yt_idefix
 from yt_idefix.api import IdefixVtkDataset, PlutoVtkDataset
 from yt_idefix.loaders import VisibleDeprecationWarning
-
-YT_VERSION = Version(version("yt"))
 
 # A sample list of units for test.
 # The first three values are chosen randomly
@@ -218,28 +214,13 @@ def test_derived_field(vtk_file):
 def test_slice_plot(vtk_file):
     file = vtk_file
     ds = yt.load(file["path"], geometry=file["geometry"], unit_system="code")
-    if YT_VERSION < Version("4.1.dev0"):
-        yt.SlicePlot(ds, 2, fields=("gas", "density"))
-    else:
-        # this should work but it's broken with yt 4.0.x
-        # it is fixed in https://github.com/yt-project/yt/pull/3489
-        yt.SlicePlot(ds, normal=(0, 0, 1), fields=("gas", "density"))
+    yt.SlicePlot(ds, normal=(0, 0, 1), fields=("gas", "density"))
 
 
-@pytest.mark.skipif(
-    YT_VERSION < Version("4.0.5"),
-    reason=(
-        "This test breaks at collection because a ResourceWarning is emitted.\n"
-        "It is resolved in yt 4.0.5"
-    ),
-)
 def test_projection_plot(vtk_file):
     file = vtk_file
     ds = yt.load(file["path"], geometry=file["geometry"], unit_system="code")
-    if YT_VERSION < Version("4.1.dev0"):
-        yt.ProjectionPlot(ds, 2, fields=("gas", "density"))
-    else:
-        yt.ProjectionPlot(ds, normal=(0, 0, 1), fields=("gas", "density"))
+    yt.ProjectionPlot(ds, normal=(0, 0, 1), fields=("gas", "density"))
 
 
 def test_load_magic(vtk_file):
