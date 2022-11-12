@@ -3,8 +3,8 @@
 id: cataclysmic_disk
 attrs:
   path: data.0086.vtk
-  has_geometry: False
+  has_geometry: false
   geometry: polar
   dimensionality: 2
   kind: idefix
-  has_units: False
+  has_units: false

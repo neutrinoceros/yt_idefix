@@ -1,9 +1,65 @@
 [build-system]
 requires = [
-  "setuptools>=19.6",
-  # see https://github.com/numpy/numpy/pull/18389
-  "wheel>=0.36.2",
+    "setuptools>=61.2",
 ]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "yt_idefix"
+version = "0.14.0"
+description = "An extension module for yt, adding a frontend for Idefix"
+authors = [
+    { name = "C.M.T. Robert" },
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Environment :: Console",
+    "Framework :: Matplotlib",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: POSIX :: AIX",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Typing :: Typed",
+]
+keywords = [
+    "astronomy astrophysics visualization amr adaptivemeshrefinement",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "inifix>=2.3.0",
+    "numpy>=1.17.3",
+    "yt>=4.1.0",
+]
+
+[project.license]
+text = "GPL-3.0"
+
+[project.optional-dependencies]
+test = [
+    "more-itertools>=8.4",
+    "pyaml>=17.10.0",
+    "pytest>=7.0",
+    "unyt>=2.9.2",
+]
+typecheck = [
+    "mypy==0.971",
+]
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.urls]
+Homepage = "https://yt-project.org/"
+Documentation = "https://yt-project.org/docs/dev/"
+Source = "https://github.com/neutrinoceros/yt_idefix"
+Tracker = "https://github.com/neutrinoceros/yt_idefix/issues"
 
 [tool.black]
 line-length = 88
@@ -30,11 +86,10 @@ exclude = '''
 | yt/visualization/_colormap_data.py
 '''
 
-
 [tool.isort]
 profile = "black"
 combine_as_imports = true
-skip =  ["venv", "benchmarks"]
+skip = ["venv", "benchmarks"]
 known_third_party = [
   "IPython",
   "nose",
@@ -54,10 +109,14 @@ known_third_party = [
 known_first_party = ["yt"]
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
 
-# The -s option prevents pytest from capturing output sent to stdout
-# -v runs pytest in verbose mode
-# -rsfE: The -r tells pytest to provide extra test summary info on the events
-# specified by the characters following the r. s: skipped, f: failed, E: error
+[tool.mypy]
+python_version = 3.8
+show_error_codes = true
+ignore_missing_imports = true # remove once yt 4.1.0 is released
+warn_unused_configs = true
+warn_unreachable = true
+show_error_context = true
+
 [tool.pytest.ini_options]
 addopts = '''
     -s
@@ -75,12 +134,16 @@ filterwarnings = [
     "ignore: The register_cmap function will be deprecated in a future version.:PendingDeprecationWarning"
 ]
 
+[tool.setuptools]
+license-files = [
+    "LICENSE",
+]
+include-package-data = false
 
-[tool.mypy]
-python_version = 3.8
-show_error_codes = true
-ignore_missing_imports = true # remove once yt 4.1.0 is released
-warn_unused_configs = true
-# warn_unused_ignores = true # uncomment when minimal supported version is yt 4.1 or newer
-warn_unreachable = true
-show_error_context = true
+[tool.setuptools.package-data]
+yt_idefix = [
+    "py.typed",
+]
+
+[tool.setuptools.packages.find]
+namespaces = false

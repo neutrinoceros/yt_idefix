@@ -6,4 +6,4 @@ attrs:
   geometry: cartesian
   dimensionality: 2
   kind: idefix
-  has_units: False
+  has_units: false
