@@ -1,15 +1,15 @@
 id: rotor
 attrs:
   path: data.0030.vtk
-  has_geometry: True
+  has_geometry: true
   geometry: polar
   dimensionality: 2
   kind: pluto
-  has_units: False
+  has_units: false
   units:
-    length: "1.0 cm"
-    velocity: "1.0 cm/s"
-    density: "1.0 g/cm**3"
-    mass: "1.0 g"
-    time: "1.0 s"
-    magnetic: "3.544907701811 G"
+    length: 1.0 cm
+    velocity: 1.0 cm/s
+    density: 1.0 g/cm**3
+    mass: 1.0 g
+    time: 1.0 s
+    magnetic: 3.544907701811 G

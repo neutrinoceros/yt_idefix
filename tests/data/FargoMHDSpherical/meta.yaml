@@ -2,8 +2,8 @@
 id: spherical_disk
 attrs:
   path: data.0010.vtk
-  has_geometry: True
+  has_geometry: true
   geometry: spherical
   dimensionality: 3
   kind: idefix
-  has_units: False
+  has_units: false
