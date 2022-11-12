@@ -15,6 +15,7 @@ repos:
   - id: end-of-file-fixer
   - id: no-commit-to-branch
   - id: debug-statements
+  - id: check-merge-conflict
 - repo: https://github.com/neutrinoceros/inifix.git
   rev: v3.0.0
   hooks:
