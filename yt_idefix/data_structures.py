@@ -326,7 +326,6 @@ class IdefixDataset(Dataset, ABC):
         regexp = self.__class__._version_regexp
 
         match = re.search(regexp, header)
-        version: str
         if match is None:
             warnings.warn(
                 f"Could not determine code version from file header {header!r}"
