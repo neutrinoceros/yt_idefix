@@ -144,7 +144,7 @@ def test_pluto_over_units_override(pluto_vtk_file):
 def test_pluto_wrong_definitions_header(pluto_vtk_file):
     with pytest.raises(
         FileNotFoundError,
-        match=("No such file 'definitions2.h'"),
+        match=(r".*No such file or directory: '.*definitions2\.h'"),
     ):
         yt.load(pluto_vtk_file["path"], definitions_header="definitions2.h")
 
