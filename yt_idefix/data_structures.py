@@ -124,14 +124,14 @@ class IdefixHierarchy(GridIndex, ABC):
 
     @abstractmethod
     @cached_property
-    def _cell_widths(self):
+    def _cell_widths(self) -> tuple[XSpans, YSpans, ZSpans]:
         # must return a 3-tuple of 1D unyt_array
         # with unit "code_length" and dtype float64
         ...
 
     @abstractmethod
     @cached_property
-    def _cell_centers(self):
+    def _cell_centers(self) -> tuple[XCoords, YCoords, ZCoords]:
         # must return a 3-tuple of 1D unyt_array
         # with unit "code_length" and dtype float64
         ...
@@ -212,16 +212,24 @@ class IdefixDmpHierarchy(IdefixHierarchy):
             return dmp_io.get_field_offset_index(fh)
 
     @cached_property
-    def _cell_widths(self):
+    def _cell_widths(self) -> tuple[XSpans, YSpans, ZSpans]:
         _fprops, fdata = dmp_io.read_idefix_dmpfile(self.index_filename, skip_data=True)
         length_unit = self.ds.quan(1, "code_length")
-        return tuple((fdata[f"xr{d}"] - fdata[f"xl{d}"]) * length_unit for d in "123")
+        return (
+            (fdata["xr1"] - fdata["xl1"]) * length_unit,
+            (fdata["xr2"] - fdata["xl2"]) * length_unit,
+            (fdata["xr3"] - fdata["xl3"]) * length_unit,
+        )
 
     @cached_property
-    def _cell_centers(self):
+    def _cell_centers(self) -> tuple[XCoords, YCoords, ZCoords]:
         _fprops, fdata = dmp_io.read_idefix_dmpfile(self.index_filename, skip_data=True)
         length_unit = self.ds.quan(1, "code_length")
-        return tuple(fdata[f"x{d}"] * length_unit for d in "123")
+        return (
+            fdata["x1"] * length_unit,
+            fdata["x2"] * length_unit,
+            fdata["x3"] * length_unit,
+        )
 
 
 class IdefixDataset(Dataset, ABC):
