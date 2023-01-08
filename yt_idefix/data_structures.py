@@ -576,8 +576,25 @@ class PlutoVtkDataset(IdefixVtkDataset):
             elif (unit_match := re.fullmatch(unit_regexp, line)) is not None:
                 unit = unit_match.group(1).lower() + "_unit"
                 expr = unit_match.group(2)
+                # Before evaluating the expression, replace the input parameters,
+                # pre-defined constants, code units and sqrt function
+                # that cannot be resolved. The order doesn't matter.
+                expr = re.sub(r"g_inputParam\[(\w+)\]", self._get_input_parameter, expr)
+                expr = re.sub(r"CONST_\w+", self._get_constants, expr)
+                expr = re.sub(r"UNIT_(\w+)", self._get_unit, expr)
+                expr = re.sub(r"sqrt", "np.sqrt", expr)
                 expr = re.sub(constexpr, self._get_constants, expr)
                 self.parameters[unit] = eval(expr)
+
+    def _get_input_parameter(self, match: re.Match) -> str:
+        """Replace matched input parameters with its value"""
+        key = match.group(1)
+        return str(self.parameters["Parameters"][key])
+
+    def _get_unit(self, match: re.Match) -> str:
+        """Replace matched unit with its value"""
+        key = match.group(1).lower() + "_unit"
+        return str(self.parameters.get(key, 1.0))
 
     def _get_constants(self, match: re.Match) -> str:
         """Replace matched constant string with its value"""
