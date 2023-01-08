@@ -8,7 +8,7 @@ import weakref
 from abc import ABC, abstractmethod
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Final, Literal
 
 import inifix
 import numpy as np
@@ -40,6 +40,8 @@ if TYPE_CHECKING:
     ZCoords = np.ndarray
 
 ytLogger = logging.getLogger("yt")
+_DEF_GEOMETRY_REGEXP: Final = re.compile(r"^\s*#define\s+GEOMETRY\s+([A-Z]+)")
+_DEF_UNIT_REGEXP: Final = re.compile(r"^\s*#define\s+UNIT_(\w+)\s+(\S+)")
 
 
 class IdefixGrid(StretchedGrid):
@@ -315,26 +317,38 @@ class IdefixDataset(Dataset, ABC):
         self._setup_geometry()
 
     def _setup_geometry(self) -> None:
-        from_file = self.parameters.get("geometry")
-        from_user = self._geometry_from_user
-        if from_file is None and from_user is None:
+        from_bin = self.parameters.get("geometry")
+        from_definitions = self.parameters["definitions"].get("geometry")
+        from_input = self._geometry_from_user
+
+        if len({from_definitions, from_bin} - {None}) > 1:
+            raise RuntimeError(
+                "Geometries from disk file and definitions header do not match, got\n"
+                f" - {from_bin!r} (from {self.parameter_filename})\n"
+                f" - {from_definitions!r} (from {self._definitions_header})"
+            )
+
+        from_disk = from_bin or from_definitions
+
+        if from_disk is None and from_input is None:
             raise ValueError(
-                "Geometry couldn't be parsed from file. "
+                "Geometry couldn't be parsed from disk. "
                 "The 'geometry' keyword argument must be specified."
             )
-        elif from_user is not None:
-            if from_file is not None and from_user != from_user:
+
+        if from_input is not None:
+            if len({from_disk, from_input} - {None}) > 1:
                 warnings.warn(
-                    f"Got inconsistent geometry flags:\n"
-                    f" - {from_file!r} (from file)\n"
-                    f" - {from_user!r} (from user)\n"
-                    "user-input prevails to allow working around hypothetical parsing bugs, "
+                    "Geometries from disk and input do not match, got\n"
+                    f" - {from_disk!r} (from disk)\n"
+                    f" - {from_input!r} (from input)\n"
+                    "input prevails to allow working around hypothetical parsing bugs, "
                     "but it is very likely to result in an error in the general case."
                 )
-            self.geometry = from_user
+            self.geometry = from_input
         else:
-            assert from_file is not None
-            self.geometry = from_file
+            assert from_disk is not None
+            self.geometry = from_disk
 
     def _parse_inifile(self) -> None:
         if not self._inifile:
@@ -353,13 +367,19 @@ class IdefixDataset(Dataset, ABC):
             if any(_ != "u" for _ in vals[3::3]):
                 msg_elems.append(f"found non-uniform block(s) in direction {ax}")
 
-    @abstractmethod
     def _parse_definitions_header(self) -> None:
+        self.parameters["definitions"] = {}
         if not self._definitions_header:
             return
 
-        with open(self._definitions_header) as fh:  # noqa F841
-            ...
+        with open(self._definitions_header) as fh:
+            body = fh.read()
+        lines = C_io.strip_comments(body).split("\n")
+
+        for line in lines:
+            if (geom_match := re.fullmatch(_DEF_GEOMETRY_REGEXP, line)) is not None:
+                self.parameters["definitions"]["geometry"] = geom_match.group(1).lower()
+                return
 
     def _set_code_unit_attributes(self):
         # This is where quantities are created that represent the various
@@ -418,10 +438,6 @@ class IdefixVtkDataset(IdefixDataset):
         else:
             return cls._required_header_keyword in header
 
-    def _parse_definitions_header(self) -> None:
-        # this method is required for IdefixDataset, but currently not used
-        return
-
     def _read_data_header(self) -> str:
         return vtk_io.read_header(self.parameter_filename)
 
@@ -473,10 +489,6 @@ class IdefixDmpDataset(IdefixDataset):
             return re.match(r"Idefix .* Dump Data", header_string) is not None
         except Exception:
             return False
-
-    def _parse_definitions_header(self) -> None:
-        # this method is required for IdefixDataset, but currently not used
-        return
 
     def _get_fields_metadata(self) -> tuple[IdefixFieldProperties, IdefixMetadata]:
         # read everything except large arrays
@@ -555,6 +567,7 @@ class PlutoVtkDataset(IdefixVtkDataset):
 
     def _parse_definitions_header(self) -> None:
         """Read some metadata from header file 'definitions.h'."""
+        self.parameters["definitions"] = {}
         if not self._definitions_header:
             ytLogger.warning(
                 "%s was not found. Code units will be set to 1.0 in cgs.",
@@ -562,18 +575,14 @@ class PlutoVtkDataset(IdefixVtkDataset):
             )
             return
 
-        geom_regexp = re.compile(r"^\s*#define\s+GEOMETRY\s+([A-Z]+)")
-        unit_regexp = re.compile(r"^\s*#define\s+UNIT_(\w+)\s+(\S+)")
-        constexpr = re.compile(r"CONST_\w+")
-
         with open(self._definitions_header) as fh:
             body = fh.read()
         lines = C_io.strip_comments(body).split("\n")
 
         for line in lines:
-            if (geom_match := re.fullmatch(geom_regexp, line)) is not None:
-                self.parameters["geometry"] = geom_match.group(1).lower()
-            elif (unit_match := re.fullmatch(unit_regexp, line)) is not None:
+            if (geom_match := re.fullmatch(_DEF_GEOMETRY_REGEXP, line)) is not None:
+                self.parameters["definitions"]["geometry"] = geom_match.group(1).lower()
+            elif (unit_match := re.fullmatch(_DEF_UNIT_REGEXP, line)) is not None:
                 unit = unit_match.group(1).lower() + "_unit"
                 expr = unit_match.group(2)
                 # Before evaluating the expression, replace the input parameters,
@@ -583,8 +592,7 @@ class PlutoVtkDataset(IdefixVtkDataset):
                 expr = re.sub(r"CONST_\w+", self._get_constants, expr)
                 expr = re.sub(r"UNIT_(\w+)", self._get_unit, expr)
                 expr = re.sub(r"sqrt", "np.sqrt", expr)
-                expr = re.sub(constexpr, self._get_constants, expr)
-                self.parameters[unit] = eval(expr)
+                self.parameters["definitions"][unit] = eval(expr)
 
     def _get_input_parameter(self, match: re.Match) -> str:
         """Replace matched input parameters with its value"""
@@ -594,7 +602,7 @@ class PlutoVtkDataset(IdefixVtkDataset):
     def _get_unit(self, match: re.Match) -> str:
         """Replace matched unit with its value"""
         key = match.group(1).lower() + "_unit"
-        return str(self.parameters.get(key, 1.0))
+        return str(self.parameters["definitions"].get(key, 1.0))
 
     def _get_constants(self, match: re.Match) -> str:
         """Replace matched constant string with its value"""
@@ -611,14 +619,11 @@ class PlutoVtkDataset(IdefixVtkDataset):
         # Default values of Pluto's base units which are stored in self.parameters
         # if they can be read from definitions.h
         # Otherwise, they are set to unity in cgs.
+        defs = self.parameters["definitions"]
         pluto_units = {
-            "velocity_unit": self.quan(
-                self.parameters.get("velocity_unit", 1.0), "cm/s"
-            ),
-            "density_unit": self.quan(
-                self.parameters.get("density_unit", 1.0), "g/cm**3"
-            ),
-            "length_unit": self.quan(self.parameters.get("length_unit", 1.0), "cm"),
+            "velocity_unit": self.quan(defs.get("velocity_unit", 1.0), "cm/s"),
+            "density_unit": self.quan(defs.get("density_unit", 1.0), "g/cm**3"),
+            "length_unit": self.quan(defs.get("length_unit", 1.0), "cm"),
         }
 
         uo_size = len(self.units_override)
