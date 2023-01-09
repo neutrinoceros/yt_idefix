@@ -37,6 +37,13 @@ dependencies = [
     "yt>=4.1.0",
 ]
 
+[project.entry-points."yt.frontends"]
+# these entry points require yt 4.2 (unreleased at the time of writing)
+# they are included early for testing purposes
+IdefixDmpkDataset = "yt_idefix.api:IdefixDmpDataset"
+IdefixVtkDataset = "yt_idefix.api:IdefixVtkDataset"
+PlutoVtkDataset = "yt_idefix.api:PlutoVtkDataset"
+
 [project.license]
 text = "GPL-3.0"
 
