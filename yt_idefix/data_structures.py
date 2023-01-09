@@ -317,11 +317,11 @@ class IdefixDataset(Dataset, ABC):
         self._setup_geometry()
 
     def _setup_geometry(self) -> None:
-        from_bin = self.parameters.get("geometry")
-        from_definitions = self.parameters["definitions"].get("geometry")
-        from_input = self._geometry_from_user
+        from_bin = self.parameters.get("geometry", "")
+        from_definitions = self.parameters["definitions"].get("geometry", "")
+        from_input = self._geometry_from_user or ""
 
-        if len({from_definitions, from_bin} - {None}) > 1:
+        if from_definitions and from_bin and from_bin != from_definitions:
             raise RuntimeError(
                 "Geometries from disk file and definitions header do not match, got\n"
                 f" - {from_bin!r} (from {self.parameter_filename})\n"
@@ -330,14 +330,14 @@ class IdefixDataset(Dataset, ABC):
 
         from_disk = from_bin or from_definitions
 
-        if from_disk is None and from_input is None:
+        if not any((from_disk, from_input)):
             raise ValueError(
                 "Geometry couldn't be parsed from disk. "
                 "The 'geometry' keyword argument must be specified."
             )
 
-        if from_input is not None:
-            if len({from_disk, from_input} - {None}) > 1:
+        if from_input:
+            if from_disk and from_input and from_input != from_disk:
                 warnings.warn(
                     "Geometries from disk and input do not match, got\n"
                     f" - {from_disk!r} (from disk)\n"
@@ -347,7 +347,7 @@ class IdefixDataset(Dataset, ABC):
                 )
             self.geometry = from_input
         else:
-            assert from_disk is not None
+            assert from_disk
             self.geometry = from_disk
 
     def _parse_inifile(self) -> None:
