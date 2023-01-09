@@ -342,16 +342,6 @@ class IdefixDataset(Dataset, ABC):
 
         with open(self._inifile, "rb") as fh:
             self.parameters.update(inifix.load(fh))
-        grid_ini = self.parameters["Grid"]
-
-        msg_elems: list[str] = []
-        for ax, vals in grid_ini.items():
-            if vals[0] > 1:
-                # more than one block is only relevant for mixing grid spacings,
-                # but only "u" is supported
-                msg_elems.append(f"found multiple blocks in direction {ax}; got {vals}")
-            if any(_ != "u" for _ in vals[3::3]):
-                msg_elems.append(f"found non-uniform block(s) in direction {ax}")
 
     @abstractmethod
     def _parse_definitions_header(self) -> None:
