@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "yt_idefix"
-version = "0.14.0"
+version = "0.15.0"
 description = "An extension module for yt, adding a frontend for Idefix"
 authors = [
     { name = "C.M.T. Robert" },
