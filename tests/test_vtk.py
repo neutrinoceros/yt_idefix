@@ -176,7 +176,7 @@ def test_load_missing_geometry_metadata(vtk_file_no_geom):
     with pytest.raises(
         ValueError,
         match=(
-            "Geometry couldn't be parsed from file. "
+            "Geometry couldn't be parsed from disk. "
             "The 'geometry' keyword argument must be specified."
         ),
     ):
