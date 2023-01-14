@@ -37,6 +37,11 @@ dependencies = [
     "yt>=4.1.0",
 ]
 
+[project.optional-dependencies]
+experimental = [
+  "yt@git+https://github.com/yt-project/yt.git#egg=main",
+]
+
 [project.entry-points."yt.frontends"]
 # these entry points require yt 4.2 (unreleased at the time of writing)
 # they are included early for testing purposes
@@ -47,16 +52,6 @@ PlutoVtkDataset = "yt_idefix.api:PlutoVtkDataset"
 [project.license]
 text = "GPL-3.0"
 
-[project.optional-dependencies]
-test = [
-    "more-itertools>=8.4",
-    "pyaml>=17.10.0",
-    "pytest>=7.0",
-    "unyt>=2.9.2",
-]
-typecheck = [
-    "mypy==0.971",
-]
 
 [project.readme]
 file = "README.md"

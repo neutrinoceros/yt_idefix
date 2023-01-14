@@ -1,0 +1,4 @@
+more-itertools>=8.4
+pyaml>=17.10.0
+pytest>=7.0
+unyt>=2.9.2
