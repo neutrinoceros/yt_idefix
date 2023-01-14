@@ -11,13 +11,21 @@
 [![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
 
 A maturing yt frontend for Idefix and Pluto (vtk), packaged as an extension for yt.
-This frontend is a candidate for integration in the core yt code base.
 
 ## Installation
 
 ```shell
-pip install yt_idefix
+python -m pip install yt_idefix
 ```
+
+Alternatively, use
+```shell
+python -m pip install "yt_idefix[experimental]"
+```
+to require the bleeding-edge version of `yt`, enabling all experimental
+features, including unreleased ones. Note that this route takes longer (a couple
+minutes) to install because it will compile yt from source. See [Experimental features](#experimental-features).
+
 ## Usage
 
 After importing `yt` itself, make sure to activate the extension
@@ -26,20 +34,27 @@ import yt
 import yt_idefix
 ```
 
-Now `yt.load` will be able to read Pluto/Idefix `.vtk` output files, as well as Idefix `.dmp` dump files.
+Now `yt.load` will be able to read Pluto/Idefix `.vtk` output files, as well as
+Idefix `.dmp` dump files.
 
 
-## Strecthed grids support
+## Experimental features
 
-### yt_idefix 0.12.0 and newer
+### Seamless plugin support
+*new in yt 4.2 (unreleased) + yt_idefix 0.16*
 
-version 0.12.0 brings experimental *native* support for streched grids, which is under
-active development upstream, in yt itself.
+`yt>=4.2` supports automatic
+loading for external frontends, i.e., the extra import line (`import yt_idefix`)
+will not be needed with this version.
 
-Slices should now work seamlessly even with older versions of yt, however
-yt 4.1 will be required to perform projections correctly.
+This feature is marked as experimental until yt 4.2.0 is released.
 
-**update**: yt_idefix 0.13.3 is the last release allowing yt 4.0.x, yt_idefix 0.14.0 requires yt 4.1
+### Strecthed grids support
+*new in yt 4.1 + yt_idefix 0.12*
+- `yt_idefix>=0.12.0` natively supports `yt.SlicePlot` for streched grids
+- `yt>=4.1.0` is required from `yt.ProjectionPlot`
+
+Streched grids support is considered experimental as of yt 4.1
 
 
 ### yt_idefix 0.11 and older (deprecated)
