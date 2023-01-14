@@ -57,7 +57,8 @@ This feature is marked as experimental until yt 4.2.0 is released.
 Streched grids support is considered experimental as of yt 4.1
 
 
-### yt_idefix 0.11 and older (deprecated)
+## Deprecated features
+*will be removed in yt_idefix 1.0*
 
 yt_idefix ships a specialized loader function for datasets with streched grids
 `yt_idefix.load_stretched`. This function is only provided as a workaround 4.0.x limitations, but it's highly limited itself:
