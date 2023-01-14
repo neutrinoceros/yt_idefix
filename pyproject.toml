@@ -37,11 +37,6 @@ dependencies = [
     "yt>=4.1.0",
 ]
 
-[project.optional-dependencies]
-experimental = [
-  "yt@git+https://github.com/yt-project/yt.git#egg=main",
-]
-
 [project.entry-points."yt.frontends"]
 # these entry points require yt 4.2 (unreleased at the time of writing)
 # they are included early for testing purposes

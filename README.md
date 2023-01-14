@@ -18,14 +18,6 @@ A maturing yt frontend for Idefix and Pluto (vtk), packaged as an extension for 
 python -m pip install yt_idefix
 ```
 
-Alternatively, use
-```shell
-python -m pip install "yt_idefix[experimental]"
-```
-to require the bleeding-edge version of `yt`, enabling all experimental
-features, including unreleased ones. Note that this route takes longer (a couple
-minutes) to install because it will compile yt from source. See [Experimental features](#experimental-features).
-
 ## Usage
 
 After importing `yt` itself, make sure to activate the extension
@@ -48,6 +40,10 @@ loading for external frontends, i.e., the extra import line (`import yt_idefix`)
 will not be needed with this version.
 
 This feature is marked as experimental until yt 4.2.0 is released.
+In the mean time, this feature can be enabled by installing yt from source as, i.e.,
+```shell
+python -m pip install git+https://github.com/yt-project/yt.git
+```
 
 ### Strecthed grids support
 *new in yt 4.1 + yt_idefix 0.12*
