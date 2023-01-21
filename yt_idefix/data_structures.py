@@ -345,10 +345,25 @@ class IdefixDataset(Dataset, ABC):
                     "input prevails to allow working around hypothetical parsing bugs, "
                     "but it is very likely to result in an error in the general case."
                 )
-            self.geometry = from_input
+            geom_str = from_input
         else:
             assert from_disk
-            self.geometry = from_disk
+            geom_str = from_disk
+
+        def parse_geometry(geom: str):
+            import yt
+
+            if yt.version_info[:2] > (4, 1):
+                try:
+                    from yt.geometry.api import Geometry  # type: ignore [attr-defined]
+
+                    return Geometry(geom)
+                except ImportError:
+                    pass
+
+            return geom
+
+        self.geometry = parse_geometry(geom_str)
 
     def _parse_inifile(self) -> None:
         if not self._inifile:
