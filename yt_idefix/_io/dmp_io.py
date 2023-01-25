@@ -25,12 +25,13 @@ class CharCount(IntEnum):
 
 # emulating C++
 # enum DataType {DoubleType, SingleType, IntegerType};
-DTYPES: dict[int, Prec] = {0: "d", 1: "f", 2: "i"}
+DTYPES: dict[int, Prec] = {0: "d", 1: "f", 2: "i", 3: "?"}
 DTYPES_2_NUMPY: dict[Prec, str] = {"d": "=f8", "f": "=f4", "i": "=i4"}
 DTYPES_2_SIZE: dict[Prec, ByteSize] = {
     "i": ByteSize.INT,
     "f": ByteSize.FLOAT,
     "d": ByteSize.DOUBLE,
+    "?": ByteSize.BOOLEAN,
 }
 
 
@@ -49,7 +50,8 @@ def read_next_field_properties(
     field_name = read_null_terminated_string(fh)
 
     fmt = "=i"
-    dtype = DTYPES[struct.unpack(fmt, fh.read(struct.calcsize(fmt)))[0]]
+    int_dtype = struct.unpack(fmt, fh.read(struct.calcsize(fmt)))[0]
+    dtype = DTYPES[int_dtype]
     ndim = struct.unpack(fmt, fh.read(struct.calcsize(fmt)))[0]
     if not isinstance(ndim, int):
         raise TypeError(ndim)

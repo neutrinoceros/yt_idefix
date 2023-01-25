@@ -5,7 +5,7 @@ from typing import Any, Dict, Literal, NamedTuple, Tuple
 
 import numpy as np
 
-Prec = Literal["d", "f", "i"]
+Prec = Literal["d", "f", "i", "?"]
 Dim = Literal[1, 2, 3]
 
 
@@ -64,3 +64,4 @@ class ByteSize(IntEnum):
     INT = 4
     FLOAT = 4
     DOUBLE = 8
+    BOOLEAN = 1
