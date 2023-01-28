@@ -107,7 +107,6 @@ sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
 [tool.mypy]
 python_version = 3.8
 show_error_codes = true
-ignore_missing_imports = true # remove once yt 4.1.0 is released
 warn_unused_configs = true
 warn_unreachable = true
 show_error_context = true
