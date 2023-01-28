@@ -115,14 +115,6 @@ warn_unreachable = true
 show_error_context = true
 
 [tool.pytest.ini_options]
-addopts = '''
-    -s
-    -v
-    -rsfE
-    --ignore-glob='*_nose.py'
-    --ignore='yt/frontends/owls_subfind/tests/test_outputs.py'
-    --ignore='yt/frontends/ramses/tests/test_outputs.py'
-'''
 filterwarnings = [
     "error",
 ]
