@@ -17,7 +17,9 @@ from yt.data_objects.index_subobjects.stretched_grid import StretchedGrid
 from yt.data_objects.static_output import Dataset
 from yt.funcs import setdefaultattr
 from yt.geometry.grid_geometry_handler import GridIndex
-from yt.utilities.lib.misc_utilities import _obtain_coords_and_widths
+from yt.utilities.lib.misc_utilities import (  # type: ignore [import]
+    _obtain_coords_and_widths,
+)
 from yt_idefix._typing import UnitLike
 
 from ._io import C_io, dmp_io, vtk_io

@@ -78,9 +78,7 @@ exclude = '''
   | buck-out
   | build
   | dist
-  | yt/frontends/stream/sample_data
 )/
-| yt/visualization/_colormap_data.py
 '''
 
 [tool.isort]
@@ -109,26 +107,13 @@ sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
 [tool.mypy]
 python_version = 3.8
 show_error_codes = true
-ignore_missing_imports = true # remove once yt 4.1.0 is released
 warn_unused_configs = true
 warn_unreachable = true
 show_error_context = true
 
 [tool.pytest.ini_options]
-addopts = '''
-    -s
-    -v
-    -rsfE
-    --ignore-glob='*_nose.py'
-    --ignore='yt/frontends/owls_subfind/tests/test_outputs.py'
-    --ignore='yt/frontends/ramses/tests/test_outputs.py'
-'''
 filterwarnings = [
     "error",
-    # triggered on Python 3.10 by dependencies
-    "ignore: The distutils package is deprecated and slated for removal in Python 3.12. Use setuptools or check PEP 632 for potential alternatives:DeprecationWarning",
-    # triggered from matplotlib 3.6 with yt <= 4.0.5
-    "ignore: The register_cmap function will be deprecated in a future version.:PendingDeprecationWarning"
 ]
 
 [tool.setuptools]
