@@ -7,4 +7,3 @@ from .data_structures import (
     IdefixVtkHierarchy,
     PlutoVtkDataset,
 )
-from .loaders import load, load_stretched

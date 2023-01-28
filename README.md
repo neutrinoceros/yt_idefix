@@ -51,14 +51,3 @@ python -m pip install git+https://github.com/yt-project/yt.git
 - `yt>=4.1.0` is required from `yt.ProjectionPlot`
 
 Streched grids support is considered experimental as of yt 4.1
-
-
-## Deprecated features
-*will be removed in yt_idefix 1.0*
-
-yt_idefix ships a specialized loader function for datasets with streched grids
-`yt_idefix.load_stretched`. This function is only provided as a workaround 4.0.x limitations, but it's highly limited itself:
-- no field magic (no aliasing, or dimensionalization, or automatic derived field generation)
-- no lazy loading (all data has to reside in memory)
-- projections are not supported
-- only supports vtk outputs (not dumps)
