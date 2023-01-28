@@ -78,9 +78,7 @@ exclude = '''
   | buck-out
   | build
   | dist
-  | yt/frontends/stream/sample_data
 )/
-| yt/visualization/_colormap_data.py
 '''
 
 [tool.isort]
