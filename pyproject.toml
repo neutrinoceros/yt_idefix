@@ -94,19 +94,36 @@ exclude = '''
 )/
 '''
 
-[tool.isort]
-profile = "black"
-combine_as_imports = true
-skip = ["venv", "benchmarks"]
-known_third_party = [
+[tool.ruff]
+target-version = "py38"  # https://github.com/charliermarsh/ruff/issues/2039
+exclude = [
+    "*/api.py",
+    "*/__init__.py",
+]
+select = [
+    "E",
+    "F",
+    "W",
+    "B",    # flake8-bugbear
+    "G",    # flake8-logging-format
+    "YTT",  # flake8-2020
+    "UP",   # pyupgrade
+    "I",    # isort
+]
+ignore = [
+    "E501",  # line too long
+]
+
+[tool.ruff.isort]
+combine-as-imports = true
+known-third-party = [
   "numpy",
   "matplotlib",
   "unyt",
   "yaml",
   "pytest",
 ]
-known_first_party = ["yt"]
-sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+known-first-party = ["yt"]
 
 [tool.mypy]
 python_version = 3.8
