@@ -86,20 +86,11 @@ profile = "black"
 combine_as_imports = true
 skip = ["venv", "benchmarks"]
 known_third_party = [
-  "IPython",
-  "nose",
   "numpy",
-  "sympy",
   "matplotlib",
   "unyt",
-  "git",
   "yaml",
-  "dateutil",
-  "requests",
-  "coverage",
   "pytest",
-  "pyx",
-  "glue",
 ]
 known_first_party = ["yt"]
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
