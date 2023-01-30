@@ -6,6 +6,7 @@ exclude: ^(yt/extern|yt/frontends/stream/sample_data|yt/units|scripts|benchmark|
 
 ci:
   autofix_prs: false
+  autoupdate_schedule: quarterly
 
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
