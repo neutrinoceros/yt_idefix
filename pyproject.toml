@@ -47,7 +47,6 @@ PlutoVtkDataset = "yt_idefix.api:PlutoVtkDataset"
 [project.license]
 text = "GPL-3.0"
 
-
 [project.readme]
 file = "README.md"
 content-type = "text/markdown"
@@ -57,6 +56,20 @@ Homepage = "https://yt-project.org/"
 Documentation = "https://yt-project.org/docs/dev/"
 Source = "https://github.com/neutrinoceros/yt_idefix"
 Tracker = "https://github.com/neutrinoceros/yt_idefix/issues"
+
+[tool.setuptools]
+license-files = [
+    "LICENSE",
+]
+include-package-data = false
+
+[tool.setuptools.package-data]
+yt_idefix = [
+    "py.typed",
+]
+
+[tool.setuptools.packages.find]
+namespaces = false
 
 [tool.black]
 line-length = 88
@@ -106,17 +119,3 @@ show_error_context = true
 filterwarnings = [
     "error",
 ]
-
-[tool.setuptools]
-license-files = [
-    "LICENSE",
-]
-include-package-data = false
-
-[tool.setuptools.package-data]
-yt_idefix = [
-    "py.typed",
-]
-
-[tool.setuptools.packages.find]
-namespaces = false
