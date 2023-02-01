@@ -263,7 +263,6 @@ def read_idefix_dmpfile(
 def read_idefix_dump_from_buffer(
     fh: BinaryIO, skip_data: bool = False
 ) -> tuple[IdefixFieldProperties, IdefixMetadata]:
-
     # skip header
     fh.seek(CharCount.HEADER * ByteSize.CHAR)
 

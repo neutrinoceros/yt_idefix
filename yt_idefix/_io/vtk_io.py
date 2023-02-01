@@ -79,7 +79,6 @@ def parse_shape(s: str, md: dict[str, Any]) -> None:
 
 # this may not be kept in the following form
 def read_metadata(fh: BinaryIO) -> dict[str, Any]:
-
     fh.seek(0)
     # skip over the first 4 lines which normally contains
     # VTK DataFile Version x.x

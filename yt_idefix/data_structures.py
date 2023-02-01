@@ -449,7 +449,6 @@ class IdefixVtkDataset(IdefixDataset):
         return vtk_io.read_header(self.parameter_filename)
 
     def _parse_parameter_file(self):
-
         # parse metadata
         with open(self.parameter_filename, "rb") as fh:
             md = vtk_io.read_metadata(fh)
@@ -505,7 +504,6 @@ class IdefixDmpDataset(IdefixDataset):
         return dmp_io.read_header(self.parameter_filename)
 
     def _parse_parameter_file(self):
-
         fprops, fdata = self._get_fields_metadata()
         self.parameters.update(fdata)
 
