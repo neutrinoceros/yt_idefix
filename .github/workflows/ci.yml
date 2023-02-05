@@ -37,7 +37,9 @@ jobs:
         python -m pip install --requirement requirements/tests.txt
 
     - name: run tests
-      run: pytest --color=yes
+      run: |
+        python -m pip freeze
+        pytest --color=yes
 
 
   type-check:
