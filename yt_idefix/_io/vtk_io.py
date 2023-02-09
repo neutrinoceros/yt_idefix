@@ -6,7 +6,7 @@ from typing import Any, BinaryIO, Literal, overload
 
 import numpy as np
 
-from .commons import ByteSize, Coordinates, Shape
+from .commons import Coordinates, Shape
 
 KNOWN_GEOMETRIES: dict[int, str] = {
     0: "cartesian",
@@ -54,7 +54,7 @@ def read_single_field(
     if offset is not None and fh.tell() != offset:
         fh.seek(offset)
     if skip_data:
-        fh.seek(count * ByteSize.FLOAT, 1)
+        fh.seek(count * np.dtype("f").itemsize, 1)
         data = None
     else:
         data = np.fromfile(fh, ">f", count=count)

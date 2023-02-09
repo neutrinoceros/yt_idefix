@@ -7,7 +7,7 @@ from typing import BinaryIO, Literal, cast, overload
 
 import numpy as np
 
-from .commons import ByteSize, Dim, IdefixFieldProperties, IdefixMetadata, Prec
+from .commons import Dim, IdefixFieldProperties, IdefixMetadata, Prec
 
 KNOWN_GEOMETRIES: dict[int, str] = {
     1: "cartesian",
@@ -27,17 +27,11 @@ class CharCount(IntEnum):
 # enum DataType {DoubleType, SingleType, IntegerType};
 DTYPES: dict[int, Prec] = {0: "d", 1: "f", 2: "i", 3: "?"}
 DTYPES_2_NUMPY: dict[Prec, str] = {"d": "=f8", "f": "=f4", "i": "=i4"}
-DTYPES_2_SIZE: dict[Prec, ByteSize] = {
-    "i": ByteSize.INT,
-    "f": ByteSize.FLOAT,
-    "d": ByteSize.DOUBLE,
-    "?": ByteSize.BOOLEAN,
-}
 
 
 def read_null_terminated_string(fh: BinaryIO, maxsize: int = CharCount.NAME) -> str:
-    """Read maxsize * ByteSize.CHAR bytes, but only parse non-null characters."""
-    b = fh.read(maxsize * ByteSize.CHAR)
+    """Read maxsize bytes, but only parse non-null characters."""
+    b = fh.read(maxsize)
     s = b.decode("utf-8", errors="backslashreplace")
     s = s.split("\x00", maxsplit=1)[0]
     return s
@@ -130,7 +124,7 @@ def read_chunk(
     # type hints for now
     assert ndim == len(dim)
     count = np.product(dim)
-    size = count * DTYPES_2_SIZE[dtype]
+    size = count * np.dtype(dtype).itemsize
     if skip_data:
         fh.seek(size, 1)
         return None
@@ -224,7 +218,7 @@ def get_field_offset_index(fh: BinaryIO) -> dict[str, int]:
     field_index = {}
 
     # skip header
-    fh.seek(CharCount.HEADER * ByteSize.CHAR)
+    fh.seek(CharCount.HEADER)
     # skip grid properties
     for _ in range(9):
         _field_name, dtype, ndim, dim = read_next_field_properties(fh)
@@ -264,7 +258,7 @@ def read_idefix_dump_from_buffer(
     fh: BinaryIO, skip_data: bool = False
 ) -> tuple[IdefixFieldProperties, IdefixMetadata]:
     # skip header
-    fh.seek(CharCount.HEADER * ByteSize.CHAR)
+    fh.seek(CharCount.HEADER)
 
     data: float | np.ndarray | None
     fprops: IdefixFieldProperties = {}
