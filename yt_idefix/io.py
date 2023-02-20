@@ -1,9 +1,11 @@
+import re
 from abc import ABC, abstractmethod
 from typing import BinaryIO, Tuple, cast
 
 import numpy as np
 
 from yt.utilities.io_handler import BaseIOHandler, BaseParticleIOHandler
+from yt.utilities.on_demand_imports import _h5py as h5py
 
 from ._io import dmp_io, vtk_io
 
@@ -80,3 +82,54 @@ class IdefixDmpIO(SingleGridIO, BaseParticleIOHandler):
     def _read_particle_fields(self, chunks, ptf, selector):
         # idefix doesn't have particles (yet)
         raise NotImplementedError("Particles are not currently supported for Idefix")
+
+
+class PlutoXdmfIOHandler(BaseIOHandler):
+    _particle_reader = False
+    _dataset_type = "pluto-xdmf"
+
+    def _read_particle_coords(self, chunks, ptf):
+        raise NotImplementedError("Reading of particle fields not yet implemented!")
+
+    def _read_particle_fields(self, chunks, ptf, selector):
+        raise NotImplementedError("Reading of particle fields not yet implemented!")
+
+    def _read_fluid_selection(self, chunks, selector, fields, size):
+        """
+        Filenames are data.<snapnum>.<dbl/flt>.h5
+        <snapnum> needs to be parse from the filename.
+        <snapnum> is the corresponding entry in the <dbl/flt>.h5.out file
+        Example <dbl/flt>.h5.out file:
+            0 0.000000e+00 1.000000e-04 0 single_file little rho vx1 vx2 vx3 prs tr1 tr2 tr3 Temp ndens PbykB mach
+            1 2.498181e+00 3.500985e-03 747 single_file little rho vx1 vx2 vx3 prs tr1 tr2 tr3 Temp ndens PbykB mach
+            2 4.998045e+00 3.400969e-03 1458 single_file little rho vx1 vx2 vx3 prs tr1 tr2 tr3 Temp ndens PbykB mach
+            3 7.497932e+00 3.386245e-03 2186 single_file little rho vx1 vx2 vx3 prs tr1 tr2 tr3 Temp ndens PbykB mach
+        """
+        if (match := re.search(r"\d{4}", self.ds.filename)) is not None:
+            entry = int(match.group())
+        else:
+            raise RuntimeError(f"Failed to parse output number from {self.ds.filename}")
+
+        data = {field: np.empty(size, dtype="float64") for field in fields}
+
+        with h5py.File(self.ds.filename, "r") as fh:
+            ind = 0
+            for chunk in chunks:
+                for grid in chunk.objs:
+                    nd = 0
+                    for field in fields:
+                        ftype, fname = field
+                        position = f"/Timestep_{entry}/vars/{fname}"
+                        field_data = fh[position][:].astype("=f8")
+
+                        while field_data.ndim < 3:
+                            field_data = np.expand_dims(field_data, axis=0)
+
+                        # X3 X2 X1 orderding of fields in PLUTO needs to rearranged to X1 X2 X3 order in yt.
+                        values = np.transpose(field_data, axes=(2, 1, 0))
+                        nd = grid.select(selector, values, data[field], ind)
+                    ind += nd
+        return data
+
+    def _read_chunk_data(self, chunk, fields):
+        raise NotImplementedError("No multipart file dumps happen in PLUTO till date!")

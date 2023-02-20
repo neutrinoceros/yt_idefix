@@ -3,4 +3,5 @@ from .data_structures import (
     IdefixDmpDataset,
     IdefixVtkDataset,
     PlutoVtkDataset,
+    PlutoXdmfDataset,
 )

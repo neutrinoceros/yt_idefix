@@ -20,12 +20,20 @@ from yt.geometry.grid_geometry_handler import GridIndex
 from yt.utilities.lib.misc_utilities import (  # type: ignore [import]
     _obtain_coords_and_widths,
 )
+from yt.utilities.on_demand_imports import _h5py as h5py
+from yt_idefix._backports import removesuffix
 from yt_idefix._typing import UnitLike
 
-from ._io import C_io, dmp_io, vtk_io
+from ._io import C_io, dmp_io, h5_io, vtk_io
 from ._io.commons import IdefixFieldProperties, IdefixMetadata
 from .definitions import _PlutoBaseUnits, pluto_def_constants
-from .fields import BaseVtkFields, IdefixDmpFields, IdefixVtkFields, PlutoVtkFields
+from .fields import (
+    BaseVtkFields,
+    IdefixDmpFields,
+    IdefixVtkFields,
+    PlutoVtkFields,
+    PlutoXdmfFields,
+)
 
 # import IO classes to ensure they are properly registered,
 # even though we don't call them directly
@@ -87,8 +95,6 @@ class GoodBoyHierarchy(GridIndex, ABC):
         # Idefix/Pluto are not AMR
         self.grid_levels[0][0] = 0
         self.min_level = self.max_level = 0
-
-        self._field_offsets = self._get_field_offset_index()
 
     def _populate_grid_objects(self):
         # the minimal form of this method is
@@ -240,6 +246,61 @@ class IdefixDmpHierarchy(FieldOffsetHierarchy):
             fdata["x2"] * length_unit,
             fdata["x3"] * length_unit,
         )
+
+
+class PlutoXdmfHierarchy(GoodBoyHierarchy):
+    def _detect_output_fields(self):
+        with h5py.File(self.index_filename, mode="r") as h5f:
+            root = list(h5f.keys())[0]
+            self.field_list = [
+                (self.ds._dataset_type, str(k)) for k in list(h5f[f"{root}/vars/"])
+            ]
+
+    @cached_property
+    def _cell_widths(self) -> tuple[XSpans, YSpans, ZSpans]:
+        cell_edges = h5_io.read_grid_coordinates(
+            self.index_filename, geometry=self.ds.geometry
+        )
+
+        dims = self.ds.domain_dimensions
+        length_unit = self.ds.quan(1, "code_length")
+
+        cell_widths: tuple[XSpans, YSpans, ZSpans]
+        cell_widths = (
+            np.empty(max(dims[0], 2), dtype="float64") * length_unit,
+            np.empty(max(dims[1], 2), dtype="float64") * length_unit,
+            np.empty(max(dims[2], 2), dtype="float64") * length_unit,
+        )
+
+        for idir, edges in enumerate(cell_edges[:3]):
+            if dims[idir] > 1:
+                cell_widths[idir][:] = np.ediff1d(edges)
+            else:
+                cell_widths[idir][:] = self.ds.domain_width[idir]
+        return cell_widths
+
+    @cached_property
+    def _cell_centers(self) -> tuple[XCoords, YCoords, ZCoords]:
+        cell_edges = h5_io.read_grid_coordinates(
+            self.index_filename, geometry=self.ds.geometry
+        )
+
+        dims = self.ds.domain_dimensions
+        length_unit = self.ds.quan(1, "code_length")
+
+        cell_centers: tuple[XCoords, YCoords, ZCoords]
+        cell_centers = (
+            np.empty(max(dims[0], 2), dtype="float64") * length_unit,
+            np.empty(max(dims[1], 2), dtype="float64") * length_unit,
+            np.empty(max(dims[2], 2), dtype="float64") * length_unit,
+        )
+
+        for idir, edges in enumerate(cell_edges[:3]):
+            if dims[idir] > 1:
+                cell_centers[idir][:] = 0.5 * (edges[1:] + edges[:-1])
+            else:
+                cell_centers[idir][:] = edges[0]
+        return cell_centers
 
 
 class GoodboyDataset(Dataset, ABC):
@@ -765,3 +826,100 @@ class PlutoVtkDataset(VtkMixin, StaticPlutoDataset):
 
     def _get_log_file(self) -> str:
         return os.path.join(self.directory, "vtk.out")
+
+
+class PlutoXdmfDataset(StaticPlutoDataset):
+    _dataset_type = "pluto-xdmf"
+    _index_class = PlutoXdmfHierarchy
+    _field_info_class = PlutoXdmfFields
+
+    def _get_log_file(self) -> str:
+        if (suffix := re.search(r"(flt|dbl)\.h5$", self.filename)) is not None:
+            return os.path.join(self.directory, f"{suffix.group()}.out")
+        else:
+            raise RuntimeError(
+                f"Failed to detect log file associated with {self.filename}"
+            )
+
+    def _parse_parameter_file(self):
+        """
+        Filenames are data.<snapnum>.<dbl/flt>.h5
+        <snapnum> needs to be parse from the filename.
+        <snapnum> is the corresponding entry in the <dbl/flt>.h5.out file
+        Example <dbl/flt>.h5.out file:
+            0 0.000000e+00 1.000000e-04 0 single_file little rho vx1 vx2 vx3 prs tr1 tr2 tr3 Temp ndens PbykB mach
+            1 2.498181e+00 3.500985e-03 747 single_file little rho vx1 vx2 vx3 prs tr1 tr2 tr3 Temp ndens PbykB mach
+            2 4.998045e+00 3.400969e-03 1458 single_file little rho vx1 vx2 vx3 prs tr1 tr2 tr3 Temp ndens PbykB mach
+            3 7.497932e+00 3.386245e-03 2186 single_file little rho vx1 vx2 vx3 prs tr1 tr2 tr3 Temp ndens PbykB mach
+
+        One of these lines is parsed to count the number of passive tracer fields in the data dump.
+        """
+        super()._parse_parameter_file()
+
+        # parse the grid
+        coords = h5_io.read_grid_coordinates(
+            self.filename, geometry=self.parameters["definitions"]["geometry"]
+        )
+
+        self.domain_dimensions = np.array(coords.array_shape)
+        self.dimensionality = np.count_nonzero(self.domain_dimensions - 1)
+
+        dle = np.array([arr.min() for arr in coords.arrays], dtype="float64")
+        dre = np.array([arr.max() for arr in coords.arrays], dtype="float64")
+
+        # temporary hack to prevent 0-width dimensions for 2D data
+        dre = np.where(dre == dle, dle + 1, dre)
+        self.domain_left_edge = dle
+        self.domain_right_edge = dre
+
+        self._periodicity = (True, True, True)
+
+    def _count_tracers(self) -> int:
+        with open(self._get_log_file()) as fh:
+            txt = fh.readlines()
+            if (match := re.search(r"\d{4}", self.filename)) is not None:
+                entry = int(match.group())
+            else:
+                raise RuntimeError(f"Failed to parse entry number from {self.filename}")
+
+            count = 0
+            # Passive tracer names in PLUTO are tr1, tr2, tr3 and so on by default
+            while f"tr{count + 1}" in txt[entry].split():
+                count += 1
+
+        return count
+
+    def _read_data_header(self) -> str:
+        grid_file = os.path.join(self.directory, "grid.out")
+        if not os.path.isfile(grid_file):
+            return ""
+
+        with open(grid_file) as fh:
+            body = fh.read()
+
+        if (res := re.match(r"(#.*\n)+", body)) is not None:
+            return res.group()
+        else:
+            return ""
+
+    @classmethod
+    def _is_valid(cls, filename: str, *args, **kwargs) -> bool:
+        if not (
+            filename.endswith((".dbl.h5", ".flt.h5"))
+            and os.path.isfile(removesuffix(filename, ".h5") + ".xmf")
+            and os.path.isfile(
+                os.path.join(
+                    os.path.dirname(filename), os.path.basename(filename[-6:]) + ".out"
+                )
+            )
+        ):
+            return False
+
+        try:
+            fileh = h5py.File(filename, mode="r")
+        except (ImportError, OSError):
+            return False
+        else:
+            entries = list(fileh.keys())
+            fileh.close()
+            return "cell_coords" in entries and "node_coords" in entries
