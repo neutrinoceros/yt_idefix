@@ -8,9 +8,9 @@ attrs:
   current_time:
   has_units: false
   units:
-    length: 1.0 cm
-    velocity: 1.0 cm/s
-    density: 1.0 g/cm**3
-    mass: 1.0 g
-    time: 1.0 s
-    magnetic: 3.5449077 G
+    length: 1.49597892e+13 cm
+    velocity: 1e5 cm/s
+    density: 1.67262171e-24 g/cm**3
+    mass: 5.59982108e+15 g
+    time: 1.49597892e+08 s
+    magnetic: 4.58462477e-07 G

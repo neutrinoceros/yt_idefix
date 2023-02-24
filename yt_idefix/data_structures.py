@@ -623,12 +623,19 @@ class PlutoVtkDataset(IdefixVtkDataset):
 
         # Default values of Pluto's base units which are stored in self.parameters
         # if they can be read from definitions.h
-        # Otherwise, they are set to unity in cgs.
+        # Otherwise, they are set to the default values adopted in Pluto.
+        # velocity_unit = km/s
+        # density_unit = mp/cm**3
+        # length_unit = au
         defs = self.parameters["definitions"]
         pluto_units = {
-            "velocity_unit": self.quan(defs.get("velocity_unit", 1.0), "cm/s"),
-            "density_unit": self.quan(defs.get("density_unit", 1.0), "g/cm**3"),
-            "length_unit": self.quan(defs.get("length_unit", 1.0), "cm"),
+            "velocity_unit": self.quan(defs.get("velocity_unit", 1.0e5), "cm/s"),
+            "density_unit": self.quan(
+                defs.get("density_unit", pluto_def_constants["CONST_mp"]), "g/cm**3"
+            ),
+            "length_unit": self.quan(
+                defs.get("length_unit", pluto_def_constants["CONST_au"]), "cm"
+            ),
         }
 
         uo_size = len(self.units_override)
