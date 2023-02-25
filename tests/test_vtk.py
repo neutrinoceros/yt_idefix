@@ -3,7 +3,7 @@ import re
 
 import pytest
 from more_itertools import distinct_combinations
-from unyt import Unit, assert_allclose_units
+from unyt import Unit, assert_allclose_units, unyt_quantity
 
 import yt
 from yt_idefix.api import IdefixVtkDataset, PlutoVtkDataset
@@ -41,7 +41,9 @@ def test_parse_pluto_metadata(pluto_vtk_file):
         if file["current_time"] is None:
             assert ds.current_time == -ds.time_unit
         else:
-            assert ds.current_time == file["current_time"]
+            assert_allclose_units(
+                ds.current_time, unyt_quantity.from_string(file["current_time"])
+            )
     else:
         assert ds.current_time >= 0
 
