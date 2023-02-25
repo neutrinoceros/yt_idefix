@@ -591,12 +591,14 @@ class PlutoVtkDataset(IdefixVtkDataset):
                 unit = unit_match.group(1).lower() + "_unit"
                 expr = unit_match.group(2)
                 # Before evaluating the expression, replace the input parameters,
-                # pre-defined constants, code units and sqrt function
+                # pre-defined constants, code units and arithmetic operators
                 # that cannot be resolved. The order doesn't matter.
                 expr = re.sub(r"g_inputParam\[(\w+)\]", self._get_input_parameter, expr)
                 expr = re.sub(r"CONST_\w+", self._get_constants, expr)
                 expr = re.sub(r"UNIT_(\w+)", self._get_unit, expr)
                 expr = re.sub(r"sqrt", "np.sqrt", expr)
+                expr = re.sub(r"log", "np.log", expr)
+                expr = re.sub(r"log10", "np.log10", expr)
                 self.parameters["definitions"][unit] = eval(expr)
 
     def _get_input_parameter(self, match: re.Match) -> str:
