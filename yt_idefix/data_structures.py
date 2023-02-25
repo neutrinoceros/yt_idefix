@@ -591,12 +591,14 @@ class PlutoVtkDataset(IdefixVtkDataset):
                 unit = unit_match.group(1).lower() + "_unit"
                 expr = unit_match.group(2)
                 # Before evaluating the expression, replace the input parameters,
-                # pre-defined constants, code units and sqrt function
+                # pre-defined constants, code units and arithmetic operators
                 # that cannot be resolved. The order doesn't matter.
                 expr = re.sub(r"g_inputParam\[(\w+)\]", self._get_input_parameter, expr)
                 expr = re.sub(r"CONST_\w+", self._get_constants, expr)
                 expr = re.sub(r"UNIT_(\w+)", self._get_unit, expr)
                 expr = re.sub(r"sqrt", "np.sqrt", expr)
+                expr = re.sub(r"log", "np.log", expr)
+                expr = re.sub(r"log10", "np.log10", expr)
                 self.parameters["definitions"][unit] = eval(expr)
 
     def _get_input_parameter(self, match: re.Match) -> str:
@@ -623,12 +625,19 @@ class PlutoVtkDataset(IdefixVtkDataset):
 
         # Default values of Pluto's base units which are stored in self.parameters
         # if they can be read from definitions.h
-        # Otherwise, they are set to unity in cgs.
+        # Otherwise, they are set to the default values adopted in Pluto.
+        # velocity_unit = km/s
+        # density_unit = mp/cm**3
+        # length_unit = au
         defs = self.parameters["definitions"]
         pluto_units = {
-            "velocity_unit": self.quan(defs.get("velocity_unit", 1.0), "cm/s"),
-            "density_unit": self.quan(defs.get("density_unit", 1.0), "g/cm**3"),
-            "length_unit": self.quan(defs.get("length_unit", 1.0), "cm"),
+            "velocity_unit": self.quan(defs.get("velocity_unit", 1.0e5), "cm/s"),
+            "density_unit": self.quan(
+                defs.get("density_unit", pluto_def_constants["CONST_mp"]), "g/cm**3"
+            ),
+            "length_unit": self.quan(
+                defs.get("length_unit", pluto_def_constants["CONST_au"]), "cm"
+            ),
         }
 
         uo_size = len(self.units_override)
