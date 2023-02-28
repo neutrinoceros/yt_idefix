@@ -24,5 +24,8 @@
 
 /* [Beg] user-defined constants (do not change this line) */
 
+#define  UNIT_LENGTH                    1000*CONST_pc*log10(10)
+#define  UNIT_VELOCITY                  1e5
+#define  UNIT_DENSITY                   CONST_mp*log(3)
 
 /* [End] user-defined constants (do not change this line) */
