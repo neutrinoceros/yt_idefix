@@ -598,7 +598,6 @@ class PlutoVtkDataset(IdefixVtkDataset):
                 expr = re.sub(r"UNIT_(\w+)", self._get_unit, expr)
                 expr = re.sub(r"sqrt", "np.sqrt", expr)
                 expr = re.sub(r"log", "np.log", expr)
-                expr = re.sub(r"log10", "np.log10", expr)
                 self.parameters["definitions"][unit] = eval(expr)
 
     def _get_input_parameter(self, match: re.Match) -> str:

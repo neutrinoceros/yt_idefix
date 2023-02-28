@@ -6,6 +6,7 @@ attrs:
   dimensionality: 3
   kind: pluto
   has_units: true
+  current_time: 2.279213e-02
   units:
     length: 3.08567758e21 cm
     velocity: 1e5 cm/s
