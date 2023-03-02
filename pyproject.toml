@@ -32,7 +32,7 @@ keywords = [
 ]
 requires-python = ">=3.8"
 dependencies = [
-    "inifix>=2.3.0",
+    "inifix>=4.1.0",
     "numpy>=1.17.3",
     "yt>=4.1.0",
 ]
