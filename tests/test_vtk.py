@@ -27,7 +27,7 @@ def test_class_validation(vtk_file):
         "idefix": IdefixVtkDataset,
         "pluto": PlutoVtkDataset,
     }[file["kind"]]
-    assert cls._is_valid(file["path"])
+    assert cls._is_valid(str(file["path"]))
 
 
 def test_parse_pluto_metadata(pluto_vtk_file):
