@@ -437,7 +437,7 @@ class IdefixVtkDataset(IdefixDataset):
     _required_header_keyword = "Idefix"
 
     @classmethod
-    def _is_valid(cls, filename, *args, **kwargs) -> bool:
+    def _is_valid(cls, filename: str, *args, **kwargs) -> bool:
         try:
             header = vtk_io.read_header(filename)
         except Exception:
@@ -489,7 +489,7 @@ class IdefixDmpDataset(IdefixDataset):
     _dataset_type = "idefix-dmp"
 
     @classmethod
-    def _is_valid(cls, filename, *args, **kwargs) -> bool:
+    def _is_valid(cls, filename: str, *args, **kwargs) -> bool:
         try:
             header_string = dmp_io.read_header(filename)
             return re.match(r"Idefix .* Dump Data", header_string) is not None
