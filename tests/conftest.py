@@ -11,7 +11,6 @@ import unyt as un
 import yaml
 from packaging.version import Version
 
-UNYT_VERSION = Version(version("unyt"))
 NUMPY_VERSION = Version(version("numpy"))
 
 
