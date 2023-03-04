@@ -27,6 +27,7 @@ def pytest_configure(config):
 DATA_DIR = Path(__file__).parent / "data"
 
 VTK_FILES: dict[str, dict[str, Any]] = {}
+XDMF_FILES: dict[str, dict[str, Any]] = {}
 
 
 def load_meta(pdir: Path, meta_file: Path) -> list[dict[str, Any]]:
@@ -65,12 +66,19 @@ for ddir in os.listdir(DATA_DIR):
     for ds in datasets:
         if ds["attrs"]["path"].suffix == ".vtk":
             VTK_FILES.update({ds["id"]: ds["attrs"]})
+        elif ds["attrs"]["path"].suffix == ".h5":
+            XDMF_FILES.update({ds["id"]: ds["attrs"]})
         else:
             raise ValueError(f"Failed to determine data type for {ds['attrs']['path']}")
 
 
 @pytest.fixture(params=VTK_FILES.values(), ids=VTK_FILES.keys(), scope="session")
 def vtk_file(request):
+    return request.param
+
+
+@pytest.fixture(params=XDMF_FILES.values(), ids=XDMF_FILES.keys(), scope="session")
+def xdmf_file(request):
     return request.param
 
 
