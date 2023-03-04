@@ -1,6 +1,9 @@
 id: disk_planet
+
+paths:
+- data.0010.vtk
+
 attrs:
-  path: data.0010.vtk
   has_geometry: true
   geometry: spherical
   dimensionality: 3

@@ -1,6 +1,9 @@
 id: rotor
+
+paths:
+- data.0030.vtk
+
 attrs:
-  path: data.0030.vtk
   has_geometry: true
   geometry: polar
   dimensionality: 2
