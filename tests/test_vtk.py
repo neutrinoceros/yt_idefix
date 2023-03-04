@@ -7,6 +7,7 @@ from unyt import Unit, assert_allclose_units
 
 import yt
 from yt_idefix.api import IdefixVtkDataset, PlutoVtkDataset
+from yt_idefix.data_structures import VtkMixin
 
 # A sample list of units for test.
 # The first three values are chosen randomly
@@ -223,4 +224,4 @@ def test_projection_plot(vtk_file):
 
 def test_load_magic(vtk_file):
     ds = yt.load(vtk_file["path"], geometry=vtk_file["geometry"])
-    assert isinstance(ds, IdefixVtkDataset)
+    assert isinstance(ds, VtkMixin)

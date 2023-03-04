@@ -236,13 +236,16 @@ class IdefixDmpHierarchy(IdefixHierarchy):
         )
 
 
-class IdefixDataset(Dataset, ABC):
-    """A common abstraction for IdefixDmpDataset and IdefixVtkDataset."""
+class GoodboyDataset(Dataset, ABC):
+    """
+    Abstract class that defines interfaces common to all concrete dataset classes in this module
+    """
 
-    _version_regexp = re.compile(r"v\d+\.\d+\.?\d*[-\w+]*")
-    _dataset_type: str  # defined in subclasses
-    _default_definitions_header = "definitions.hpp"
-    _default_inifile = "idefix.ini"
+    # defined in subclasses
+    _dataset_type: str
+    _default_inifile: str
+    _default_definitions_header: str
+    _version_regexp: re.Pattern
 
     def __init__(
         self,
@@ -430,20 +433,23 @@ class IdefixDataset(Dataset, ABC):
         return match.group()
 
 
-class IdefixVtkDataset(IdefixDataset):
-    _index_class = IdefixVtkHierarchy
-    _field_info_class: type[BaseVtkFields] = IdefixVtkFields
-    _dataset_type = "idefix-vtk"
-    _required_header_keyword = "Idefix"
+class IdefixDataset(GoodboyDataset, ABC):
+    _default_inifile = "idefix.ini"
+    _default_definitions_header = "definitions.hpp"
+    _version_regexp = re.compile(r"v\d+\.\d+\.?\d*[-\w+]*")
 
-    @classmethod
-    def _is_valid(cls, filename: str, *args, **kwargs) -> bool:
-        try:
-            header = vtk_io.read_header(filename)
-        except Exception:
-            return False
-        else:
-            return cls._required_header_keyword in header
+
+class StaticPlutoDataset(GoodboyDataset, ABC):
+    # PlutoDataset is already used as a class name in yt.frontends.chombo
+    # the key difference being that, in this extension frontend
+    # we only support static grid formats (as opposed to chombo-pluto, which is AMR)
+    _default_inifile = "pluto.ini"
+    _default_definitions_header = "definitions.h"
+    _version_regexp = re.compile(r"\d+\.\d+\.?\d*[-\w+]*")
+
+
+class VtkMixin(Dataset):
+    _index_class = IdefixVtkHierarchy
 
     def _read_data_header(self) -> str:
         return vtk_io.read_header(self.parameter_filename)
@@ -484,9 +490,9 @@ class IdefixVtkDataset(IdefixDataset):
 
 
 class IdefixDmpDataset(IdefixDataset):
+    _dataset_type = "idefix-dmp"
     _index_class = IdefixDmpHierarchy
     _field_info_class = IdefixDmpFields
-    _dataset_type = "idefix-dmp"
 
     @classmethod
     def _is_valid(cls, filename: str, *args, **kwargs) -> bool:
@@ -531,13 +537,32 @@ class IdefixDmpDataset(IdefixDataset):
         super()._parse_parameter_file()
 
 
-class PlutoVtkDataset(IdefixVtkDataset):
-    _field_info_class = PlutoVtkFields
+class IdefixVtkDataset(VtkMixin, IdefixDataset):
+    _dataset_type = "idefix-vtk"
+    _field_info_class: type[BaseVtkFields] = IdefixVtkFields
+
+    @classmethod
+    def _is_valid(cls, filename: str, *args, **kwargs) -> bool:
+        try:
+            header = vtk_io.read_header(filename)
+        except Exception:
+            return False
+        else:
+            return "Idefix" in header
+
+
+class PlutoVtkDataset(VtkMixin, StaticPlutoDataset):
     _dataset_type = "pluto-vtk"
-    _version_regexp = re.compile(r"\d+\.\d+\.?\d*[-\w+]*")
-    _required_header_keyword = "PLUTO"
-    _default_definitions_header = "definitions.h"
-    _default_inifile = "pluto.ini"
+    _field_info_class = PlutoVtkFields
+
+    @classmethod
+    def _is_valid(cls, filename: str, *args, **kwargs) -> bool:
+        try:
+            header = vtk_io.read_header(filename)
+        except Exception:
+            return False
+        else:
+            return "PLUTO" in header
 
     def _parse_parameter_file(self):
         super()._parse_parameter_file()
