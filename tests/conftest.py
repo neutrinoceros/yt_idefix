@@ -66,7 +66,7 @@ for ddir in os.listdir(DATA_DIR):
         if ds["attrs"]["path"].suffix == ".vtk":
             VTK_FILES.update({ds["id"]: ds["attrs"]})
         else:
-            raise ValueError(f"Failed to determine data type for {ds['path']}")
+            raise ValueError(f"Failed to determine data type for {ds['attrs']['path']}")
 
 
 @pytest.fixture(params=VTK_FILES.values(), ids=VTK_FILES.keys(), scope="session")
