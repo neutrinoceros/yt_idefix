@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sys
 from importlib.metadata import version
+from itertools import takewhile
 from pathlib import Path
 from typing import Any
 
@@ -30,6 +31,19 @@ VTK_FILES: dict[str, dict[str, Any]] = {}
 XDMF_FILES: dict[str, dict[str, Any]] = {}
 
 
+def full_extension(fn: str) -> str:
+    """
+    Examples
+    --------
+    >>> full_extension("data.0056.vtk")
+    '.vtk'
+    >>> full_extension("data.0056.dbl.h5')
+    '.dbl.h5'
+    """
+    elements = list(takewhile(lambda s: not s.isdigit(), reversed(fn.split("."))))
+    return "." + ".".join(reversed(elements))
+
+
 def load_meta(pdir: Path, meta_file: Path) -> list[dict[str, Any]]:
     with open(meta_file) as fh:
         metadata = yaml.load(fh, yaml.SafeLoader)
@@ -48,7 +62,7 @@ def load_meta(pdir: Path, meta_file: Path) -> list[dict[str, Any]]:
         pp = pdir / p
         retv.append(
             {
-                "id": f"{metadata['id']}{pp.suffix.replace('.', '_')}",
+                "id": f"{metadata['id']}{full_extension(p).replace('.', '_')}",
                 "attrs": {**attrs, **{"path": pp}},
             }
         )
