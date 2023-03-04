@@ -29,7 +29,7 @@ DATA_DIR = Path(__file__).parent / "data"
 VTK_FILES: dict[str, dict[str, Any]] = {}
 
 
-def load_meta(pdir: Path, meta_file: Path) -> list[dict[str:Any]]:
+def load_meta(pdir: Path, meta_file: Path) -> list[dict[str, Any]]:
     with open(meta_file) as fh:
         metadata = yaml.load(fh, yaml.SafeLoader)
 
