@@ -1,6 +1,9 @@
 id: sod
+
+paths:
+- data.0001.vtk
+
 attrs:
-  path: data.0001.vtk
   has_geometry: true
   geometry: cartesian
   dimensionality: 1

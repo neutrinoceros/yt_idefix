@@ -1,6 +1,9 @@
 id: sedov
+
+paths:
+- data.0018.vtk
+
 attrs:
-  path: data.0018.vtk
   has_geometry: true
   geometry: cartesian
   dimensionality: 3

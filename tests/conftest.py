@@ -29,30 +29,44 @@ DATA_DIR = Path(__file__).parent / "data"
 VTK_FILES: dict[str, dict[str, Any]] = {}
 
 
-def load_meta(pdir, meta_file):
+def load_meta(pdir: Path, meta_file: Path) -> list[dict[str:Any]]:
     with open(meta_file) as fh:
         metadata = yaml.load(fh, yaml.SafeLoader)
 
-    metadata["attrs"]["path"] = pdir / metadata["attrs"]["path"]
     if "units" in metadata["attrs"]:
         keys = list(metadata["attrs"]["units"].keys())
         for u in keys:
             metadata["attrs"]["units"][u] = un.unyt_quantity.from_string(
                 metadata["attrs"]["units"][u]
             )
-    return metadata
+
+    attrs = metadata["attrs"]
+    paths = metadata["paths"]
+    retv = []
+    for p in paths:
+        pp = pdir / p
+        retv.append(
+            {
+                "id": f"{metadata['id']}{pp.suffix.replace('.', '_')}",
+                "attrs": {**attrs, **{"path": pp}},
+            }
+        )
+    return retv
 
 
 for ddir in os.listdir(DATA_DIR):
-    pdir = DATA_DIR / ddir
-    meta_file = pdir / "meta.yaml"
-    if not pdir.is_dir():
-        continue
-    if not meta_file.is_file():
+    if not (pdir := DATA_DIR / ddir).is_dir():
         continue
 
-    metadata = load_meta(pdir, meta_file)
-    VTK_FILES.update({metadata["id"]: metadata["attrs"]})
+    if not (meta_file := pdir / "meta.yaml").is_file():
+        continue
+
+    datasets = load_meta(pdir, meta_file)
+    for ds in datasets:
+        if ds["attrs"]["path"].suffix == ".vtk":
+            VTK_FILES.update({ds["id"]: ds["attrs"]})
+        else:
+            raise ValueError(f"Failed to determine data type for {ds['path']}")
 
 
 @pytest.fixture(params=VTK_FILES.values(), ids=VTK_FILES.keys(), scope="session")
