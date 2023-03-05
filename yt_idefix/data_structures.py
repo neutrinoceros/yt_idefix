@@ -489,7 +489,7 @@ class StaticPlutoDataset(GoodboyDataset, ABC):
             # No need of validation and logging when no unit to be overrided
             if uo_size > 0:
                 try:
-                    self._validate_units_override_keys(uo_cache)
+                    self.__class__._validate_units_override_keys(uo_cache)
                 except ValueError:
                     # It means the combination is invalid
                     del uo_cache[unit]
@@ -525,6 +525,87 @@ class StaticPlutoDataset(GoodboyDataset, ABC):
         # we accept density_unit as a valid override
         "density_unit": "g/cm**3",
     }
+
+    def _parse_definitions_header(self) -> None:
+        """Read some metadata from header file 'definitions.h'."""
+        self.parameters["definitions"] = {}
+        if not self._definitions_header:
+            ytLogger.warning(
+                "%s was not found. Code units will be set to 1.0 in cgs.",
+                self._default_definitions_header,
+            )
+            return
+
+        with open(self._definitions_header) as fh:
+            body = fh.read()
+        lines = C_io.strip_comments(body).split("\n")
+
+        for line in lines:
+            if (geom_match := re.fullmatch(_DEF_GEOMETRY_REGEXP, line)) is not None:
+                self.parameters["definitions"]["geometry"] = geom_match.group(1).lower()
+            elif (unit_match := re.fullmatch(_DEF_UNIT_REGEXP, line)) is not None:
+                unit = unit_match.group(1).lower() + "_unit"
+                expr = unit_match.group(2)
+                # Before evaluating the expression, replace the input parameters,
+                # pre-defined constants, code units and arithmetic operators
+                # that cannot be resolved. The order doesn't matter.
+                expr = re.sub(r"g_inputParam\[(\w+)\]", self._get_input_parameter, expr)
+                expr = re.sub(r"CONST_\w+", self._get_constants, expr)
+                expr = re.sub(r"UNIT_(\w+)", self._get_unit, expr)
+                expr = re.sub(r"sqrt", "np.sqrt", expr)
+                expr = re.sub(r"log", "np.log", expr)
+                self.parameters["definitions"][unit] = eval(expr)
+
+    def _get_input_parameter(self, match: re.Match) -> str:
+        """Replace matched input parameters with its value"""
+        key = match.group(1)
+        return str(self.parameters["Parameters"][key])
+
+    def _get_unit(self, match: re.Match) -> str:
+        """Replace matched unit with its value"""
+        key = match.group(1).lower() + "_unit"
+        return str(self.parameters["definitions"].get(key, 1.0))
+
+    def _get_constants(self, match: re.Match) -> str:
+        """Replace matched constant string with its value"""
+        key = match.group()
+        return str(pluto_def_constants[key])
+
+    @classmethod
+    def _validate_units_override_keys(cls, units_override):
+        """Check that units in units_override are able to derive three base units:
+        mass, length and time
+        """
+
+        # YT supports overriding other normalisations, this method ensures consistency
+        # between supplied 'units_override' items and principles in PLUTO.
+
+        # PLUTO's normalisations/units have 3 degrees of freedom. Therefore, any combinations
+        # are valid other than the three cases listed explicitly.
+
+        if "temperature_unit" in units_override:
+            raise ValueError(
+                "Temperature is not allowed in units_override, "
+                "since it's always in Kelvin in PLUTO"
+            )
+
+        # Three units are enough for deriving others, more will likely cause conflict
+        if len(units_override) > 3:
+            raise ValueError(
+                "More than 3 degrees of freedom were specified "
+                f"in units_override ({len(units_override)} given)"
+            )
+
+        # check if provided overrides are allowed
+        suo = set(units_override)
+        if suo in cls.invalid_unit_combinations:
+            raise ValueError(
+                f"Combination {suo} passed to units_override "
+                "cannot derive all units\n"
+                f"Choose any other combinations, except for:\n {cls.invalid_unit_combinations}"
+            )
+
+        super()._validate_units_override_keys(units_override)
 
 
 class VtkMixin(Dataset):
@@ -673,84 +754,3 @@ class PlutoVtkDataset(VtkMixin, StaticPlutoDataset):
                     "Failed to retrieve time from %s, setting current_time = -1",
                     log_file,
                 )
-
-    def _parse_definitions_header(self) -> None:
-        """Read some metadata from header file 'definitions.h'."""
-        self.parameters["definitions"] = {}
-        if not self._definitions_header:
-            ytLogger.warning(
-                "%s was not found. Code units will be set to 1.0 in cgs.",
-                self._default_definitions_header,
-            )
-            return
-
-        with open(self._definitions_header) as fh:
-            body = fh.read()
-        lines = C_io.strip_comments(body).split("\n")
-
-        for line in lines:
-            if (geom_match := re.fullmatch(_DEF_GEOMETRY_REGEXP, line)) is not None:
-                self.parameters["definitions"]["geometry"] = geom_match.group(1).lower()
-            elif (unit_match := re.fullmatch(_DEF_UNIT_REGEXP, line)) is not None:
-                unit = unit_match.group(1).lower() + "_unit"
-                expr = unit_match.group(2)
-                # Before evaluating the expression, replace the input parameters,
-                # pre-defined constants, code units and arithmetic operators
-                # that cannot be resolved. The order doesn't matter.
-                expr = re.sub(r"g_inputParam\[(\w+)\]", self._get_input_parameter, expr)
-                expr = re.sub(r"CONST_\w+", self._get_constants, expr)
-                expr = re.sub(r"UNIT_(\w+)", self._get_unit, expr)
-                expr = re.sub(r"sqrt", "np.sqrt", expr)
-                expr = re.sub(r"log", "np.log", expr)
-                self.parameters["definitions"][unit] = eval(expr)
-
-    def _get_input_parameter(self, match: re.Match) -> str:
-        """Replace matched input parameters with its value"""
-        key = match.group(1)
-        return str(self.parameters["Parameters"][key])
-
-    def _get_unit(self, match: re.Match) -> str:
-        """Replace matched unit with its value"""
-        key = match.group(1).lower() + "_unit"
-        return str(self.parameters["definitions"].get(key, 1.0))
-
-    def _get_constants(self, match: re.Match) -> str:
-        """Replace matched constant string with its value"""
-        key = match.group()
-        return str(pluto_def_constants[key])
-
-    @classmethod
-    def _validate_units_override_keys(cls, units_override):
-        """Check that units in units_override are able to derive three base units:
-        mass, length and time
-        """
-
-        # YT supports overriding other normalisations, this method ensures consistency
-        # between supplied 'units_override' items and principles in PLUTO.
-
-        # PLUTO's normalisations/units have 3 degrees of freedom. Therefore, any combinations
-        # are valid other than the three cases listed explicitly.
-
-        if "temperature_unit" in units_override:
-            raise ValueError(
-                "Temperature is not allowed in units_override, "
-                "since it's always in Kelvin in PLUTO"
-            )
-
-        # Three units are enough for deriving others, more will likely cause conflict
-        if len(units_override) > 3:
-            raise ValueError(
-                "More than 3 degrees of freedom were specified "
-                f"in units_override ({len(units_override)} given)"
-            )
-
-        # check if provided overrides are allowed
-        suo = set(units_override)
-        if suo in cls.invalid_unit_combinations:
-            raise ValueError(
-                f"Combination {suo} passed to units_override "
-                "cannot derive all units\n"
-                f"Choose any other combinations, except for:\n {cls.invalid_unit_combinations}"
-            )
-
-        super(cls, cls)._validate_units_override_keys(units_override)
