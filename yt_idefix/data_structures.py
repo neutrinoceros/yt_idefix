@@ -64,7 +64,7 @@ class IdefixHierarchy(GridIndex, ABC):
         self.dataset_type = dataset_type
         self.dataset = weakref.proxy(ds)
         # for now, the index file is the dataset!
-        self.index_filename = self.dataset.parameter_filename
+        self.index_filename = self.dataset.filename
         self.directory = os.path.dirname(self.index_filename)
         # float type for the simulation edges and must be float64 now
         self.float_type = np.float64
@@ -329,7 +329,7 @@ class GoodboyDataset(Dataset, ABC):
         if from_definitions and from_bin and from_bin != from_definitions:
             raise RuntimeError(
                 "Geometries from disk file and definitions header do not match, got\n"
-                f" - {from_bin!r} (from {self.parameter_filename})\n"
+                f" - {from_bin!r} (from {self.filename})\n"
                 f" - {from_definitions!r} (from {self._definitions_header})"
             )
 
@@ -452,11 +452,11 @@ class VtkMixin(Dataset):
     _index_class = IdefixVtkHierarchy
 
     def _read_data_header(self) -> str:
-        return vtk_io.read_header(self.parameter_filename)
+        return vtk_io.read_header(self.filename)
 
     def _parse_parameter_file(self):
         # parse metadata
-        with open(self.parameter_filename, "rb") as fh:
+        with open(self.filename, "rb") as fh:
             md = vtk_io.read_metadata(fh)
         self.parameters.update(md)
 
@@ -464,7 +464,7 @@ class VtkMixin(Dataset):
         # from here self.geometry is assumed to be set
 
         # parse the grid
-        with open(self.parameter_filename, "rb") as fh:
+        with open(self.filename, "rb") as fh:
             coords = vtk_io.read_grid_coordinates(fh, geometry=self.geometry)
             self._field_offset_index = vtk_io.read_field_offset_index(
                 fh, coords.array_shape
@@ -504,10 +504,10 @@ class IdefixDmpDataset(IdefixDataset):
 
     def _get_fields_metadata(self) -> tuple[IdefixFieldProperties, IdefixMetadata]:
         # read everything except large arrays
-        return dmp_io.read_idefix_dmpfile(self.parameter_filename, skip_data=True)
+        return dmp_io.read_idefix_dmpfile(self.filename, skip_data=True)
 
     def _read_data_header(self) -> str:
-        return dmp_io.read_header(self.parameter_filename)
+        return dmp_io.read_header(self.filename)
 
     def _parse_parameter_file(self):
         fprops, fdata = self._get_fields_metadata()
@@ -569,9 +569,9 @@ class PlutoVtkDataset(VtkMixin, StaticPlutoDataset):
 
         # parse time from vtk.out
         log_file = os.path.join(self.directory, "vtk.out")
-        if (match := re.search(r"\.(\d*)\.", self.parameter_filename)) is None:
+        if (match := re.search(r"\.(\d*)\.", self.filename)) is None:
             raise RuntimeError(
-                f"Failed to parse output number from file name {self.parameter_filename}"
+                f"Failed to parse output number from file name {self.filename}"
             )
         index = int(match.group(1))
 
