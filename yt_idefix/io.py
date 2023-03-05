@@ -14,7 +14,7 @@ class SingleGridIO(BaseIOHandler, ABC):
     def __init__(self, ds):
         BaseIOHandler.__init__(self, ds)
         self.ds = ds
-        self._data_file = ds.parameter_filename
+        self._data_file = ds.filename
 
     def _read_fluid_selection(self, chunks, selector, fields, size):
         data = {}
