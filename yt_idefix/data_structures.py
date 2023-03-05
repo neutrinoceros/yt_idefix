@@ -444,6 +444,88 @@ class StaticPlutoDataset(GoodboyDataset, ABC):
     _default_definitions_header = "definitions.h"
     _version_regexp = re.compile(r"\d+\.\d+\.?\d*[-\w+]*")
 
+    def _set_code_unit_attributes(self):
+        """Conversion between physical units and code units."""
+
+        # Pluto's base units are length, velocity and density, but here we consider
+        # length, mass and time as base units. Since it can make us easy to calculate
+        # all units when self.units_override is not None.
+
+        # Default values of Pluto's base units which are stored in self.parameters
+        # if they can be read from definitions.h
+        # Otherwise, they are set to the default values adopted in Pluto.
+        # velocity_unit = km/s
+        # density_unit = mp/cm**3
+        # length_unit = AU
+        defs = self.parameters["definitions"]
+        pluto_units = {
+            "velocity_unit": self.quan(defs.get("velocity_unit", 1.0e5), "cm/s"),
+            "density_unit": self.quan(
+                defs.get("density_unit", pluto_def_constants["CONST_mp"]), "g/cm**3"
+            ),
+            "length_unit": self.quan(
+                defs.get("length_unit", pluto_def_constants["CONST_au"]), "cm"
+            ),
+        }
+
+        uo_size = len(self.units_override)
+        if uo_size > 0 and uo_size < 3:
+            ytLogger.info(
+                "Less than 3 units were specified in units_override (got %s). "
+                "Need to rely on PLUTO's internal units to derive other units",
+                uo_size,
+            )
+
+        uo_cache = self.units_override.copy()
+        while len(uo_cache) < 3:
+            # If less than 3 units were passed into units_override,
+            # the rest will be chosen from Pluto's units
+            unit, value = pluto_units.popitem()
+            # If any Pluto's base unit is specified in units_override, it'll be preserved
+            if unit in uo_cache:
+                continue
+            uo_cache[unit] = value
+            # Make sure the combination of units are able to derive base units
+            # No need of validation and logging when no unit to be overrided
+            if uo_size > 0:
+                try:
+                    self._validate_units_override_keys(uo_cache)
+                except ValueError:
+                    # It means the combination is invalid
+                    del uo_cache[unit]
+                else:
+                    ytLogger.info("Relying on %s: %s.", unit, uo_cache[unit])
+
+        bu = _PlutoBaseUnits(uo_cache)
+        for unit, value in bu._data.items():
+            setattr(self, unit, value)
+
+        self.velocity_unit = self.length_unit / self.time_unit
+        self.density_unit = self.mass_unit / self.length_unit**3
+        self.magnetic_unit = (
+            np.sqrt(4.0 * np.pi * self.density_unit) * self.velocity_unit
+        )
+        self.magnetic_unit.convert_to_units("gauss")
+        self.temperature_unit = self.quan(1.0, "K")
+
+    invalid_unit_combinations = [
+        {"magnetic_unit", "velocity_unit", "density_unit"},
+        {"velocity_unit", "time_unit", "length_unit"},
+        {"density_unit", "length_unit", "mass_unit"},
+    ]
+
+    default_units = {
+        "length_unit": "cm",
+        "time_unit": "s",
+        "mass_unit": "g",
+        "velocity_unit": "cm/s",
+        "magnetic_unit": "gauss",
+        "temperature_unit": "K",
+        # this is the one difference with Dataset.default_units:
+        # we accept density_unit as a valid override
+        "density_unit": "g/cm**3",
+    }
+
 
 class VtkMixin(Dataset):
     _index_class = IdefixVtkHierarchy
@@ -636,88 +718,6 @@ class PlutoVtkDataset(VtkMixin, StaticPlutoDataset):
         """Replace matched constant string with its value"""
         key = match.group()
         return str(pluto_def_constants[key])
-
-    def _set_code_unit_attributes(self):
-        """Conversion between physical units and code units."""
-
-        # Pluto's base units are length, velocity and density, but here we consider
-        # length, mass and time as base units. Since it can make us easy to calculate
-        # all units when self.units_override is not None.
-
-        # Default values of Pluto's base units which are stored in self.parameters
-        # if they can be read from definitions.h
-        # Otherwise, they are set to the default values adopted in Pluto.
-        # velocity_unit = km/s
-        # density_unit = mp/cm**3
-        # length_unit = au
-        defs = self.parameters["definitions"]
-        pluto_units = {
-            "velocity_unit": self.quan(defs.get("velocity_unit", 1.0e5), "cm/s"),
-            "density_unit": self.quan(
-                defs.get("density_unit", pluto_def_constants["CONST_mp"]), "g/cm**3"
-            ),
-            "length_unit": self.quan(
-                defs.get("length_unit", pluto_def_constants["CONST_au"]), "cm"
-            ),
-        }
-
-        uo_size = len(self.units_override)
-        if uo_size > 0 and uo_size < 3:
-            ytLogger.info(
-                "Less than 3 units were specified in units_override (got %s). "
-                "Need to rely on PLUTO's internal units to derive other units",
-                uo_size,
-            )
-
-        uo_cache = self.units_override.copy()
-        while len(uo_cache) < 3:
-            # If less than 3 units were passed into units_override,
-            # the rest will be chosen from Pluto's units
-            unit, value = pluto_units.popitem()
-            # If any Pluto's base unit is specified in units_override, it'll be preserved
-            if unit in uo_cache:
-                continue
-            uo_cache[unit] = value
-            # Make sure the combination of units are able to derive base units
-            # No need of validation and logging when no unit to be overrided
-            if uo_size > 0:
-                try:
-                    self._validate_units_override_keys(uo_cache)
-                except ValueError:
-                    # It means the combination is invalid
-                    del uo_cache[unit]
-                else:
-                    ytLogger.info("Relying on %s: %s.", unit, uo_cache[unit])
-
-        bu = _PlutoBaseUnits(uo_cache)
-        for unit, value in bu._data.items():
-            setattr(self, unit, value)
-
-        self.velocity_unit = self.length_unit / self.time_unit
-        self.density_unit = self.mass_unit / self.length_unit**3
-        self.magnetic_unit = (
-            np.sqrt(4.0 * np.pi * self.density_unit) * self.velocity_unit
-        )
-        self.magnetic_unit.convert_to_units("gauss")
-        self.temperature_unit = self.quan(1.0, "K")
-
-    invalid_unit_combinations = [
-        {"magnetic_unit", "velocity_unit", "density_unit"},
-        {"velocity_unit", "time_unit", "length_unit"},
-        {"density_unit", "length_unit", "mass_unit"},
-    ]
-
-    default_units = {
-        "length_unit": "cm",
-        "time_unit": "s",
-        "mass_unit": "g",
-        "velocity_unit": "cm/s",
-        "magnetic_unit": "gauss",
-        "temperature_unit": "K",
-        # this is the one difference with Dataset.default_units:
-        # we accept density_unit as a valid override
-        "density_unit": "g/cm**3",
-    }
 
     @classmethod
     def _validate_units_override_keys(cls, units_override):
