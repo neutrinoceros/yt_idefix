@@ -415,14 +415,11 @@ class GoodboyDataset(Dataset, ABC):
         pass
 
     def _get_code_version(self) -> str:
-        # take the last line of the header
-        # - in Idefix dumps there's only one line
-        # - in Vtk files (Idefix or Pluto), there are two,
-        #   the first of which isn't code specific
-        header = self._read_data_header().splitlines()[-1]
-
+        # we assume the version string is somewhere in the first two
+        # lines, which is general enough for the data formats we support
+        lines = self._read_data_header().splitlines()
+        header = "\n".join(lines[: (min(len(lines), 2))])
         regexp = self.__class__._version_regexp
-
         match = re.search(regexp, header)
         if match is None:
             warnings.warn(
