@@ -444,6 +444,39 @@ class StaticPlutoDataset(GoodboyDataset, ABC):
     _default_definitions_header = "definitions.h"
     _version_regexp = re.compile(r"\d+\.\d+\.?\d*[-\w+]*")
 
+    @abstractmethod
+    def _get_log_file(self) -> str:
+        pass
+
+    def _parse_parameter_file(self):
+        super()._parse_parameter_file()
+
+        if (match := re.search(r"\.(\d*)\.", self.filename)) is None:
+            raise RuntimeError(
+                f"Failed to parse output number from file name {self.filename}"
+            )
+        index = int(match.group(1))
+
+        # will be converted to actual unyt_quantity in _set_derived_attrs
+        self.current_time = -1
+
+        log_file = self._get_log_file()
+        if not os.path.isfile(log_file):
+            ytLogger.warning("Missing log file %s, setting current_time = -1", log_file)
+            return
+
+        with open(log_file) as fh:
+            body = fh.read()
+
+        match = re.search(rf"^{index}\s(\S+)", body, flags=re.MULTILINE)
+        if match is not None:
+            self.current_time = float(match.group(1))
+        else:
+            ytLogger.warning(
+                "Failed to retrieve time from %s, setting current_time = -1",
+                log_file,
+            )
+
     def _set_code_unit_attributes(self):
         """Conversion between physical units and code units."""
 
@@ -642,8 +675,8 @@ class VtkMixin(Dataset):
         self.domain_left_edge = dle
         self.domain_right_edge = dre
 
-        # time wasn't stored in vtk files before Idefix 0.8
-        self.current_time = md.get("time", -1)
+        # time may be already set by super classes.
+        setdefaultattr(self, "current_time", md.get("time", -1))
 
         # periodicity was not stored in vtk files before Idefix 0.9
         self._periodicity = md.get("periodicity", (True, True, True))
@@ -724,33 +757,5 @@ class PlutoVtkDataset(VtkMixin, StaticPlutoDataset):
         else:
             return "PLUTO" in header
 
-    def _parse_parameter_file(self):
-        super()._parse_parameter_file()
-
-        # parse time from vtk.out
-        log_file = os.path.join(self.directory, "vtk.out")
-        if (match := re.search(r"\.(\d*)\.", self.filename)) is None:
-            raise RuntimeError(
-                f"Failed to parse output number from file name {self.filename}"
-            )
-        index = int(match.group(1))
-
-        # will be converted to actual unyt_quantity in _set_derived_attrs
-        self.current_time = -1
-
-        if not os.path.isfile(log_file):
-            ytLogger.warning("Missing log file %s, setting current_time = -1", log_file)
-            return
-
-        log_regexp = re.compile(rf"^{index}\s(\S+)")
-        with open(log_file) as fh:
-            for line in fh.readlines():
-                log_match = re.search(log_regexp, line)
-                if log_match:
-                    self.current_time = float(log_match.group(1))
-                    break
-            else:
-                ytLogger.warning(
-                    "Failed to retrieve time from %s, setting current_time = -1",
-                    log_file,
-                )
+    def _get_log_file(self) -> str:
+        return os.path.join(self.directory, "vtk.out")
