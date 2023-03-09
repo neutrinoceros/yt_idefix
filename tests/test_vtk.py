@@ -47,8 +47,8 @@ def test_parse_pluto_metadata(pluto_vtk_file):
         assert ds.current_time >= 0
 
 
-def test_pluto_units(pluto_vtk_file):
-    file = pluto_vtk_file
+def test_units(vtk_file_with_units):
+    file = vtk_file_with_units
     ds = yt.load(file["path"])
     for u, expected in file["units"].items():
         assert_allclose_units(getattr(ds, f"{u}_unit"), expected)
@@ -72,8 +72,8 @@ def test_pluto_complete_units_override(pluto_vtk_file):
             assert_allclose_units(getattr(ds, attr), ds.quan(*value))
 
 
-def test_pluto_one_unit_override(pluto_vtk_file):
-    file = pluto_vtk_file
+def test_pluto_one_unit_override(vtk_file_with_units):
+    file = vtk_file_with_units
     # Pluto's length_unit and density_unit will be combined with
     uo = {"time_unit": (2.0, "yr")}
     ds = yt.load(file["path"], geometry=file["geometry"], units_override=uo)
@@ -84,8 +84,8 @@ def test_pluto_one_unit_override(pluto_vtk_file):
     assert_allclose_units(ds.velocity_unit, expect_velocity)
 
 
-def test_pluto_two_units_override(pluto_vtk_file):
-    file = pluto_vtk_file
+def test_pluto_two_units_override(vtk_file_with_units):
+    file = vtk_file_with_units
     # Pluto's length_unit will be combined with
     uo = {"time_unit": (2.0, "yr"), "density_unit": (32.0, "g/cm**3")}
     ds = yt.load(file["path"], geometry=file["geometry"], units_override=uo)
