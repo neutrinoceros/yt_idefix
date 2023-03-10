@@ -46,7 +46,7 @@ _DEF_GEOMETRY_REGEXP: Final = re.compile(r"^\s*#define\s+GEOMETRY\s+([A-Z]+)")
 _DEF_UNIT_REGEXP: Final = re.compile(r"^\s*#define\s+UNIT_(\w+)\s+(\S+)")
 
 
-class IdefixGrid(StretchedGrid):
+class SingleGrid(StretchedGrid):
     _id_offset = 0
 
     def __init__(self, id, cell_widths, filename, index, level, dims):
@@ -57,8 +57,8 @@ class IdefixGrid(StretchedGrid):
         self.ActiveDimensions = dims
 
 
-class IdefixHierarchy(GridIndex, ABC):
-    grid = IdefixGrid
+class GoodBoyHierarchy(GridIndex, ABC):
+    grid = SingleGrid
 
     def __init__(self, ds, dataset_type="idefix"):
         self.dataset_type = dataset_type
@@ -119,14 +119,6 @@ class IdefixHierarchy(GridIndex, ABC):
         self.grids[i] = g
 
     @abstractmethod
-    def _get_field_offset_index(self) -> dict[str, int]:
-        HEADER_SIZE: int = 256
-        with open(self.index_filename, "rb") as fh:
-            fh.seek(HEADER_SIZE)
-            field_index = ...
-        return field_index  # type: ignore
-
-    @abstractmethod
     @cached_property
     def _cell_widths(self) -> tuple[XSpans, YSpans, ZSpans]:
         # must return a 3-tuple of 1D unyt_array
@@ -161,7 +153,21 @@ class IdefixHierarchy(GridIndex, ABC):
         return coords, cell_widths
 
 
-class IdefixVtkHierarchy(IdefixHierarchy):
+class FieldOffsetHierarchy(GoodBoyHierarchy, ABC):
+    @abstractmethod
+    def _get_field_offset_index(self) -> dict[str, int]:
+        HEADER_SIZE: int = 256
+        with open(self.index_filename, "rb") as fh:
+            fh.seek(HEADER_SIZE)
+            field_index = ...
+        return field_index  # type: ignore
+
+    def _parse_index(self):
+        super()._parse_index()
+        self._field_offsets = self._get_field_offset_index()
+
+
+class VtkHierarchy(FieldOffsetHierarchy):
     def _get_field_offset_index(self) -> dict[str, int]:
         return self.ds._field_offset_index
 
@@ -210,7 +216,7 @@ class IdefixVtkHierarchy(IdefixHierarchy):
         return cell_centers
 
 
-class IdefixDmpHierarchy(IdefixHierarchy):
+class IdefixDmpHierarchy(FieldOffsetHierarchy):
     def _get_field_offset_index(self) -> dict[str, int]:
         with open(self.index_filename, "rb") as fh:
             return dmp_io.get_field_offset_index(fh)
@@ -642,7 +648,7 @@ class StaticPlutoDataset(GoodboyDataset, ABC):
 
 
 class VtkMixin(Dataset):
-    _index_class = IdefixVtkHierarchy
+    _index_class = VtkHierarchy
 
     def _read_data_header(self) -> str:
         return vtk_io.read_header(self.filename)
