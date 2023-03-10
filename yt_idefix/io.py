@@ -11,18 +11,13 @@ from ._io import dmp_io, vtk_io
 class SingleGridIO(BaseIOHandler, ABC):
     _particle_reader = False
 
-    def __init__(self, ds):
-        BaseIOHandler.__init__(self, ds)
-        self.ds = ds
-        self._data_file = ds.filename
-
     def _read_fluid_selection(self, chunks, selector, fields, size):
         data = {}
 
         for field in fields:
             data[field] = np.empty(size, dtype="float64")
 
-        with open(self._data_file, mode="rb") as fh:
+        with open(self.ds.filename, mode="rb") as fh:
             ind = 0
             for chunk in chunks:
                 for grid in chunk.objs:
