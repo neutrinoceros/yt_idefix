@@ -72,7 +72,6 @@ yt_idefix = [
 namespaces = false
 
 [tool.ruff]
-target-version = "py38"  # https://github.com/charliermarsh/ruff/issues/2039
 exclude = [
     "*/api.py",
     "*/__init__.py",
