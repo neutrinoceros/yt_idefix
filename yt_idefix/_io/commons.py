@@ -47,6 +47,56 @@ class Coordinates(NamedTuple):
         return Coordinates(arrs[0], arrs[1], arrs[2], self.array_shape)
 
 
+def get_native_coordinates_from_cartesian(
+    xcart: np.ndarray,
+    ycart: np.ndarray,
+    zcart: np.ndarray,
+    geometry: str,
+) -> list[np.ndarray]:
+    shape = Shape(*xcart.shape)
+
+    # Reconstruct the polar coordinate system
+    if geometry == "polar":
+        # on disk coordinates are cell face coordinates.
+        # We need to convert from cartesian to polar,
+        # but no interpolation is needed.
+        r = np.sqrt(xcart[:, 0, 0] ** 2 + ycart[:, 0, 0] ** 2)
+        theta = np.unwrap(np.arctan2(ycart[0, :, 0], xcart[0, :, 0]))
+        z = zcart[0, 0, :]
+
+        coords = [r, theta, z]
+    elif geometry == "spherical":
+        # Reconstruct the spherical coordinate system
+        if shape.n3 == 1:
+            r = np.sqrt(xcart[:, 0, 0] ** 2 + ycart[:, 0, 0] ** 2)
+            phi = np.unwrap(
+                np.arctan2(zcart[0, shape.n2 // 2, :], xcart[0, shape.n2 // 2, :])
+            )
+            theta = np.arccos(
+                ycart[0, :, 0] / np.sqrt(xcart[0, :, 0] ** 2 + ycart[0, :, 0] ** 2)
+            )
+        else:
+            r = np.sqrt(xcart[:, 0, 0] ** 2 + ycart[:, 0, 0] ** 2 + zcart[:, 0, 0] ** 2)
+            phi = np.unwrap(
+                np.arctan2(
+                    ycart[shape.n1 // 2, shape.n2 // 2, :],
+                    xcart[shape.n1 // 2, shape.n2 // 2, :],
+                )
+            )
+            theta = np.arccos(
+                zcart[0, :, 0]
+                / np.sqrt(
+                    xcart[0, :, 0] ** 2 + ycart[0, :, 0] ** 2 + zcart[0, :, 0] ** 2
+                )
+            )
+        coords = [r, theta, phi]
+    else:
+        raise NotImplementedError(
+            f"This kind of geometry: {geometry} is not supported yet!"
+        )
+    return coords
+
+
 # map field name to numpy array init data:
 # precision (-> datatype), dimensionality, [nx, ny, nz]
 # the np.ndarray is assumed to contain *dim* elements

@@ -6,7 +6,7 @@ from typing import Any, BinaryIO, Literal, overload
 
 import numpy as np
 
-from .commons import Coordinates, Shape
+from .commons import Coordinates, Shape, get_native_coordinates_from_cartesian
 
 KNOWN_GEOMETRIES: dict[int, str] = {
     0: "cartesian",
@@ -191,50 +191,10 @@ def read_grid_coordinates(
         zcart.shape = rshape
         zcart = zcart.T
 
-        # Reconstruct the polar coordinate system
-        if geometry == "polar":
-            # on disk coordinates are cell face coordinates.
-            # We need to convert from cartesian to polar,
-            # but no interpolation is needed.
-            r = np.sqrt(xcart[:, 0, 0] ** 2 + ycart[:, 0, 0] ** 2)
-            theta = np.unwrap(np.arctan2(ycart[0, :, 0], xcart[0, :, 0]))
-            z = zcart[0, 0, :]
+        coords = get_native_coordinates_from_cartesian(xcart, ycart, zcart, geometry)
 
-            data_type = next(fh).decode().split()[0]  # CELL_DATA (NX-1)(NY-1)(NZ-1)
-            next(fh)
-
-            coords = [r, theta, z]
-        else:
-            assert geometry == "spherical"
-            # Reconstruct the spherical coordinate system
-            if shape.n3 == 1:
-                r = np.sqrt(xcart[:, 0, 0] ** 2 + ycart[:, 0, 0] ** 2)
-                phi = np.unwrap(
-                    np.arctan2(zcart[0, shape.n2 // 2, :], xcart[0, shape.n2 // 2, :])
-                )
-                theta = np.arccos(
-                    ycart[0, :, 0] / np.sqrt(xcart[0, :, 0] ** 2 + ycart[0, :, 0] ** 2)
-                )
-            else:
-                r = np.sqrt(
-                    xcart[:, 0, 0] ** 2 + ycart[:, 0, 0] ** 2 + zcart[:, 0, 0] ** 2
-                )
-                phi = np.unwrap(
-                    np.arctan2(
-                        ycart[shape.n1 // 2, shape.n2 // 2, :],
-                        xcart[shape.n1 // 2, shape.n2 // 2, :],
-                    )
-                )
-                theta = np.arccos(
-                    zcart[0, :, 0]
-                    / np.sqrt(
-                        xcart[0, :, 0] ** 2 + ycart[0, :, 0] ** 2 + zcart[0, :, 0] ** 2
-                    )
-                )
-            coords = [r, theta, phi]
-
-            data_type = next(fh).decode().split()[0]  # CELL_DATA (NX-1)(NY-1)(NZ-1)
-            next(fh)
+        data_type = next(fh).decode().split()[0]  # CELL_DATA (NX-1)(NY-1)(NZ-1)
+        next(fh)
 
         array_shape = shape.to_cell_centered()
         assert data_type == "CELL_DATA"
