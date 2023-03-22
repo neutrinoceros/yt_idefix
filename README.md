@@ -29,6 +29,7 @@ import yt_idefix
 Now `yt.load` will be able to read Pluto/Idefix `.vtk` output files, as well as
 Idefix `.dmp` dump files.
 
+Pluto [`XDMF`](https://www.xdmf.org/index.php/XDMF_Model_and_Format) files are supported from version 1.1.0. Note that this feature requires `h5py`.
 
 ## Experimental features
 
