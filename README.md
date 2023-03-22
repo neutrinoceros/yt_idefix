@@ -10,7 +10,7 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v1.json)](https://github.com/charliermarsh/ruff)
 
-A maturing yt frontend for Idefix and Pluto (vtk), packaged as an extension for yt.
+A maturing yt frontend for Idefix and Pluto, packaged as an extension for yt.
 
 ## Installation
 
@@ -26,10 +26,16 @@ import yt
 import yt_idefix
 ```
 
-Now `yt.load` will be able to read Pluto/Idefix `.vtk` output files, as well as
-Idefix `.dmp` dump files.
+Now `yt.load` will be able to read Pluto/Idefix output files.
 
-Pluto [`XDMF`](https://www.xdmf.org/index.php/XDMF_Model_and_Format) files are supported from version 1.1.0. Note that this feature requires `h5py`.
+## Supported formats
+
+| Code   | format | supported since | additional dependencies |
+|--------|:------:|:---------------:|-------------------------|
+| Idefix | `.dmp` | v0.1.0          |                         |
+| Idefix | `.vtk` | v0.3.0          |                         |
+| Pluto  | `.vtk` | v0.9.0          |                         |
+| Pluto  |  XDMF  | v1.1.0          | `h5py`                  |
 
 ## Experimental features
 
