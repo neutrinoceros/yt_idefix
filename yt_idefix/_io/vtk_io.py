@@ -130,7 +130,6 @@ def read_grid_coordinates(
 ) -> Coordinates:
     # Return cell edges coordinates
 
-    fh.seek(0)
     md = read_metadata(fh)
 
     geometry = md.get("geometry", geometry)
