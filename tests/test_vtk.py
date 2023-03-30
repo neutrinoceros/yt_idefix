@@ -98,6 +98,16 @@ def test_pluto_two_units_override(vtk_file_with_units):
     assert_allclose_units(ds.mass_unit, expect_mass)
 
 
+def test_missing_inifile(vtk_file):
+    file = vtk_file
+    yt.load(file["path"], inifile=None, geometry=file["geometry"])
+    if "require_inifile" in file:
+        if file["require_inifile"] is True:
+            pytest.raises(
+                RuntimeError, match=r"The inifile is missing for unit definitions. *"
+            )
+
+
 def test_pluto_invalid_units_override(pluto_vtk_file):
     for uo in PlutoVtkDataset.invalid_unit_combinations:
         with pytest.raises(ValueError, match=r".* cannot derive all units\n.*"):
