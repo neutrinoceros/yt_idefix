@@ -370,9 +370,6 @@ class GoodboyDataset(Dataset, ABC):
         ):
             return str(file.absolute())
         else:
-            ytLogger.warning(
-                f"The inifile (default: {self._default_inifile}) is missing. Make sure you don't need it."
-            )
             return ""
 
     def _parse_parameter_file(self):
@@ -664,10 +661,12 @@ class StaticPlutoDataset(GoodboyDataset, ABC):
     def _get_input_parameter(self, match: re.Match) -> str:
         """Replace matched input parameters with its value"""
         if not self._inifile:
-            raise RuntimeError(
+            warnings.warn(
                 "The inifile is missing for unit definitions. "
-                f"You can specify it to the keyword argument 'inifile' (default: {self._default_inifile})."
+                f"Specify it to the keyword argument 'inifile' (default: {self._default_inifile}), "
+                "or make sure that all fields are in code units!"
             )
+            return "1.0"
         key = match.group(1)
         return str(self.parameters["Parameters"][key])
 
