@@ -668,6 +668,12 @@ class StaticPlutoDataset(GoodboyDataset, ABC):
             )
             return "1.0"
         key = match.group(1)
+        if key not in self.parameters["Parameters"]:
+            warnings.warn(
+                f"Cannot get the value of {key} from {self._inifile}."
+                "Make sure that all fields are in code units!"
+            )
+            return "1.0"
         return str(self.parameters["Parameters"][key])
 
     def _get_unit(self, match: re.Match) -> str:
