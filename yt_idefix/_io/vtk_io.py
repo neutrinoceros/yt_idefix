@@ -100,7 +100,8 @@ def read_metadata(fh: BinaryIO) -> dict[str, Any]:
                 geometry_from_data = KNOWN_GEOMETRIES.get(geom_flag)
                 if geometry_from_data is None:
                     warnings.warn(
-                        f"Unknown geometry enum value {geom_flag}, please report this."
+                        f"Unknown geometry enum value {geom_flag}, please report this.",
+                        stacklevel=2,
                     )
                 metadata["geometry"] = geometry_from_data
             elif d.startswith("TIME"):
@@ -110,7 +111,7 @@ def read_metadata(fh: BinaryIO) -> dict[str, Any]:
                     np.fromfile(fh, dtype=">i4", count=3).astype(bool)
                 )
             else:
-                warnings.warn(f"Found unknown field {d!r}")
+                warnings.warn(f"Found unknown field {d!r}", stacklevel=2)
             next(fh)  # skip extra linefeed (empty line)
         parse_shape(next(fh).decode(), metadata)
 
@@ -161,12 +162,14 @@ def read_grid_coordinates(
                 # Raising a warning should suffice
                 warnings.warn(
                     "point_type=POINT_DATA case is not fully supported. "
-                    "Domain edges will be slightly off."
+                    "Domain edges will be slightly off.",
+                    stacklevel=2,
                 )
             else:
                 warnings.warn(
                     f"Got unexpected value point_type={point_type!r}. "
-                    "Results are not guaranteed."
+                    "Results are not guaranteed.",
+                    stacklevel=2,
                 )
             array_shape = shape
 
