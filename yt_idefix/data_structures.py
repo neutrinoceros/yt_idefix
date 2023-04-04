@@ -415,7 +415,8 @@ class GoodboyDataset(Dataset, ABC):
                     f" - {from_disk!r} (from disk)\n"
                     f" - {from_input!r} (from input)\n"
                     "input prevails to allow working around hypothetical parsing bugs, "
-                    "but it is very likely to result in an error in the general case."
+                    "but it is very likely to result in an error in the general case.",
+                    stacklevel=2,
                 )
             geom_str = from_input
         else:
@@ -490,7 +491,8 @@ class GoodboyDataset(Dataset, ABC):
         match = re.search(regexp, header)
         if match is None:
             warnings.warn(
-                f"Could not determine code version from file header {header!r}"
+                f"Could not determine code version from file header {header!r}",
+                stacklevel=2,
             )
             return "unknown"
 
