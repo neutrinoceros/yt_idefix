@@ -727,7 +727,7 @@ class VtkMixin(Dataset):
 
         # some versions of Pluto define field names in lower case
         # so we normalize to upper case to avoid duplicating data
-        # in IdefixVtkFieldInfo.known_other_fields
+        # in BaseVtkFields.known_other_fields
         normalize_varnames = self.dataset_type == "pluto-vtk"
 
         # parse the grid
