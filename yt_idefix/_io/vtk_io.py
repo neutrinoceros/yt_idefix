@@ -204,7 +204,7 @@ def read_grid_coordinates(
     return Coordinates(coords[0], coords[1], coords[2], array_shape)
 
 
-def read_field_offset_index(fh: BinaryIO, shape: Shape) -> dict[str, int]:
+def read_field_offset_index(fh: BinaryIO, shape: Shape, upper_case_varnames:bool) -> dict[str, int]:
     # assuming fh is correctly positioned (read_grid_coordinates must be called first)
     retv: dict[str, int] = {}
 
@@ -218,7 +218,8 @@ def read_field_offset_index(fh: BinaryIO, shape: Shape) -> dict[str, int]:
         # some versions of Pluto define field names in lower case
         # so we normalize to upper case to avoid duplicating data
         # in IdefixVtkFieldInfo.known_other_fields
-        varname = varname.upper()
+        if upper_case_varnames:
+            varname = varname.upper()
 
         if datatype == "SCALARS":
             next(fh)

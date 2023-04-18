@@ -725,11 +725,22 @@ class VtkMixin(Dataset):
         super()._parse_parameter_file()
         # from here self.geometry is assumed to be set
 
+        if self.dataset_type == "idefix-vtk":
+            # idefix may have upper and lower case
+            # characters in the variable names
+            upper_case_varnames = False
+        else:
+            # For Pluto it depends on the version
+            # for normalisation purposes they are
+            # we use upper case names
+            upper_case_varnames = True
+
         # parse the grid
         with open(self.filename, "rb") as fh:
             coords = vtk_io.read_grid_coordinates(fh, geometry=self.geometry)
+            "ld"
             self._field_offset_index = vtk_io.read_field_offset_index(
-                fh, coords.array_shape
+                fh, coords.array_shape, upper_case_varnames
             )
         self._detected_field_list = list(self._field_offset_index.keys())
 
