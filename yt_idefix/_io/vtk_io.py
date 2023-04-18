@@ -204,7 +204,9 @@ def read_grid_coordinates(
     return Coordinates(coords[0], coords[1], coords[2], array_shape)
 
 
-def read_field_offset_index(fh: BinaryIO, shape: Shape, upper_case_varnames:bool) -> dict[str, int]:
+def read_field_offset_index(
+    fh: BinaryIO, shape: Shape, upper_case_varnames: bool
+) -> dict[str, int]:
     # assuming fh is correctly positioned (read_grid_coordinates must be called first)
     retv: dict[str, int] = {}
 
