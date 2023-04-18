@@ -739,7 +739,7 @@ class VtkMixin(Dataset):
         with open(self.filename, "rb") as fh:
             coords = vtk_io.read_grid_coordinates(fh, geometry=self.geometry)
             self._field_offset_index = vtk_io.read_field_offset_index(
-                fh, coords.array_shape, upper_case_varnames
+                fh, coords.array_shape, upper_case_varnames=normalize_varnames
             )
         self._detected_field_list = list(self._field_offset_index.keys())
 
