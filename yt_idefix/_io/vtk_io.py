@@ -217,9 +217,6 @@ def read_field_offset_index(
         s = line.decode()
         datatype, varname, dtype = s.split()
 
-        # some versions of Pluto define field names in lower case
-        # so we normalize to upper case to avoid duplicating data
-        # in IdefixVtkFieldInfo.known_other_fields
         if upper_case_varnames:
             varname = varname.upper()
 
