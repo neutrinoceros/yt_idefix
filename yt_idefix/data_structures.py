@@ -725,15 +725,10 @@ class VtkMixin(Dataset):
         super()._parse_parameter_file()
         # from here self.geometry is assumed to be set
 
-        if self.dataset_type == "idefix-vtk":
-            # idefix may have upper and lower case
-            # characters in the variable names
-            upper_case_varnames = False
-        else:
-            # For Pluto it depends on the version
-            # for normalisation purposes they are
-            # we use upper case names
-            upper_case_varnames = True
+        # some versions of Pluto define field names in lower case
+        # so we normalize to upper case to avoid duplicating data
+        # in IdefixVtkFieldInfo.known_other_fields
+        normalize_varnames = self.dataset_type == "pluto-vtk"
 
         # parse the grid
         with open(self.filename, "rb") as fh:
