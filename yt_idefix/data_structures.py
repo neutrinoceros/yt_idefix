@@ -662,11 +662,13 @@ class StaticPlutoDataset(GoodboyDataset, ABC):
         """Replace matched input parameters with its value"""
         key = match.group(1)
         if key not in self.parameters.get("Parameters", {}):
-            if not self._inifile:
+            if not os.path.exists(self._inifile):
                 warnings.warn(
-                    "The inifile is missing for unit definitions. "
-                    f"Specify it to the keyword argument 'inifile' (default: {self._default_inifile}), "
-                    "or make sure that all fields are in code units!",
+                    f"Could not find inifile ({self._inifile}). "
+                    "Inferred code units might be inaccurate\n"
+                    "To silence this warning, specify the inifile keyword argument to yt.load, "
+                    "as a path (either absolute or relative to the data file's parent directory). "
+                    f"Default is {self._default_inifile!r}. ",
                     stacklevel=2,
                 )
             else:

@@ -107,9 +107,7 @@ def test_missing_inifile(tmp_path):
         tmpdir,
         ignore=shutil.ignore_patterns("*.ini"),
     )
-    with pytest.warns(
-        UserWarning, match=r"The inifile is missing for unit definitions."
-    ):
+    with pytest.warns(UserWarning, match="Could not find inifile"):
         yt.load(tmpdir / "data.0010.vtk")
 
 
