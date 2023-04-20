@@ -666,12 +666,14 @@ class StaticPlutoDataset(GoodboyDataset, ABC):
                 warnings.warn(
                     "The inifile is missing for unit definitions. "
                     f"Specify it to the keyword argument 'inifile' (default: {self._default_inifile}), "
-                    "or make sure that all fields are in code units!"
+                    "or make sure that all fields are in code units!",
+                    stacklevel=2,
                 )
             else:
                 warnings.warn(
                     f"Cannot get the value of {key} from {self._inifile}."
-                    "Make sure that all fields are in code units!"
+                    "Make sure that all fields are in code units!",
+                    stacklevel=2,
                 )
             return "1.0"
         return str(self.parameters["Parameters"][key])
