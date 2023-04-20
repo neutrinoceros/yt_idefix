@@ -9,7 +9,6 @@ attrs:
   dimensionality: 3
   kind: pluto
   has_units: true
-  require_inifile: true
   units:
     length: 7.77909038e13 cm
     velocity: 208457.8557 cm/s
