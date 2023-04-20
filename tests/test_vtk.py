@@ -103,7 +103,7 @@ def test_pluto_two_units_override(vtk_file_with_units):
 def test_missing_inifile(tmp_path):
     tmpdir = tmp_path / "missing_inifile"
     shutil.copytree(
-        Path(__file__).parent / "data/pluto_disk_planet",
+        Path(__file__).parent / "data" / "pluto_disk_planet",
         tmpdir,
         ignore=shutil.ignore_patterns("*.ini"),
     )
@@ -114,7 +114,7 @@ def test_missing_inifile(tmp_path):
 
 
 def test_incorrect_inifile():
-    file_dir = Path(__file__).parent / "data/pluto_disk_planet"
+    file_dir = Path(__file__).parent / "data" / "pluto_disk_planet"
     with pytest.warns(UserWarning, match=r"Cannot get the value of *"):
         yt.load(file_dir / "data.0010.vtk", inifile=file_dir / "incorrect_inifile")
 
