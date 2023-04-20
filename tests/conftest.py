@@ -155,17 +155,3 @@ PLUTO_VTK_FILES = {k: v for k, v in VTK_FILES.items() if v["kind"] == "pluto"}
 )
 def pluto_vtk_file(request):
     return request.param
-
-
-VTK_FILES_NEED_INIFILE = {
-    k: v for k, v in VTK_FILES.items() if v.get("require_inifile")
-}
-
-
-@pytest.fixture(
-    params=VTK_FILES_NEED_INIFILE.values(),
-    ids=VTK_FILES_NEED_INIFILE.keys(),
-    scope="session",
-)
-def vtk_file_need_inifile(request):
-    return request.param

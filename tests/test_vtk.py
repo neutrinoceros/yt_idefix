@@ -99,22 +99,26 @@ def test_pluto_two_units_override(vtk_file_with_units):
     assert_allclose_units(ds.mass_unit, expect_mass)
 
 
-def test_missing_inifile(vtk_file_need_inifile, tmp_path):
-    file = vtk_file_need_inifile
-    tmpdir = tmp_path / "missing_inifile"
-    shutil.copytree(file["path"].parent, tmpdir, ignore=shutil.ignore_patterns("*.ini"))
-    with pytest.warns(
-        UserWarning, match=r"The inifile is missing for unit definitions. *"
-    ):
-        yt.load(list(tmpdir.glob("*.vtk"))[0])
+def test_missing_inifile(vtk_file_with_units, tmp_path):
+    file = vtk_file_with_units
+    if file.get("require_inifile"):
+        tmpdir = tmp_path / "missing_inifile"
+        shutil.copytree(
+            file["path"].parent, tmpdir, ignore=shutil.ignore_patterns("*.ini")
+        )
+        with pytest.warns(
+            UserWarning, match=r"The inifile is missing for unit definitions. *"
+        ):
+            yt.load(list(tmpdir.glob("*.vtk"))[0])
 
 
-def test_incorrect_inifile(vtk_file_need_inifile):
-    file = vtk_file_need_inifile
-    inifile = file["path"].parent / "incorrect_inifile"
-    if inifile.exists:
-        with pytest.warns(UserWarning, match=r"Cannot get the value of *"):
-            yt.load(file["path"], inifile=inifile)
+def test_incorrect_inifile(vtk_file_with_units):
+    file = vtk_file_with_units
+    if file.get("require_inifile"):
+        inifile = file["path"].parent / "incorrect_inifile"
+        if inifile.exists:
+            with pytest.warns(UserWarning, match=r"Cannot get the value of *"):
+                yt.load(file["path"], inifile=inifile)
 
 
 def test_pluto_invalid_units_override(pluto_vtk_file):

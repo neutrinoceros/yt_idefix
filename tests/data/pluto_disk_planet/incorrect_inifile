@@ -1,3 +1,7 @@
+# Compared with the original pluto.ini,
+# this inifile lacks the required parameters
+# under section [Parameters] for unit definitions
+
 [Grid]
 X1-grid    1  0.4          128  u  2.5
 X2-grid    1  1.448623279  16   u  1.570796327
