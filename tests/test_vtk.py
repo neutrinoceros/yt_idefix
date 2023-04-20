@@ -1,5 +1,7 @@
 import os
 import re
+import shutil
+from pathlib import Path
 
 import pytest
 from more_itertools import distinct_combinations
@@ -96,6 +98,25 @@ def test_pluto_two_units_override(vtk_file_with_units):
     expect_mass = ds.quan(*uo["density_unit"]) * ds.length_unit**3
     assert_allclose_units(ds.velocity_unit, expect_velocity)
     assert_allclose_units(ds.mass_unit, expect_mass)
+
+
+def test_missing_inifile(tmp_path):
+    tmpdir = tmp_path / "missing_inifile"
+    shutil.copytree(
+        Path(__file__).parent / "data" / "pluto_disk_planet",
+        tmpdir,
+        ignore=shutil.ignore_patterns("*.ini"),
+    )
+    with pytest.warns(
+        UserWarning, match=r"The inifile is missing for unit definitions."
+    ):
+        yt.load(tmpdir / "data.0010.vtk")
+
+
+def test_incorrect_inifile():
+    file_dir = Path(__file__).parent / "data" / "pluto_disk_planet"
+    with pytest.warns(UserWarning, match=r"Cannot get the value of"):
+        yt.load(file_dir / "data.0010.vtk", inifile=file_dir / "incorrect_inifile")
 
 
 def test_pluto_invalid_units_override(pluto_vtk_file):

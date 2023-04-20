@@ -661,6 +661,21 @@ class StaticPlutoDataset(GoodboyDataset, ABC):
     def _get_input_parameter(self, match: re.Match) -> str:
         """Replace matched input parameters with its value"""
         key = match.group(1)
+        if key not in self.parameters.get("Parameters", {}):
+            if not self._inifile:
+                warnings.warn(
+                    "The inifile is missing for unit definitions. "
+                    f"Specify it to the keyword argument 'inifile' (default: {self._default_inifile}), "
+                    "or make sure that all fields are in code units!",
+                    stacklevel=2,
+                )
+            else:
+                warnings.warn(
+                    f"Cannot get the value of {key} from {self._inifile}."
+                    "Make sure that all fields are in code units!",
+                    stacklevel=2,
+                )
+            return "1.0"
         return str(self.parameters["Parameters"][key])
 
     def _get_unit(self, match: re.Match) -> str:
