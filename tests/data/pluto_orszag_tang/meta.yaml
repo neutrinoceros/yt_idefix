@@ -1,0 +1,21 @@
+id: orszag_tang
+
+paths:
+- data.0010.vtk
+- data.0010.dbl.h5
+- data.0010.flt.h5
+
+attrs:
+  has_geometry: true
+  geometry: cartesian
+  dimensionality: 2
+  kind: pluto
+  has_units: false
+  current_time: 1.000000e+02
+  units:
+    length: 1.4959789200000e+13 cm
+    velocity: 1.0 km/s
+    density: 1.67262171e-24 g/cm**3
+    mass: 5.599821080414673e+15 g
+    time: 1.49597892e+08 s
+    magnetic: 4.5846247725940657e-07 G
