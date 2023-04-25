@@ -1,5 +1,3 @@
-import re
-
 from yt.fields.field_info_container import FieldInfoContainer
 from yt.fields.magnetic_field import setup_magnetic_field_aliases
 
@@ -51,16 +49,52 @@ class IdefixDmpFields(BaseFields):
 
 class PlutoFields(BaseFields):
     known_other_fields = (
+        # PLUTO 4 standard variable names normalized in upper case,
+        # Referring to Tools/IDL/pload.pro in Pluto v4.2-patch2
+        # Ion fractions are not listed here
         # Each entry here is of the form
         # ( "name", ("units", ["fields", "to", "alias"], # "display_name")),
-        ("RHO", ("code_mass / code_length**3", ["density", "rho"], None)),
-        ("VX1", ("code_length/code_time", ["vel_x"], None)),
-        ("VX2", ("code_length/code_time", ["vel_y"], None)),
-        ("VX3", ("code_length/code_time", ["vel_z"], None)),
-        ("PRS", ("code_pressure", ["prs", "pres", "pressure"], None)),
+        # alias should be set with yt-standard-name or pluto-macro-name
+        ("RHO", ("code_density", ["density"], None)),
+        ("VX1", ("code_velocity", ["velocity_x"], None)),
+        ("VX2", ("code_velocity", ["velocity_y"], None)),
+        ("VX3", ("code_velocity", ["velocity_z"], None)),
+        ("PRS", ("code_pressure", ["pressure"], None)),
+        ("AX1", ("code_magnetic", [], None)),
+        ("AX2", ("code_magnetic", [], None)),
+        ("AX3", ("code_magnetic", [], None)),
         ("BX1", ("code_magnetic", [], None)),
         ("BX2", ("code_magnetic", [], None)),
         ("BX3", ("code_magnetic", [], None)),
+        ("EX1", ("code_magnetic/c", [], None)),
+        ("EX2", ("code_magnetic/c", [], None)),
+        ("EX3", ("code_magnetic/c", [], None)),
+        ("BX1S", ("code_magnetic", ["BX1s"], None)),
+        ("BX2S", ("code_magnetic", ["BX2s"], None)),
+        ("BX3S", ("code_magnetic", ["BX3s"], None)),
+        ("EX1S", ("code_magnetic/c", ["EX1s"], None)),
+        ("EX2S", ("code_magnetic/c", ["EX2s"], None)),
+        ("EX3S", ("code_magnetic/c", ["EX3s"], None)),
+        ("CRG", ("", ["code_magnetic/code_length/c"], None)),
+        ("PSI_GLM", ("", [], None)),
+        ("PHI_GLM", ("", [], None)),
+        ("RHO_D", ("code_density", [], None)),
+        ("VX1_D", ("code_velocity", [], None)),
+        ("VX2_D", ("code_velocity", [], None)),
+        ("VX3_D", ("code_velocity", [], None)),
+        ("ENR", ("code_pressure", [], None)),
+        ("FR1", ("code_pressure*code_velocity", [], None)),
+        ("FR2", ("code_pressure*code_velocity", [], None)),
+        ("FR3", ("code_pressure*code_velocity", [], None)),
+        ("ENTROPY", ("", ["ENTR"], None)),
+        ("TR1", ("", [], None)),
+        ("TR2", ("", [], None)),
+        ("TR3", ("", [], None)),
+        ("TR4", ("", [], None)),
+        ("TR5", ("", [], None)),
+        ("TR6", ("", [], None)),
+        ("TR7", ("", [], None)),
+        ("TR8", ("", [], None)),
     )
 
     known_particle_fields = ()
@@ -69,22 +103,6 @@ class PlutoFields(BaseFields):
         setup_magnetic_field_aliases(
             self, self.ds._dataset_type, [f"Bx{idir}" for idir in "123"]
         )
-
-        # Add tracer fields
-        _TRC_REGEXP = re.compile(r"^TR(\d+)")
-        for _, field in self.field_list:
-            if (tr_match := re.fullmatch(_TRC_REGEXP, field)) is not None:
-                idx = tr_match.group(1)
-                self.add_output_field(
-                    (self.ds._dataset_type, f"tr{idx}"),
-                    sampling_type="cell",
-                    units="",
-                )
-                self.alias(
-                    ("gas", f"tracer_{idx}"),
-                    (self.ds._dataset_type, f"tr{idx}"),
-                    units="",
-                )
 
     def setup_particle_fields(self, ptype):
         super().setup_particle_fields(ptype)
