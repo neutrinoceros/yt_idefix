@@ -118,8 +118,10 @@ class PlutoXdmfIOHandler(BaseIOHandler):
                 for grid in chunk.objs:
                     nd = 0
                     for field in fields:
-                        ftype, fname = field
-                        position = f"/Timestep_{entry}/vars/{fname}"
+                        _, fname = field
+                        position = (
+                            f"/Timestep_{entry}/vars/{self.ds._field_name_map[fname]}"
+                        )
                         field_data = fh[position][:].astype("=f8")
 
                         while field_data.ndim < 3:
