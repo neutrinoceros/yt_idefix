@@ -875,7 +875,7 @@ class PlutoXdmfDataset(StaticPlutoDataset):
             self._detected_field_list = list(h5f[f"{root}/vars/"])
             self._field_name_map = {}
             # some versions of Pluto define field names in lower case
-            # so we normalize builtin fields (not complete yet) to upper case
+            # so we normalize standard output field names to upper case
             # to avoid duplicating data in PlutoFields.known_other_fields
             for varname in self._detected_field_list:
                 if (

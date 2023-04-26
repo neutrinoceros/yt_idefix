@@ -220,7 +220,7 @@ def read_field_offset_index(
         datatype, varname, dtype = s.split()
 
         # some versions of Pluto define field names in lower case
-        # so we normalize builtin field to upper case
+        # so we normalize standard output field names to upper case
         # to avoid duplicating data in PlutoFields.known_other_fields
         if varname.upper() in dict(field_info.known_other_fields).keys():
             varname = varname.upper()

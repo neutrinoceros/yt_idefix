@@ -51,9 +51,9 @@ class PlutoFields(BaseFields):
     known_other_fields = (
         # PLUTO 4 standard variable names normalized in upper case,
         # Referring to Tools/IDL/pload.pro in Pluto v4.2-patch2
-        # Ion fractions are not listed here
+        # Field names of ion fractions are excluded to normalize
         # Each entry here is of the form
-        # ( "name", ("units", ["fields", "to", "alias"], # "display_name")),
+        # ( "name", ("units", ["alias"], "display_name")),
         # alias should be set with yt-standard-name or pluto-macro-name
         ("RHO", ("code_density", ["density"], None)),
         ("VX1", ("code_velocity", ["velocity_x"], None)),
