@@ -18,6 +18,15 @@ A maturing yt frontend for Idefix and Pluto, packaged as an extension for yt.
 python -m pip install yt_idefix
 ```
 
+## Supported formats
+
+| Code   | format | supported since | additional dependencies |
+|--------|:------:|:---------------:|-------------------------|
+| Idefix | `.dmp` | v0.1.0          |                         |
+| Idefix | `.vtk` | v0.3.0          |                         |
+| Pluto  | `.vtk` | v0.9.0          |                         |
+| Pluto  |  XDMF  | v1.1.0          | `h5py`                  |
+
 ## Usage
 
 After importing `yt` itself, make sure to activate the extension
@@ -28,14 +37,48 @@ import yt_idefix
 
 Now `yt.load` will be able to read Pluto/Idefix output files.
 
-## Supported formats
+### Additional arguments to `yt.load`
+The metadata are parsed from data file, definitions header file and inifile when loading dataset.
 
-| Code   | format | supported since | additional dependencies |
-|--------|:------:|:---------------:|-------------------------|
-| Idefix | `.dmp` | v0.1.0          |                         |
-| Idefix | `.vtk` | v0.3.0          |                         |
-| Pluto  | `.vtk` | v0.9.0          |                         |
-| Pluto  |  XDMF  | v1.1.0          | `h5py`                  |
+Definitions header file (`definitions.h` for Pluto, or `definitions.hpp` for Idefix) and inifile (`pluto.ini` and `idefix.ini` respectively) are discovered automatically if they match default names, are located along with data files, and unique. Otherwise, they can be specified explicitly as paths (either relative to data files or absolute paths) with parameters `definitions_header` and `inifile` respectively.
+
+Geometry is parsed automatically whenever possible, but as a last resort, it can also be specified as a keyword argument (possible values are "cartesian", "spherical", "cylindrical" and "polar").
+
+```python
+# Examples
+ds = yt.load("data.0010.vtk", definitions_header="../definitions.h", inifile="example.ini")
+ds = yt.load("data.0010.vtk", geometry='spherical")
+```
+
+The data are loaded as physical quantities with units. The default unit system is `cgs` in yt. This frontend can convert data from code units into `cgs` properly, based on the unit definitions from metadata.
+
+Users are able to choose the unit displayed in two ways, through `unit_system` ("code", "mks" and "cgs") and `units_override`(only valid for Pluto).
+
+```python
+# Examples on units
+ds = yt.load("data.0010.vtk", unit_system='mks")
+
+units_override = dict(length_unit=(100.0, "au"), mass_unit=yt.units.mass_sun)
+ds = yt.load("data.0010.vtk", unit_override=unit_override) # Caution that other units will also be changed for consistency!!
+```
+With Pluto data, the rest of the system will be derived consistently with given units, within the following rules:
+1. Temperature unit cannot be overridden (always set to Kelvin)
+2. No more than three units can be overridden at once (overconstrained systems are never validated for simplicity)
+3. When given less than three overrides, base units in Pluto (ordered: velocity_unit, density_unit, length_unit) are assumed
+4. The following combinations are not allowed
+
+```python
+{"magnetic_unit", "velocity_unit", "density_unit"},
+{"velocity_unit", "time_unit", "length_unit"},
+{"density_unit", "length_unit", "mass_unit"},
+```
+
+yt is able to provide some derived fields from existed fields, e.g., `"cell_volume"`. Fields related to element species can be created according to primordial abundances of H and He, through `default_species_fields` (`"neutral"` and `"ionized"`) parameters.
+
+```python
+# Example
+ds = yt.load("data.0010.vtk", default_species_fields="ionized")
+```
 
 ## Experimental features
 
