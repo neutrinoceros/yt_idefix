@@ -40,7 +40,7 @@ Now `yt.load` will be able to read Pluto/Idefix output files.
 ### Additional arguments to `yt.load`
 The metadata are parsed from data file, definitions header file and inifile when loading dataset.
 
-Definitions header file (`definitions.h` for Pluto, or `definitions.hpp` for Idefix) and inifile (`pluto.ini` and `idefix.ini` respectively) are discovered automatically if they match default names, and are located along with data files. Otherwise, they can be specified explicitly as paths (either relative to data files or absolute paths) with parameters `definitions_header` and `inifile` respectively.
+Definitions header file (`definitions.h` for Pluto, or `definitions.hpp` for Idefix) and inifile (`pluto.ini` and `idefix.ini` respectively) are discovered automatically if they match default names, are located along with data files, and unique. Otherwise, they can be specified explicitly as paths (either relative to data files or absolute paths) with parameters `definitions_header` and `inifile` respectively.
 
 Geometry is parsed automatically whenever possible, but as a last resort, it can also be specified as a keyword argument (possible values are "cartesian", "spherical", "cylindrical" and "polar").
 
@@ -62,10 +62,10 @@ units_override = dict(length_unit=(100.0, "au"), mass_unit=yt.units.mass_sun)
 ds = yt.load("data.0010.vtk", unit_override=unit_override) # Caution that other units will also be changed for consistency!!
 ```
 With Pluto data, the rest of the system will be derived consistently with given units, within the following rules:
-1. Temperature unit is not allowed to be overrided (always in "K")
-2. No more than three units are overrided at once.
-3. When given less than three overrided units, base units in Pluto (ordered: velocity_unit, density_unit, length_unit) will be used for derivation
-4. Following combinations are not allowed
+1. Temperature unit cannot be overridden (always set to Kelvin)
+2. No more than three units can be overridden at once (overconstrained systems are never validated for simplicity)
+3. When given less than three overrides, base units in Pluto (ordered: velocity_unit, density_unit, length_unit) are assumed
+4. The following combinations are not allowed
 
 ```python
 {"magnetic_unit", "velocity_unit", "density_unit"},
