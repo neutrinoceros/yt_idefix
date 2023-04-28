@@ -80,6 +80,30 @@ yt is able to provide some derived fields from existed fields, e.g., `"cell_volu
 ds = yt.load("data.0010.vtk", default_species_fields="ionized")
 ```
 
+### Convention of field names
+The outputs are loaded from disk with field names in uppercase. This normalization is only applied to the standard outputs but user-defined outputs and Pluto's ion fraction outputs.
+
+```python
+# Example
+ds.field_list
+# Output:
+# [('pluto-vtk', 'PRS'),   # standard output
+#  ('pluto-vtk', 'RHO'),   # standard output
+#  ('pluto-vtk', 'VX1'),   # standard output
+#  ('pluto-vtk', 'VX2'),   # standard output
+#  ('pluto-vtk', 'VX3'),   # standard output
+#  ('pluto-vtk', 'temp')]  # This is a user-defined output
+```
+
+Fields can be called with above names and also their macros defined in Pluto/Idefix. Most macros are just the uppercase of output names while some of them are not in Pluto, which are set as aliases of the outputs in this frontend. For more information, see `known_other_fields` in `yt_idefix/fields.py`
+
+```python
+# Examples
+yt.SlicePlot(ds, "x", ("pluto-vtk", "BX1S")) # call a field with its full name
+yt.SlicePlot(ds, "x", "BX1S") # call a field with its short name
+yt.SlicePlot(ds, "x", "BX1s")) # call a field with its macro
+```
+
 ## Experimental features
 
 ### Seamless plugin support
