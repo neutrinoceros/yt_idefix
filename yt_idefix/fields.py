@@ -51,10 +51,10 @@ class PlutoFields(BaseFields):
     known_other_fields = (
         # PLUTO 4 standard variable names normalized in upper case,
         # Referring to Tools/IDL/pload.pro in Pluto v4.2-patch2
-        # Field names of ion fractions are excluded to normalize
+        # Field names of ion fractions are normalized to upper case
         # Each entry here is of the form
-        # ( "name", ("units", ["alias"], "display_name")),
-        # alias should be set with yt-standard-name or pluto-macro-name
+        # ( "name", ("code_unit", ["alias1", "alias2", ...], "display_name")),
+        # where alias should be set with yt-standard-name or pluto-macro-name
         ("RHO", ("code_density", ["density"], None)),
         ("VX1", ("code_velocity", ["velocity_x"], None)),
         ("VX2", ("code_velocity", ["velocity_y"], None)),
@@ -86,7 +86,7 @@ class PlutoFields(BaseFields):
         ("FR1", ("code_pressure*code_velocity", [], None)),
         ("FR2", ("code_pressure*code_velocity", [], None)),
         ("FR3", ("code_pressure*code_velocity", [], None)),
-        ("ENTROPY", ("", ["ENTR"], None)),
+        ("ENTROPY", ("", ["entropy", "ENTR"], None)),
         ("TR1", ("", [], None)),
         ("TR2", ("", [], None)),
         ("TR3", ("", [], None)),
@@ -101,7 +101,7 @@ class PlutoFields(BaseFields):
 
     def setup_fluid_fields(self):
         setup_magnetic_field_aliases(
-            self, self.ds._dataset_type, [f"Bx{idir}" for idir in "123"]
+            self, self.ds._dataset_type, [f"BX{idir}" for idir in "123"]
         )
 
     def setup_particle_fields(self, ptype):
