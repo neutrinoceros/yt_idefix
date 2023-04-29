@@ -95,15 +95,6 @@ ds.field_list
 #  ('pluto-vtk', 'temp')]  # This is a user-defined output
 ```
 
-Fields can be called with above names and also their macros defined in Pluto/Idefix. Most macros are just the uppercase of output names while some of them are not in Pluto, which are set as aliases of the outputs in this frontend. For more information, see `known_other_fields` in `yt_idefix/fields.py`
-
-```python
-# Examples
-yt.SlicePlot(ds, "x", ("pluto-vtk", "BX1S")) # call a field with its full name
-yt.SlicePlot(ds, "x", "BX1S") # call a field with its short name
-yt.SlicePlot(ds, "x", "BX1s")) # call a field with its macro
-```
-
 ## Experimental features
 
 ### Seamless plugin support
