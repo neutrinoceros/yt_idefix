@@ -874,6 +874,7 @@ class PlutoXdmfDataset(StaticPlutoDataset):
             self.filename, geometry=self.parameters["definitions"]["geometry"]
         )
 
+        _default_field_list = [f[0] for f in self._field_info_class.known_other_fields]
         with h5py.File(self.filename, mode="r") as h5f:
             root = list(h5f.keys())[0]
             self._detected_field_list = list(h5f[f"{root}/vars/"])
@@ -882,9 +883,7 @@ class PlutoXdmfDataset(StaticPlutoDataset):
             # so we normalize standard output field names to upper case
             # to avoid duplicating data in PlutoFields.known_other_fields
             for varname in self._detected_field_list:
-                if varname.upper() in [
-                    f[0] for f in self._field_info_class.known_other_fields
-                ]:
+                if varname.upper() in _default_field_list:
                     # The key in hdf5 is case sensitive, so we have to preserve
                     # the info of original field names for reading data
                     self._field_name_map[varname.upper()] = varname
