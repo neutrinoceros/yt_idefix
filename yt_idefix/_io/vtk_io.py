@@ -6,8 +6,6 @@ from typing import Any, BinaryIO, Literal, overload
 
 import numpy as np
 
-from yt_idefix.fields import BaseFields
-
 from .commons import Coordinates, Shape, get_native_coordinates_from_cartesian
 
 KNOWN_GEOMETRIES: dict[int, str] = {
@@ -207,7 +205,7 @@ def read_grid_coordinates(
 
 
 def read_field_offset_index(
-    fh: BinaryIO, shape: Shape, *, field_info: BaseFields
+    fh: BinaryIO, shape: Shape, *, default_field_list: map
 ) -> dict[str, int]:
     # assuming fh is correctly positioned (read_grid_coordinates must be called first)
     retv: dict[str, int] = {}
@@ -222,7 +220,7 @@ def read_field_offset_index(
         # some versions of Pluto define field names in lower case
         # so we normalize standard output field names to upper case
         # to avoid duplicating data in PlutoFields.known_other_fields
-        if varname.upper() in dict(field_info.known_other_fields).keys():
+        if varname.upper() in default_field_list:
             varname = varname.upper()
 
         if datatype == "SCALARS":

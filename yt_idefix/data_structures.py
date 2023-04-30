@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Final, Literal
 
 import inifix
 import numpy as np
+from more_itertools import unzip
 
 from yt.data_objects.index_subobjects.stretched_grid import StretchedGrid
 from yt.data_objects.static_output import Dataset
@@ -738,7 +739,9 @@ class VtkMixin(Dataset):
         with open(self.filename, "rb") as fh:
             coords = vtk_io.read_grid_coordinates(fh, geometry=self.geometry)
             self._field_offset_index = vtk_io.read_field_offset_index(
-                fh, coords.array_shape, field_info=self._field_info_class
+                fh,
+                coords.array_shape,
+                default_field_list=unzip(self._field_info_class.known_other_fields)[0],
             )
         self._detected_field_list = list(self._field_offset_index.keys())
 
@@ -880,7 +883,7 @@ class PlutoXdmfDataset(StaticPlutoDataset):
             for varname in self._detected_field_list:
                 if (
                     varname.upper()
-                    in dict(self._field_info_class.known_other_fields).keys()
+                    in unzip(self._field_info_class.known_other_fields)[0]
                 ):
                     # The key in hdf5 is case sensitive, so we have to preserve
                     # the info of original field names for reading data
