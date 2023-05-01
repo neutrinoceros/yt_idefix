@@ -28,11 +28,9 @@ from ._io import C_io, dmp_io, h5_io, vtk_io
 from ._io.commons import IdefixFieldProperties, IdefixMetadata
 from .definitions import _PlutoBaseUnits, pluto_def_constants
 from .fields import (
-    BaseVtkFields,
     IdefixDmpFields,
     IdefixVtkFields,
-    PlutoVtkFields,
-    PlutoXdmfFields,
+    PlutoFields,
 )
 
 # import IO classes to ensure they are properly registered,
@@ -249,13 +247,6 @@ class IdefixDmpHierarchy(FieldOffsetHierarchy):
 
 
 class PlutoXdmfHierarchy(GoodBoyHierarchy):
-    def _detect_output_fields(self):
-        with h5py.File(self.index_filename, mode="r") as h5f:
-            root = list(h5f.keys())[0]
-            self.field_list = [
-                (self.ds._dataset_type, str(k)) for k in list(h5f[f"{root}/vars/"])
-            ]
-
     @cached_property
     def _cell_widths(self) -> tuple[XSpans, YSpans, ZSpans]:
         cell_edges = h5_io.read_grid_coordinates(
@@ -511,6 +502,7 @@ class StaticPlutoDataset(GoodboyDataset, ABC):
     # we only support static grid formats (as opposed to chombo-pluto, which is AMR)
     _default_inifile = "pluto.ini"
     _default_definitions_header = "definitions.h"
+    _field_info_class = PlutoFields
     _version_regexp = re.compile(r"\d+\.\d+\.?\d*[-\w+]*")
 
     @abstractmethod
@@ -742,16 +734,15 @@ class VtkMixin(Dataset):
         super()._parse_parameter_file()
         # from here self.geometry is assumed to be set
 
-        # some versions of Pluto define field names in lower case
-        # so we normalize to upper case to avoid duplicating data
-        # in BaseVtkFields.known_other_fields
-        normalize_varnames = self.dataset_type == "pluto-vtk"
-
         # parse the grid
         with open(self.filename, "rb") as fh:
             coords = vtk_io.read_grid_coordinates(fh, geometry=self.geometry)
             self._field_offset_index = vtk_io.read_field_offset_index(
-                fh, coords.array_shape, upper_case_varnames=normalize_varnames
+                fh,
+                coords.array_shape,
+                default_field_list=[
+                    f[0] for f in self._field_info_class.known_other_fields
+                ],
             )
         self._detected_field_list = list(self._field_offset_index.keys())
 
@@ -823,7 +814,7 @@ class IdefixDmpDataset(IdefixDataset):
 
 class IdefixVtkDataset(VtkMixin, IdefixDataset):
     _dataset_type = "idefix-vtk"
-    _field_info_class: type[BaseVtkFields] = IdefixVtkFields
+    _field_info_class = IdefixVtkFields
 
     @classmethod
     def _is_valid(cls, filename: str, *args, **kwargs) -> bool:
@@ -837,7 +828,6 @@ class IdefixVtkDataset(VtkMixin, IdefixDataset):
 
 class PlutoVtkDataset(VtkMixin, StaticPlutoDataset):
     _dataset_type = "pluto-vtk"
-    _field_info_class = PlutoVtkFields
 
     @classmethod
     def _is_valid(cls, filename: str, *args, **kwargs) -> bool:
@@ -855,7 +845,6 @@ class PlutoVtkDataset(VtkMixin, StaticPlutoDataset):
 class PlutoXdmfDataset(StaticPlutoDataset):
     _dataset_type = "pluto-xdmf"
     _index_class = PlutoXdmfHierarchy
-    _field_info_class = PlutoXdmfFields
 
     def _get_log_file(self) -> str:
         if (suffix := re.search(r"(flt|dbl)\.h5$", self.filename)) is not None:
@@ -885,6 +874,24 @@ class PlutoXdmfDataset(StaticPlutoDataset):
             self.filename, geometry=self.parameters["definitions"]["geometry"]
         )
 
+        _default_field_list = [f[0] for f in self._field_info_class.known_other_fields]
+        with h5py.File(self.filename, mode="r") as h5f:
+            root = list(h5f.keys())[0]
+            self._detected_field_list = list(h5f[f"{root}/vars/"])
+            self._field_name_map = {}
+            # some versions of Pluto define field names in lower case
+            # so we normalize standard output field names to upper case
+            # to avoid duplicating data in PlutoFields.known_other_fields
+            for varname in self._detected_field_list:
+                if varname.upper() in _default_field_list:
+                    # The key in hdf5 is case sensitive, so we have to preserve
+                    # the info of original field names for reading data
+                    self._field_name_map[varname.upper()] = varname
+                else:
+                    self._field_name_map[varname] = varname
+
+            self._detected_field_list = self._field_name_map.keys()
+
         self.domain_dimensions = np.array(coords.array_shape)
         self.dimensionality = np.count_nonzero(self.domain_dimensions - 1)
 
@@ -897,21 +904,6 @@ class PlutoXdmfDataset(StaticPlutoDataset):
         self.domain_right_edge = dre
 
         self._periodicity = (True, True, True)
-
-    def _count_tracers(self) -> int:
-        with open(self._get_log_file()) as fh:
-            txt = fh.readlines()
-            if (match := re.search(r"\d{4}", self.filename)) is not None:
-                entry = int(match.group())
-            else:
-                raise RuntimeError(f"Failed to parse entry number from {self.filename}")
-
-            count = 0
-            # Passive tracer names in PLUTO are tr1, tr2, tr3 and so on by default
-            while f"tr{count + 1}" in txt[entry].split():
-                count += 1
-
-        return count
 
     def _read_data_header(self) -> str:
         grid_file = os.path.join(self.directory, "grid.out")

@@ -205,7 +205,7 @@ def read_grid_coordinates(
 
 
 def read_field_offset_index(
-    fh: BinaryIO, shape: Shape, *, upper_case_varnames: bool
+    fh: BinaryIO, shape: Shape, *, default_field_list: list[str]
 ) -> dict[str, int]:
     # assuming fh is correctly positioned (read_grid_coordinates must be called first)
     retv: dict[str, int] = {}
@@ -217,7 +217,10 @@ def read_field_offset_index(
         s = line.decode()
         datatype, varname, dtype = s.split()
 
-        if upper_case_varnames:
+        # some versions of Pluto define field names in lower case
+        # so we normalize standard output field names to upper case
+        # to avoid duplicating data in PlutoFields.known_other_fields
+        if varname.upper() in default_field_list:
             varname = varname.upper()
 
         if datatype == "SCALARS":

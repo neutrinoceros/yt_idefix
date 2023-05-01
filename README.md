@@ -80,6 +80,21 @@ yt is able to provide some derived fields from existed fields, e.g., `"cell_volu
 ds = yt.load("data.0010.vtk", default_species_fields="ionized")
 ```
 
+### Convention of field names
+The outputs are loaded from disk with field names in uppercase. This normalization is only applied to the standard outputs but user-defined outputs and Pluto's ion fraction outputs.
+
+```python
+# Example
+ds.field_list
+# Output:
+# [('pluto-vtk', 'PRS'),   # standard output
+#  ('pluto-vtk', 'RHO'),   # standard output
+#  ('pluto-vtk', 'VX1'),   # standard output
+#  ('pluto-vtk', 'VX2'),   # standard output
+#  ('pluto-vtk', 'VX3'),   # standard output
+#  ('pluto-vtk', 'temp')]  # This is a user-defined output
+```
+
 ## Experimental features
 
 ### Seamless plugin support
