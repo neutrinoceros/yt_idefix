@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Final, Literal
 
 import inifix
 import numpy as np
+import numpy.testing as npt
 
 from yt.data_objects.index_subobjects.stretched_grid import StretchedGrid
 from yt.data_objects.static_output import Dataset
@@ -185,9 +186,9 @@ class VtkHierarchy(FieldOffsetHierarchy):
 
         cell_widths: tuple[XSpans, YSpans, ZSpans]
         cell_widths = (
-            np.empty(max(dims[0], 2), dtype="float64") * length_unit,
-            np.empty(max(dims[1], 2), dtype="float64") * length_unit,
-            np.empty(max(dims[2], 2), dtype="float64") * length_unit,
+            np.full(max(dims[0], 2), -1, dtype="float64") * length_unit,
+            np.full(max(dims[1], 2), -1, dtype="float64") * length_unit,
+            np.full(max(dims[2], 2), -1, dtype="float64") * length_unit,
         )
 
         for idir, edges in enumerate(cell_edges[:3]):
@@ -195,6 +196,8 @@ class VtkHierarchy(FieldOffsetHierarchy):
                 cell_widths[idir][:] = np.ediff1d(edges)
             else:
                 cell_widths[idir][:] = self.ds.domain_width[idir]
+            npt.assert_array_less(0, cell_widths[idir])
+
         return cell_widths
 
     @cached_property
@@ -207,9 +210,9 @@ class VtkHierarchy(FieldOffsetHierarchy):
 
         cell_centers: tuple[XCoords, YCoords, ZCoords]
         cell_centers = (
-            np.empty(max(dims[0], 2), dtype="float64") * length_unit,
-            np.empty(max(dims[1], 2), dtype="float64") * length_unit,
-            np.empty(max(dims[2], 2), dtype="float64") * length_unit,
+            np.full(max(dims[0], 2), -1, dtype="float64") * length_unit,
+            np.full(max(dims[1], 2), -1, dtype="float64") * length_unit,
+            np.full(max(dims[2], 2), -1, dtype="float64") * length_unit,
         )
 
         for idir, edges in enumerate(cell_edges[:3]):
@@ -217,6 +220,8 @@ class VtkHierarchy(FieldOffsetHierarchy):
                 cell_centers[idir][:] = 0.5 * (edges[1:] + edges[:-1])
             else:
                 cell_centers[idir][:] = edges[0]
+            npt.assert_array_less(0, cell_centers[idir])
+
         return cell_centers
 
 
@@ -258,9 +263,9 @@ class PlutoXdmfHierarchy(GoodBoyHierarchy):
 
         cell_widths: tuple[XSpans, YSpans, ZSpans]
         cell_widths = (
-            np.empty(max(dims[0], 2), dtype="float64") * length_unit,
-            np.empty(max(dims[1], 2), dtype="float64") * length_unit,
-            np.empty(max(dims[2], 2), dtype="float64") * length_unit,
+            np.full(max(dims[0], 2), -1, dtype="float64") * length_unit,
+            np.full(max(dims[1], 2), -1, dtype="float64") * length_unit,
+            np.full(max(dims[2], 2), -1, dtype="float64") * length_unit,
         )
 
         for idir, edges in enumerate(cell_edges[:3]):
@@ -268,6 +273,8 @@ class PlutoXdmfHierarchy(GoodBoyHierarchy):
                 cell_widths[idir][:] = np.ediff1d(edges)
             else:
                 cell_widths[idir][:] = self.ds.domain_width[idir]
+            npt.assert_array_less(0, cell_widths[idir])
+
         return cell_widths
 
     @cached_property
@@ -281,9 +288,9 @@ class PlutoXdmfHierarchy(GoodBoyHierarchy):
 
         cell_centers: tuple[XCoords, YCoords, ZCoords]
         cell_centers = (
-            np.empty(max(dims[0], 2), dtype="float64") * length_unit,
-            np.empty(max(dims[1], 2), dtype="float64") * length_unit,
-            np.empty(max(dims[2], 2), dtype="float64") * length_unit,
+            np.full(max(dims[0], 2), -1, dtype="float64") * length_unit,
+            np.full(max(dims[1], 2), -1, dtype="float64") * length_unit,
+            np.full(max(dims[2], 2), -1, dtype="float64") * length_unit,
         )
 
         for idir, edges in enumerate(cell_edges[:3]):
@@ -291,6 +298,8 @@ class PlutoXdmfHierarchy(GoodBoyHierarchy):
                 cell_centers[idir][:] = 0.5 * (edges[1:] + edges[:-1])
             else:
                 cell_centers[idir][:] = edges[0]
+            npt.assert_array_less(0, cell_centers)
+
         return cell_centers
 
 
