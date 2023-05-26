@@ -14,6 +14,7 @@ import inifix
 import numpy as np
 import numpy.testing as npt
 
+import yt
 from yt.data_objects.index_subobjects.stretched_grid import StretchedGrid
 from yt.data_objects.static_output import Dataset
 from yt.funcs import setdefaultattr
@@ -423,17 +424,12 @@ class GoodboyDataset(Dataset, ABC):
             geom_str = from_disk
 
         def parse_geometry(geom: str):
-            import yt
+            if yt.version_info >= (4, 2):
+                from yt.geometry.api import Geometry  # type: ignore [attr-defined]
 
-            if yt.version_info[:2] > (4, 1):
-                try:
-                    from yt.geometry.api import Geometry  # type: ignore [attr-defined]
-
-                    return Geometry(geom)
-                except ImportError:
-                    pass
-
-            return geom
+                return Geometry(geom)
+            else:
+                return geom
 
         self.geometry = parse_geometry(geom_str)
 
