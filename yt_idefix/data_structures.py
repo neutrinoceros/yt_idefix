@@ -23,7 +23,6 @@ from yt.utilities.lib.misc_utilities import (  # type: ignore [import]
 )
 from yt.utilities.on_demand_imports import _h5py as h5py
 from yt_idefix._backports import removesuffix
-from yt_idefix._typing import UnitLike
 
 from ._io import C_io, dmp_io, h5_io, vtk_io
 from ._io.commons import IdefixFieldProperties, IdefixMetadata
@@ -319,7 +318,7 @@ class GoodboyDataset(Dataset, ABC):
         filename,
         *,
         dataset_type: str | None = None,  # deleguated to child classes
-        units_override: dict[str, UnitLike] | None = None,
+        units_override: dict[str, str] | None = None,
         unit_system: Literal["cgs", "mks", "code"] = "cgs",
         default_species_fields: Literal["neutral", "ionized"] | None = None,
         # from here, frontend-specific arguments
