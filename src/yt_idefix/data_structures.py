@@ -14,10 +14,10 @@ import inifix
 import numpy as np
 import numpy.testing as npt
 
-import yt
 from yt.data_objects.index_subobjects.stretched_grid import StretchedGrid
 from yt.data_objects.static_output import Dataset
 from yt.funcs import setdefaultattr
+from yt.geometry.api import Geometry
 from yt.geometry.grid_geometry_handler import GridIndex
 from yt.utilities.lib.misc_utilities import (  # type: ignore [import]
     _obtain_coords_and_widths,
@@ -423,15 +423,7 @@ class GoodboyDataset(Dataset, ABC):
             assert from_disk
             geom_str = from_disk
 
-        def parse_geometry(geom: str):
-            if yt.version_info >= (4, 2):
-                from yt.geometry.api import Geometry  # type: ignore [attr-defined]
-
-                return Geometry(geom)
-            else:
-                return geom
-
-        self.geometry = parse_geometry(geom_str)
+        self.geometry = Geometry(geom_str)
 
     def _parse_inifile(self) -> None:
         if not self._inifile:

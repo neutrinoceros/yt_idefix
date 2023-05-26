@@ -4,7 +4,6 @@ import numpy as np
 from numpy.testing import assert_equal
 
 import yt
-import yt_idefix  # noqa: F401
 from yt_idefix._io.dmp_io import read_idefix_dmpfile
 from yt_idefix.api import IdefixDmpDataset
 
