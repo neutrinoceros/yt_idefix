@@ -6,7 +6,6 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "yt_idefix"
-version = "2.0.2"
 description = "An extension module for yt, adding a frontend for Idefix"
 authors = [
     { name = "C.M.T. Robert" },
@@ -36,6 +35,10 @@ dependencies = [
     "numpy>=1.17.3",
     "yt>=4.1.0",
 ]
+dynamic = ["version"]
+
+[tool.setuptools.dynamic]
+version = {attr = "yt_idefix.__version__"}
 
 [project.optional-dependencies]
 HDF5 = ["h5py>=3.1.0"]
