@@ -76,6 +76,7 @@ yt_idefix = [
 ]
 
 [tool.setuptools.packages.find]
+where = ["src"]
 namespaces = false
 
 [tool.ruff]
@@ -107,7 +108,7 @@ known-third-party = [
   "yaml",
   "pytest",
 ]
-known-first-party = ["yt"]
+known-first-party = ["yt", "yt_idefix"]
 
 [tool.mypy]
 python_version = 3.8
