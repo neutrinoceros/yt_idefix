@@ -33,7 +33,7 @@ requires-python = ">=3.8"
 dependencies = [
     "inifix>=4.1.0",
     "numpy>=1.17.3",
-    "yt>=4.1.0",
+    "yt>=4.2.0",
 ]
 dynamic = ["version"]
 
@@ -44,8 +44,6 @@ version = {attr = "yt_idefix.__version__"}
 HDF5 = ["h5py>=3.1.0"]
 
 [project.entry-points."yt.frontends"]
-# these entry points require yt 4.2 (unreleased at the time of writing)
-# they are included early for testing purposes
 IdefixDmpkDataset = "yt_idefix.api:IdefixDmpDataset"
 IdefixVtkDataset = "yt_idefix.api:IdefixVtkDataset"
 PlutoVtkDataset = "yt_idefix.api:PlutoVtkDataset"

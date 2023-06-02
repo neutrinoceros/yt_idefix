@@ -29,13 +29,8 @@ python -m pip install yt_idefix
 
 ## Usage
 
-After importing `yt` itself, make sure to activate the extension
-```python
-import yt
-import yt_idefix
-```
-
-Now `yt.load` will be able to read Pluto/Idefix output files.
+Integration with yt is seamless. *Installing* this plugin is all that's required to make yt
+compatible with data formats supported by `yt_idefix` !
 
 ### Additional arguments to `yt.load`
 The metadata are parsed from data file, definitions header file and inifile when loading dataset.
@@ -94,25 +89,3 @@ ds.field_list
 #  ('pluto-vtk', 'VX3'),   # standard output
 #  ('pluto-vtk', 'temp')]  # This is a user-defined output
 ```
-
-## Experimental features
-
-### Seamless plugin support
-*new in yt 4.2 (unreleased) + yt_idefix 0.16*
-
-`yt>=4.2` supports automatic
-loading for external frontends, i.e., the extra import line (`import yt_idefix`)
-will not be needed with this version.
-
-This feature is marked as experimental until yt 4.2.0 is released.
-In the mean time, this feature can be enabled by installing yt from source as, i.e.,
-```shell
-python -m pip install git+https://github.com/yt-project/yt.git
-```
-
-### Strecthed grids support
-*new in yt 4.1 + yt_idefix 0.12*
-- `yt_idefix>=0.12.0` natively supports `yt.SlicePlot` for streched grids
-- `yt>=4.1.0` is required from `yt.ProjectionPlot`
-
-Streched grids support is considered experimental as of yt 4.1
