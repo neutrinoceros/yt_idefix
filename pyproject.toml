@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "yt_idefix"
-description = "An extension module for yt, adding a frontend for Idefix"
+description = "An extension module for yt, adding a frontend for Idefix and Pluto"
 authors = [
     { name = "C.M.T. Robert" },
 ]
