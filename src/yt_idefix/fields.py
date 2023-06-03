@@ -2,12 +2,7 @@ from yt.fields.field_info_container import FieldInfoContainer
 from yt.fields.magnetic_field import setup_magnetic_field_aliases
 
 
-class BaseFields(FieldInfoContainer):
-    # This class can be used later to add functions and attributes common to all fields
-    pass
-
-
-class IdefixVtkFields(BaseFields):
+class IdefixVtkFields(FieldInfoContainer):
     known_other_fields = (
         ("RHO", ("code_mass / code_length**3", ["density"], None)),  # type: ignore
         ("VX1", ("code_length / code_time", ["velocity_x"], None)),
@@ -25,7 +20,7 @@ class IdefixVtkFields(BaseFields):
         )
 
 
-class IdefixDmpFields(BaseFields):
+class IdefixDmpFields(FieldInfoContainer):
     known_other_fields = (
         ("Vc-RHO", ("code_mass / code_length**3", ["density"], None)),  # type: ignore
         ("Vc-VX1", ("code_length / code_time", ["velocity_x"], None)),
@@ -47,7 +42,7 @@ class IdefixDmpFields(BaseFields):
         )
 
 
-class PlutoFields(BaseFields):
+class PlutoFields(FieldInfoContainer):
     known_other_fields = (
         # PLUTO 4 standard variable names normalized in upper case,
         # Referring to Tools/IDL/pload.pro in Pluto v4.2-patch2
