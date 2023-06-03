@@ -201,7 +201,32 @@ def read_grid_coordinates(
         array_shape = shape.to_cell_centered()
         assert data_type == "CELL_DATA"
 
-    return Coordinates(coords[0], coords[1], coords[2], array_shape)
+    def warn_invalid(arr):
+        bulk_msg = (
+            "This may result from uninitialized data being written to disk, "
+            "as is a known bug in PLUTO up to version 4.4.patch2 "
+            "in 1D spherical simulations. "
+            "If you are seeing this warning in a different situation, "
+            "please report this."
+        )
+        if any(np.isnan(arr)):
+            warnings.warn(
+                f"NaNs found in coordinate array, behaviour is undefined. {bulk_msg}",
+                stacklevel=8,
+            )
+        elif not np.all(arr[:-1] <= arr[1:]):
+            warnings.warn(
+                f"Coordinate array is not sorted, behaviour is undefined. {bulk_msg}",
+                stacklevel=8,
+            )
+        return arr
+
+    return Coordinates(
+        warn_invalid(coords[0]),
+        warn_invalid(coords[1]),
+        warn_invalid(coords[2]),
+        array_shape,
+    )
 
 
 def read_field_offset_index(
