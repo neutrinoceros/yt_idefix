@@ -17,6 +17,22 @@ class IdefixVtkFields(BaseFields):
         ("BX2", ("code_magnetic", [], None)),
         ("BX3", ("code_magnetic", [], None)),
         ("PRS", ("code_pressure", ["pressure"], None)),
+        (
+            "PART_RHO",
+            ("code_mass / code_length**3", ["deposited_particle_density"], None),
+        ),
+        (
+            "PART_VX1",
+            ("code_length / code_time", ["deposited_particle_velocity_x"], None),
+        ),
+        (
+            "PART_VX2",
+            ("code_length / code_time", ["deposited_particle_velocity_y"], None),
+        ),
+        (
+            "PART_VX3",
+            ("code_length / code_time", ["deposited_particle_velocity_z"], None),
+        ),
     )
 
     def setup_fluid_fields(self):
