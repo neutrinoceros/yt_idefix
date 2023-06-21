@@ -42,7 +42,7 @@ Geometry is parsed automatically whenever possible, but as a last resort, it can
 ```python
 # Examples
 ds = yt.load("data.0010.vtk", definitions_header="../definitions.h", inifile="example.ini")
-ds = yt.load("data.0010.vtk", geometry='spherical")
+ds = yt.load("data.0010.vtk", geometry="spherical")
 ```
 
 The data are loaded as physical quantities with units. The default unit system is `cgs` in yt. This frontend can convert data from code units into `cgs` properly, based on the unit definitions from metadata.
@@ -51,7 +51,7 @@ Users are able to choose the unit displayed in two ways, through `unit_system` (
 
 ```python
 # Examples on units
-ds = yt.load("data.0010.vtk", unit_system='mks")
+ds = yt.load("data.0010.vtk", unit_system="mks")
 
 units_override = dict(length_unit=(100.0, "au"), mass_unit=yt.units.mass_sun)
 ds = yt.load("data.0010.vtk", unit_override=unit_override) # Caution that other units will also be changed for consistency!!
