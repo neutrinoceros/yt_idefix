@@ -41,7 +41,9 @@ Geometry is parsed automatically whenever possible, but as a last resort, it can
 
 ```python
 # Examples
-ds = yt.load("data.0010.vtk", definitions_header="../definitions.h", inifile="example.ini")
+ds = yt.load(
+    "data.0010.vtk", definitions_header="../definitions.h", inifile="example.ini"
+)
 ds = yt.load("data.0010.vtk", geometry="spherical")
 ```
 
@@ -54,7 +56,9 @@ Users are able to choose the unit displayed in two ways, through `unit_system` (
 ds = yt.load("data.0010.vtk", unit_system="mks")
 
 units_override = dict(length_unit=(100.0, "au"), mass_unit=yt.units.mass_sun)
-ds = yt.load("data.0010.vtk", unit_override=unit_override) # Caution that other units will also be changed for consistency!!
+
+# Caution that other units will also be changed for consistency!
+ds = yt.load("data.0010.vtk", unit_override=unit_override)
 ```
 With Pluto data, the rest of the system will be derived consistently with given units, within the following rules:
 1. Temperature unit cannot be overridden (always set to Kelvin)
