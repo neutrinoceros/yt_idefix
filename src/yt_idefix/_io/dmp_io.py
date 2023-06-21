@@ -123,7 +123,7 @@ def read_chunk(
     # more sense to just refactor this function to avoid the boolean trap, so I'll keep wonky
     # type hints for now
     assert ndim == len(dim)
-    count = np.product(dim)
+    count = np.prod(dim)
     size = count * np.dtype(dtype).itemsize
     if skip_data:
         fh.seek(size, 1)
