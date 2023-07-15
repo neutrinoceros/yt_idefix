@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import struct
+import sys
 import warnings
 from enum import IntEnum
 from typing import BinaryIO, Literal, cast, overload
@@ -9,6 +10,12 @@ from typing import BinaryIO, Literal, cast, overload
 import numpy as np
 
 from .commons import Dim, IdefixFieldProperties, IdefixMetadata, Prec
+
+if sys.version_info >= (3, 11):
+    from typing import assert_never
+else:
+    from typing_extensions import assert_never
+
 
 KNOWN_GEOMETRIES: dict[int, str] = {
     1: "cartesian",
@@ -50,6 +57,17 @@ def parse_byteorder(fh: BinaryIO) -> ByteOrder:
         return "native"
 
 
+def byteorder2alignment(byteorder: ByteOrder) -> Literal["<", ">", "="]:
+    if byteorder == "little":
+        return "<"
+    elif byteorder == "big":
+        return ">"
+    elif byteorder == "native":
+        return "="
+    else:
+        assert_never(byteorder)
+
+
 # emulating C++
 # enum DataType {DoubleType, SingleType, IntegerType};
 DTYPES: dict[int, Prec] = {0: "d", 1: "f", 2: "i", 3: "?"}
@@ -72,7 +90,9 @@ def read_next_field_properties(
     """Emulate Idefix's OutputDump::ReadNextFieldProperty"""
     field_name = read_null_terminated_string(fh)
 
-    fmt = "=i"
+    alignment = byteorder2alignment(byteorder)
+
+    fmt = f"{alignment}i"
     int_dtype = struct.unpack(fmt, fh.read(struct.calcsize(fmt)))[0]
     dtype = DTYPES[int_dtype]
     ndim = struct.unpack(fmt, fh.read(struct.calcsize(fmt)))[0]
@@ -81,7 +101,7 @@ def read_next_field_properties(
     if not (1 <= ndim <= 3):
         raise ValueError(ndim)
     ndim = cast(Dim, ndim)
-    fmt = f"={ndim}i"
+    fmt = f"{alignment}{ndim}i"
     dim = np.array(struct.unpack(fmt, fh.read(struct.calcsize(fmt))))
     return field_name, dtype, ndim, dim
 
@@ -163,15 +183,15 @@ def read_chunk(
         fh.seek(size, 1)
         return None
 
-    alignement = {"little": "<", "big": ">", "native": "="}[byteorder]
+    alignment = byteorder2alignment(byteorder)
 
     # note: this reversal may not be desirable in general
     if is_scalar:
-        fmt = f"{alignement}{count}{dtype}"
+        fmt = f"{alignment}{count}{dtype}"
         retv = struct.unpack(fmt, fh.read(size))[0]
         return retv
     else:
-        data = np.fromfile(fh, alignement + DTYPES_2_NUMPY[dtype], count=count)
+        data = np.fromfile(fh, alignment + DTYPES_2_NUMPY[dtype], count=count)
         data.shape = dim[::-1]
         return data.astype("=" + DTYPES_2_NUMPY[dtype], copy=False).T
 

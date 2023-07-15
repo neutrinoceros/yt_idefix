@@ -34,6 +34,7 @@ dependencies = [
     "inifix>=4.1.0",
     "numpy>=1.17.3",
     "yt>=4.2.0",
+    "typing-extensions>=4.1.0 ; python_version < '3.11'"
 ]
 dynamic = ["version"]
 
@@ -86,6 +87,7 @@ select = [
     "E",
     "F",
     "W",
+    "ARG",  # flake8-unused-arguments
     "C4",   # flake8-comprehensions
     "B",    # flake8-bugbear
     "G",    # flake8-logging-format

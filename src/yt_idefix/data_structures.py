@@ -318,7 +318,7 @@ class GoodboyDataset(Dataset, ABC):
         self,
         filename,
         *,
-        dataset_type: str | None = None,  # deleguated to child classes
+        dataset_type: str | None = None,  # deleguated to child classes # NOQA: ARG002
         units_override: dict[str, str] | None = None,
         unit_system: Literal["cgs", "mks", "code"] = "cgs",
         default_species_fields: Literal["neutral", "ionized"] | None = None,
@@ -766,7 +766,7 @@ class IdefixDmpDataset(IdefixDataset):
     _field_info_class = IdefixDmpFields
 
     @classmethod
-    def _is_valid(cls, filename: str, *args, **kwargs) -> bool:
+    def _is_valid(cls, filename: str, *args, **kwargs) -> bool:  # NOQA: ARG003
         try:
             header_string = dmp_io.read_header(filename)
             return re.match(r"Idefix .* Dump Data", header_string) is not None
@@ -813,7 +813,7 @@ class IdefixVtkDataset(VtkMixin, IdefixDataset):
     _field_info_class = IdefixVtkFields
 
     @classmethod
-    def _is_valid(cls, filename: str, *args, **kwargs) -> bool:
+    def _is_valid(cls, filename: str, *args, **kwargs) -> bool:  # NOQA: ARG003
         try:
             header = vtk_io.read_header(filename)
         except Exception:
@@ -826,7 +826,7 @@ class PlutoVtkDataset(VtkMixin, StaticPlutoDataset):
     _dataset_type = "pluto-vtk"
 
     @classmethod
-    def _is_valid(cls, filename: str, *args, **kwargs) -> bool:
+    def _is_valid(cls, filename: str, *args, **kwargs) -> bool:  # NOQA: ARG003
         try:
             header = vtk_io.read_header(filename)
         except Exception:
@@ -915,7 +915,7 @@ class PlutoXdmfDataset(StaticPlutoDataset):
             return ""
 
     @classmethod
-    def _is_valid(cls, filename: str, *args, **kwargs) -> bool:
+    def _is_valid(cls, filename: str, *args, **kwargs) -> bool:  # NOQA: ARG003
         if not (
             filename.endswith((".dbl.h5", ".flt.h5"))
             and os.path.isfile(removesuffix(filename, ".h5") + ".xmf")
