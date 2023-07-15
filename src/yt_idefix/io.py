@@ -70,8 +70,12 @@ class IdefixVtkIO(PlutoVtkIO, BaseParticleIOHandler):
 class IdefixDmpIO(SingleGridIO, BaseParticleIOHandler):
     _dataset_type = "idefix-dmp"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._byteorder = dmp_io.parse_byteorder(self.ds.filename)
+
     def _read_single_field(self, fh: BinaryIO, offset: int) -> np.ndarray:
-        return dmp_io.read_single_field(fh, offset)
+        return dmp_io.read_single_field(fh, offset, byteorder=self._byteorder)
 
     def _read_particle_coords(self, chunks, ptf):
         # This needs to *yield* a series of tuples of (ptype, (x, y, z)).
