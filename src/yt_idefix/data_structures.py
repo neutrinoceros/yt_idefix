@@ -23,7 +23,6 @@ from yt.utilities.lib.misc_utilities import (  # type: ignore [import]
     _obtain_coords_and_widths,
 )
 from yt.utilities.on_demand_imports import _h5py as h5py
-from yt_idefix._backports import removesuffix
 
 from ._io import C_io, dmp_io, h5_io, vtk_io
 from ._io.commons import IdefixFieldProperties, IdefixMetadata
@@ -918,7 +917,7 @@ class PlutoXdmfDataset(StaticPlutoDataset):
     def _is_valid(cls, filename: str, *args, **kwargs) -> bool:  # NOQA: ARG003
         if not (
             filename.endswith((".dbl.h5", ".flt.h5"))
-            and os.path.isfile(removesuffix(filename, ".h5") + ".xmf")
+            and os.path.isfile(filename.removesuffix(".h5") + ".xmf")
             and os.path.isfile(
                 os.path.join(
                     os.path.dirname(filename), os.path.basename(filename[-6:]) + ".out"
