@@ -1,6 +1,6 @@
 import re
 from abc import ABC, abstractmethod
-from typing import BinaryIO, Tuple, cast
+from typing import BinaryIO, cast
 
 import numpy as np
 
@@ -49,7 +49,7 @@ class PlutoVtkIO(SingleGridIO):
     _dataset_type = "pluto-vtk"
 
     def _read_single_field(self, fh: BinaryIO, offset: int) -> np.ndarray:
-        shape = cast(Tuple[int, int, int], tuple(self.ds.domain_dimensions))
+        shape = cast(tuple[int, int, int], tuple(self.ds.domain_dimensions))
         return vtk_io.read_single_field(fh, shape=shape, offset=offset, skip_data=False)
 
 

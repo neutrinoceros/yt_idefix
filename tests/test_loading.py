@@ -1,5 +1,4 @@
 import os
-import sys
 from pathlib import Path
 
 import pytest
@@ -29,12 +28,8 @@ def test_load_from_parent_str():
 
 
 @pytest.mark.skipif(
-    sys.version_info < (3, 9) or not ds_path.is_relative_to(Path.home()),
-    reason=(
-        "$HOME isn't a parent to the test dataset, "
-        "or Python is too old (< 3.9) for us to test that condition easily."
-    ),
-    # see https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.is_relative_to
+    not ds_path.is_relative_to(Path.home()),
+    reason=("$HOME isn't a parent to the test dataset"),
 )
 def test_load_from_home_str():
     # https://github.com/neutrinoceros/yt_idefix/issues/91

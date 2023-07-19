@@ -29,10 +29,10 @@ classifiers = [
 keywords = [
     "astronomy astrophysics visualization amr adaptivemeshrefinement",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "inifix>=4.1.0",
-    "numpy>=1.17.3",
+    "numpy>=1.19.3",
     "yt>=4.2.0",
     "typing-extensions>=4.1.0 ; python_version < '3.11'"
 ]
@@ -111,7 +111,7 @@ known-third-party = [
 known-first-party = ["yt", "yt_idefix"]
 
 [tool.mypy]
-python_version = 3.8
+python_version = 3.9
 show_error_codes = true
 warn_unused_configs = true
 warn_unreachable = true
