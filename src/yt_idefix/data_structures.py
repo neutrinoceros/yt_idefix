@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+import sys
 import warnings
 import weakref
 from abc import ABC, abstractmethod
@@ -36,6 +37,11 @@ from .fields import (
 # import IO classes to ensure they are properly registered,
 # even though we don't call them directly
 from .io import IdefixDmpIO, IdefixVtkIO, PlutoVtkIO  # noqa
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
 
 if TYPE_CHECKING:
     # these should really be unyt_array,
@@ -76,14 +82,17 @@ class GoodBoyHierarchy(GridIndex, ABC):
         self.float_type = np.float64
         super().__init__(ds, dataset_type)
 
+    @override
     def _detect_output_fields(self):
         self.field_list = [
             (self.dataset_type, f) for f in self.dataset._detected_field_list
         ]
 
+    @override
     def _count_grids(self):
         self.num_grids = 1
 
+    @override
     def _parse_index(self):
         self.grid_left_edge[0][:] = self.ds.domain_left_edge[:]
         self.grid_right_edge[0][:] = self.ds.domain_right_edge[:]
@@ -94,6 +103,7 @@ class GoodBoyHierarchy(GridIndex, ABC):
         self.grid_levels[0][0] = 0
         self.min_level = self.max_level = 0
 
+    @override
     def _populate_grid_objects(self):
         # the minimal form of this method is
         #
@@ -136,6 +146,7 @@ class GoodBoyHierarchy(GridIndex, ABC):
         # with unit "code_length" and dtype float64
         ...
 
+    @override
     def _icoords_to_fcoords(
         self,
         icoords: np.ndarray,
@@ -166,6 +177,7 @@ class FieldOffsetHierarchy(GoodBoyHierarchy, ABC):
             field_index = ...
         return field_index  # type: ignore
 
+    @override
     def _parse_index(self):
         super()._parse_index()
         self._field_offsets = self._get_field_offset_index()
@@ -313,6 +325,7 @@ class GoodboyDataset(Dataset, ABC):
     _default_definitions_header: str
     _version_regexp: re.Pattern
 
+    @override
     def __init__(
         self,
         filename,
@@ -371,6 +384,7 @@ class GoodboyDataset(Dataset, ABC):
         else:
             return ""
 
+    @override
     def _parse_parameter_file(self):
         # base method, intended to be subclassed
         # parse the version hash
@@ -445,6 +459,7 @@ class GoodboyDataset(Dataset, ABC):
                 self.parameters["definitions"]["geometry"] = geom_match.group(1).lower()
                 return
 
+    @override
     def _set_code_unit_attributes(self):
         # This is where quantities are created that represent the various
         # on-disk units.  These are the currently available quantities which
@@ -504,6 +519,7 @@ class StaticPlutoDataset(GoodboyDataset, ABC):
     def _get_log_file(self) -> str:
         pass
 
+    @override
     def _parse_parameter_file(self):
         super()._parse_parameter_file()
 
@@ -533,6 +549,7 @@ class StaticPlutoDataset(GoodboyDataset, ABC):
                 log_file,
             )
 
+    @override
     def _set_code_unit_attributes(self):
         """Conversion between physical units and code units."""
 
@@ -615,6 +632,7 @@ class StaticPlutoDataset(GoodboyDataset, ABC):
         "density_unit": "g/cm**3",
     }
 
+    @override
     def _parse_definitions_header(self) -> None:
         """Read some metadata from header file 'definitions.h'."""
         self.parameters["definitions"] = {}
@@ -677,6 +695,7 @@ class StaticPlutoDataset(GoodboyDataset, ABC):
         key = match.group()
         return str(pluto_def_constants[key])
 
+    @override
     @classmethod
     def _validate_units_override_keys(cls, units_override):
         """Check that units in units_override are able to derive three base units:
@@ -720,6 +739,7 @@ class VtkMixin(Dataset):
     def _read_data_header(self) -> str:
         return vtk_io.read_header(self.filename)
 
+    @override
     def _parse_parameter_file(self):
         # parse metadata
         with open(self.filename, "rb") as fh:
@@ -764,6 +784,7 @@ class IdefixDmpDataset(IdefixDataset):
     _index_class = IdefixDmpHierarchy
     _field_info_class = IdefixDmpFields
 
+    @override
     @classmethod
     def _is_valid(cls, filename: str, *args, **kwargs) -> bool:  # NOQA: ARG003
         try:
@@ -779,6 +800,7 @@ class IdefixDmpDataset(IdefixDataset):
     def _read_data_header(self) -> str:
         return dmp_io.read_header(self.filename)
 
+    @override
     def _parse_parameter_file(self):
         fprops, fdata = self._get_fields_metadata()
         self.parameters.update(fdata)
@@ -811,6 +833,7 @@ class IdefixVtkDataset(VtkMixin, IdefixDataset):
     _dataset_type = "idefix-vtk"
     _field_info_class = IdefixVtkFields
 
+    @override
     @classmethod
     def _is_valid(cls, filename: str, *args, **kwargs) -> bool:  # NOQA: ARG003
         try:
@@ -824,6 +847,7 @@ class IdefixVtkDataset(VtkMixin, IdefixDataset):
 class PlutoVtkDataset(VtkMixin, StaticPlutoDataset):
     _dataset_type = "pluto-vtk"
 
+    @override
     @classmethod
     def _is_valid(cls, filename: str, *args, **kwargs) -> bool:  # NOQA: ARG003
         try:
@@ -833,6 +857,7 @@ class PlutoVtkDataset(VtkMixin, StaticPlutoDataset):
         else:
             return "PLUTO" in header
 
+    @override
     def _get_log_file(self) -> str:
         return os.path.join(self.directory, "vtk.out")
 
@@ -841,6 +866,7 @@ class PlutoXdmfDataset(StaticPlutoDataset):
     _dataset_type = "pluto-xdmf"
     _index_class = PlutoXdmfHierarchy
 
+    @override
     def _get_log_file(self) -> str:
         if (suffix := re.search(r"(flt|dbl)\.h5$", self.filename)) is not None:
             return os.path.join(self.directory, f"{suffix.group()}.out")
@@ -849,6 +875,7 @@ class PlutoXdmfDataset(StaticPlutoDataset):
                 f"Failed to detect log file associated with {self.filename}"
             )
 
+    @override
     def _parse_parameter_file(self):
         """
         Filenames are data.<snapnum>.<dbl/flt>.h5
@@ -913,6 +940,7 @@ class PlutoXdmfDataset(StaticPlutoDataset):
         else:
             return ""
 
+    @override
     @classmethod
     def _is_valid(cls, filename: str, *args, **kwargs) -> bool:  # NOQA: ARG003
         if not (

@@ -34,7 +34,7 @@ dependencies = [
     "inifix>=4.1.0",
     "numpy>=1.19.3",
     "yt>=4.2.0",
-    "typing-extensions>=4.1.0 ; python_version < '3.11'"
+    "typing-extensions>=4.4.0 ; python_version < '3.12'"
 ]
 dynamic = ["version"]
 
