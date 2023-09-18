@@ -41,10 +41,10 @@ jobs:
         python -m pip install "$INSTALL_TARGET"
         python -m pip install --requirement requirements/tests.txt
 
+    - run: python -m pip list
+
     - name: run tests
-      run: |
-        python -m pip freeze
-        pytest --color=yes
+      run: pytest --color=yes
 
 
   type-check:

@@ -46,5 +46,7 @@ jobs:
         python -m pip install .
         python -m pip install --requirement requirements/tests.txt
 
+    - run: python -m pip list
+
     - name: Run Tests
       run: pytest --color=yes
