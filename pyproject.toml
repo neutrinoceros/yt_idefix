@@ -119,4 +119,7 @@ show_error_context = true
 [tool.pytest.ini_options]
 filterwarnings = [
     "error",
+    # already patched (but not released) upstream:
+    # https://github.com/dateutil/dateutil/pull/1285
+    'ignore:datetime\.datetime\.utcfromtimestamp\(\) is deprecated:DeprecationWarning',
 ]
