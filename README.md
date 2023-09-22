@@ -36,30 +36,41 @@ The metadata are parsed from data file, definitions header file and inifile when
 
 Definitions header file (`definitions.h` for Pluto, or `definitions.hpp` for Idefix) and inifile (`pluto.ini` and `idefix.ini` respectively) are discovered automatically if they match default names, are located along with data files, and unique. Otherwise, they can be specified explicitly as paths (either relative to data files or absolute paths) with parameters `definitions_header` and `inifile` respectively.
 
+```python
+ds = yt.load(
+    "data.0010.vtk",
+    definitions_header="../definitions.h",
+    inifile="example.ini",
+)
+```
+
 Geometry is parsed automatically whenever possible, but as a last resort, it can also be specified as a keyword argument (possible values are "cartesian", "spherical", "cylindrical" and "polar").
 
 ```python
-# Examples
-ds = yt.load(
-    "data.0010.vtk", definitions_header="../definitions.h", inifile="example.ini"
-)
 ds = yt.load("data.0010.vtk", geometry="spherical")
 ```
 
-The data are loaded as physical quantities with units. The default unit system is `cgs` in yt. This frontend can convert data from code units into `cgs` properly, based on the unit definitions from metadata.
+The data are loaded as physical quantities with units. The default unit system is `cgs` in yt. Data is always interpreted as dimensionful. This frontends parses metadata from `definitions.h` and `pluto.ini` to guess the proper on-disk units automatically (which is a Pluto-only feature).
 
-Users are able to choose the unit displayed in two ways, through `unit_system` ("code", "mks" and "cgs") and `units_override`(only valid for Pluto).
+Units may also be provided at runtime using the `units_override` argument
+```python
+ds = yt.load(
+    "data.0010.vtk",
+    units_override={
+        "length_unit": (100.0, "au"),
+        "mass_unit": yt.units.mass_sun,
+    },
+)
+```
+Note that s will also be changed for consistency (Pluto).
+
+Displayed units can also be controled in two ways using the `unit_system` argument. Accepted values are `"cgs"` (default), `"mks"` and `"code"`.
 
 ```python
-# Examples on units
 ds = yt.load("data.0010.vtk", unit_system="mks")
-
-units_override = dict(length_unit=(100.0, "au"), mass_unit=yt.units.mass_sun)
-
-# Caution that other units will also be changed for consistency!
-ds = yt.load("data.0010.vtk", unit_override=unit_override)
 ```
-With Pluto data, the rest of the system will be derived consistently with given units, within the following rules:
+
+With Pluto data, units not specified with `units_override` will be derived consistently with given units, within the following rules:
 1. Temperature unit cannot be overridden (always set to Kelvin)
 2. No more than three units can be overridden at once (overconstrained systems are never validated for simplicity)
 3. When given less than three overrides, base units in Pluto (ordered: velocity_unit, density_unit, length_unit) are assumed
@@ -68,27 +79,27 @@ With Pluto data, the rest of the system will be derived consistently with given 
 ```python
 {"magnetic_unit", "velocity_unit", "density_unit"},
 {"velocity_unit", "time_unit", "length_unit"},
-{"density_unit", "length_unit", "mass_unit"},
+{"density_unit", "length_unit", "mass_unit"}
 ```
 
 yt is able to provide some derived fields from existed fields, e.g., `"cell_volume"`. Fields related to element species can be created according to primordial abundances of H and He, through `default_species_fields` (`"neutral"` and `"ionized"`) parameters.
 
 ```python
-# Example
 ds = yt.load("data.0010.vtk", default_species_fields="ionized")
 ```
 
-### Convention of field names
-The outputs are loaded from disk with field names in uppercase. This normalization is only applied to the standard outputs but user-defined outputs and Pluto's ion fraction outputs.
+### Conventions on field names
 
-```python
-# Example
-ds.field_list
-# Output:
-# [('pluto-vtk', 'PRS'),   # standard output
-#  ('pluto-vtk', 'RHO'),   # standard output
-#  ('pluto-vtk', 'VX1'),   # standard output
-#  ('pluto-vtk', 'VX2'),   # standard output
-#  ('pluto-vtk', 'VX3'),   # standard output
-#  ('pluto-vtk', 'temp')]  # This is a user-defined output
+Field names of on-disk fields for density, pressure, velocity and magnetic field components are always normalized to upper case, even if Pluto may use lowercase in some versions.
+
+```python-prompt
+>>> ds.field_list
+[('pluto-vtk', 'PRS'),
+ ('pluto-vtk', 'RHO'),
+ ('pluto-vtk', 'VX1'),
+ ('pluto-vtk', 'VX2'),
+ ('pluto-vtk', 'VX3')]
 ```
+
+This normalization is only applied to not to user-defined outputs or Pluto's ion
+fraction outputs.
