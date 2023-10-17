@@ -1,18 +1,25 @@
 from __future__ import annotations
 
 import os
+import sys
 
 import numpy as np
 
+from yt.geometry.api import Geometry
 from yt.utilities.on_demand_imports import _h5py as h5py
 
 from .commons import Coordinates, Shape, get_native_coordinates_from_cartesian
 
-KNOWN_GEOMETRIES: dict[int, str] = {
-    0: "cartesian",
-    1: "polar",
-    2: "spherical",
-    3: "cylindrical",
+if sys.version_info >= (3, 11):
+    from typing import assert_never
+else:
+    from typing_extensions import assert_never
+
+KNOWN_GEOMETRIES: dict[int, Geometry] = {
+    0: Geometry.CARTESIAN,
+    1: Geometry.POLAR,
+    2: Geometry.SPHERICAL,
+    3: Geometry.CYLINDRICAL,
 }
 
 
@@ -36,18 +43,25 @@ def read_grid_coordinates(
     shape = Shape(*(nodesX.shape))
     coords: list[np.ndarray] = []
     # now assuming that fh is positioned at the end of metadata
-    if geometry in ("cartesian", "cylindrical") or (
-        geometry in ("polar", "spherical") and nodesX.ndim == 1
+    if nodesX.ndim < 1:
+        raise ValueError(...)
+    if (
+        geometry is Geometry.CARTESIAN
+        or geometry is Geometry.CYLINDRICAL
+        or (
+            (geometry is Geometry.POLAR or geometry is geometry is Geometry.SPHERICAL)
+            and nodesX.ndim == 1
+        )
     ):
         if nodesX.ndim == 1:
             # Default is assumed and not parsed from pluto.ini/grid.out (not present in data)
             nodesY = np.array([0.0, 1.0])
             nodesZ = np.array([0.0, 1.0])
-            if geometry == "spherical":
+            if geometry is Geometry.SPHERICAL:
                 if np.fabs(np.ptp(nodesX)) < 1e-8:
                     nodesX = np.hstack(([nodesX[1] - nodesX[0]], nodesX))
                     nodesX /= np.sin(0.5)
-            elif geometry == "polar":
+            elif geometry is Geometry.POLAR:
                 if np.fabs(np.ptp(nodesX)) < 1e-8:
                     nodesX = np.hstack(([nodesX[1] - nodesX[0]], nodesX))
                     nodesX /= np.cos(0.5)
@@ -56,7 +70,7 @@ def read_grid_coordinates(
             nodesX = nodesX[0, :]
             nodesY = nodesY[:, 0]
             # Default is assumed and not parsed from pluto.ini/grid.out (not present in data)
-            if geometry == "cartesian":
+            if geometry is Geometry.CARTESIAN:
                 nodesZ = np.array([0.0, 1.0])
             else:
                 nodesZ = np.array([0.0, 2 * np.pi])
@@ -67,7 +81,9 @@ def read_grid_coordinates(
             nodesZ = nodesZ[:, 0, 0]
             array_shape = Shape(*reversed(shape)).to_cell_centered()
         coords = [nodesX, nodesY, nodesZ]
-    elif geometry in ("polar", "spherical") and nodesX.ndim > 1:
+    elif (
+        geometry is Geometry.POLAR or geometry is Geometry.SPHERICAL
+    ) and nodesX.ndim > 1:
         if nodesX.ndim == 2:
             nodesX = np.expand_dims(nodesX, axis=0)
             nodesY = np.expand_dims(nodesY, axis=0)
@@ -81,5 +97,7 @@ def read_grid_coordinates(
         zcart = np.transpose(nodesZ, axes=(2, 1, 0))
 
         coords = get_native_coordinates_from_cartesian(xcart, ycart, zcart, geometry)
+    else:
+        assert_never(geometry)
     fh.close()
     return Coordinates(coords[0], coords[1], coords[2], array_shape)

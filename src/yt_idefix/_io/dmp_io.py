@@ -16,12 +16,20 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import assert_never
 
+import sys
 
-KNOWN_GEOMETRIES: dict[int, str] = {
-    1: "cartesian",
-    2: "cylindrical",
-    3: "polar",
-    4: "spherical",
+from yt.geometry.api import Geometry
+
+if sys.version_info >= (3, 11):
+    from typing import assert_never
+else:
+    from typing_extensions import assert_never
+
+KNOWN_GEOMETRIES: dict[int, Geometry] = {
+    1: Geometry.CARTESIAN,
+    2: Geometry.CYLINDRICAL,
+    3: Geometry.POLAR,
+    4: Geometry.SPHERICAL,
 }
 
 

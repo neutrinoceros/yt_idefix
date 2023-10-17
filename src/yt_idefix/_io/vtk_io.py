@@ -1,18 +1,26 @@
 from __future__ import annotations
 
 import struct
+import sys
 import warnings
 from typing import Any, BinaryIO, Literal, overload
 
 import numpy as np
 
+from yt.geometry.api import Geometry
+
 from .commons import Coordinates, Shape, get_native_coordinates_from_cartesian
 
-KNOWN_GEOMETRIES: dict[int, str] = {
-    0: "cartesian",
-    1: "polar",
-    2: "spherical",
-    3: "cylindrical",
+if sys.version_info >= (3, 11):
+    from typing import assert_never
+else:
+    from typing_extensions import assert_never
+
+KNOWN_GEOMETRIES: dict[int, Geometry] = {
+    0: Geometry.CARTESIAN,
+    1: Geometry.POLAR,
+    2: Geometry.SPHERICAL,
+    3: Geometry.CYLINDRICAL,
 }
 
 
@@ -134,7 +142,11 @@ def read_grid_coordinates(
     md = read_metadata(fh)
 
     geometry = md.get("geometry", geometry)
-    if geometry not in (valid_geometries := tuple(KNOWN_GEOMETRIES.values())):
+    if geometry is None or geometry not in (
+        valid_geometries := tuple(KNOWN_GEOMETRIES.values())
+    ):
+        # this check is somewhat redundant to make it clear
+        # to mypy that geometry can't be None beyond this point
         raise ValueError(
             f"Got unknown geometry {geometry!r}, expected one of {valid_geometries}"
         )
@@ -142,7 +154,7 @@ def read_grid_coordinates(
     shape = md["shape"]
     coords: list[np.ndarray] = []
     # now assuming that fh is positioned at the end of metadata
-    if geometry in ("cartesian", "cylindrical"):
+    if geometry is Geometry.CARTESIAN or geometry is Geometry.CYLINDRICAL:
         # In Idefix, cylindrical geometry is only meant to be used in 2D,
         # so the grid structure is effectively cartesian (R, z)
         for nx in shape:
@@ -173,8 +185,7 @@ def read_grid_coordinates(
                 )
             array_shape = shape
 
-    else:
-        assert geometry in ("polar", "spherical")
+    elif geometry is Geometry.POLAR or geometry is Geometry.SPHERICAL:
         rshape = Shape(*reversed(shape))
         npoints = int(next(fh).decode().split()[1])  # POINTS NXNYNZ float
         assert shape.size == npoints
@@ -200,6 +211,8 @@ def read_grid_coordinates(
 
         array_shape = shape.to_cell_centered()
         assert data_type == "CELL_DATA"
+    else:
+        assert_never(geometry)
 
     def warn_invalid(arr):
         bulk_msg = (
