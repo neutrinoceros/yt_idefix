@@ -4,6 +4,8 @@ from typing import Any, Literal, NamedTuple
 
 import numpy as np
 
+from yt.geometry.api import Geometry
+
 Prec = Literal["d", "f", "i", "?"]
 Dim = Literal[1, 2, 3]
 
@@ -51,12 +53,12 @@ def get_native_coordinates_from_cartesian(
     xcart: np.ndarray,
     ycart: np.ndarray,
     zcart: np.ndarray,
-    geometry: str,
+    geometry: Geometry,
 ) -> list[np.ndarray]:
     shape = Shape(*xcart.shape)
 
     # Reconstruct the polar coordinate system
-    if geometry == "polar":
+    if geometry is Geometry.POLAR:
         # on disk coordinates are cell face coordinates.
         # We need to convert from cartesian to polar,
         # but no interpolation is needed.
@@ -65,7 +67,7 @@ def get_native_coordinates_from_cartesian(
         z = zcart[0, 0, :]
 
         coords = [r, theta, z]
-    elif geometry == "spherical":
+    elif geometry is Geometry.SPHERICAL:
         # Reconstruct the spherical coordinate system
         if shape.n3 == 1:
             r = np.sqrt(xcart[:, 0, 0] ** 2 + ycart[:, 0, 0] ** 2)
@@ -91,9 +93,7 @@ def get_native_coordinates_from_cartesian(
             )
         coords = [r, theta, phi]
     else:
-        raise NotImplementedError(
-            f"This kind of geometry: {geometry} is not supported yet!"
-        )
+        raise NotImplementedError(f"{geometry} is not supported yet!")
     return coords
 
 

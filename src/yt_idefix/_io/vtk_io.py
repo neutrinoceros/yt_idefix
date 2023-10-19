@@ -3,6 +3,7 @@ from __future__ import annotations
 import struct
 import sys
 import warnings
+from enum import IntEnum
 from typing import Any, BinaryIO, Literal, overload
 
 import numpy as np
@@ -16,12 +17,12 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import assert_never
 
-KNOWN_GEOMETRIES: dict[int, Geometry] = {
-    0: Geometry.CARTESIAN,
-    1: Geometry.POLAR,
-    2: Geometry.SPHERICAL,
-    3: Geometry.CYLINDRICAL,
-}
+
+class VtkGeometry(IntEnum):
+    CARTESIAN = 0
+    POLAR = 1
+    SPHERICAL = 2
+    CYLINDRICAL = 3
 
 
 def read_header(filename: str) -> str:
@@ -105,13 +106,15 @@ def read_metadata(fh: BinaryIO) -> dict[str, Any]:
             d = next(fh).decode()
             if d.startswith("GEOMETRY"):
                 geom_flag: int = struct.unpack(">i", fh.read(4))[0]
-                geometry_from_data = KNOWN_GEOMETRIES.get(geom_flag)
-                if geometry_from_data is None:
+                try:
+                    geometry_from_data = VtkGeometry(geom_flag)
+                except ValueError:
                     warnings.warn(
                         f"Unknown geometry enum value {geom_flag}, please report this.",
                         stacklevel=2,
                     )
-                metadata["geometry"] = geometry_from_data
+                else:
+                    metadata["geometry"] = geometry_from_data.name.lower()
             elif d.startswith("TIME"):
                 metadata["time"] = struct.unpack(">f", fh.read(4))[0]
             elif d.startswith("PERIODICITY"):
@@ -150,11 +153,12 @@ def read_grid_coordinates(
         raise ValueError(
             f"Got unknown geometry {geometry!r}, expected one of {valid_geometries}"
         )
+    geom = Geometry(geometry)
 
     shape = md["shape"]
     coords: list[np.ndarray] = []
     # now assuming that fh is positioned at the end of metadata
-    if geometry is Geometry.CARTESIAN or geometry is Geometry.CYLINDRICAL:
+    if geom is Geometry.CARTESIAN or geom is Geometry.CYLINDRICAL:
         # In Idefix, cylindrical geometry is only meant to be used in 2D,
         # so the grid structure is effectively cartesian (R, z)
         for nx in shape:
@@ -185,7 +189,7 @@ def read_grid_coordinates(
                 )
             array_shape = shape
 
-    elif geometry is Geometry.POLAR or geometry is Geometry.SPHERICAL:
+    elif geom is Geometry.POLAR or geom is Geometry.SPHERICAL:
         rshape = Shape(*reversed(shape))
         npoints = int(next(fh).decode().split()[1])  # POINTS NXNYNZ float
         assert shape.size == npoints
@@ -204,7 +208,7 @@ def read_grid_coordinates(
         zcart.shape = rshape
         zcart = zcart.T
 
-        coords = get_native_coordinates_from_cartesian(xcart, ycart, zcart, geometry)
+        coords = get_native_coordinates_from_cartesian(xcart, ycart, zcart, geom)
 
         data_type = next(fh).decode().split()[0]  # CELL_DATA (NX-1)(NY-1)(NZ-1)
         next(fh)
@@ -212,7 +216,7 @@ def read_grid_coordinates(
         array_shape = shape.to_cell_centered()
         assert data_type == "CELL_DATA"
     else:
-        assert_never(geometry)
+        assert_never(geom)
 
     def warn_invalid(arr):
         bulk_msg = (

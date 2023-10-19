@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+from enum import IntEnum
 
 import numpy as np
 
@@ -15,12 +16,12 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import assert_never
 
-KNOWN_GEOMETRIES: dict[int, Geometry] = {
-    0: Geometry.CARTESIAN,
-    1: Geometry.POLAR,
-    2: Geometry.SPHERICAL,
-    3: Geometry.CYLINDRICAL,
-}
+
+class H5Geometry(IntEnum):
+    CARTESIAN = 0
+    POLAR = 1
+    SPHERICAL = 2
+    CYLINDRICAL = 3
 
 
 def read_grid_coordinates(
