@@ -70,6 +70,7 @@ class SingleGrid(StretchedGrid):
 
 
 class GoodBoyHierarchy(GridIndex, ABC):
+    _load_requirements = ["inifix"]
     grid = SingleGrid
 
     def __init__(self, ds, dataset_type="idefix"):
