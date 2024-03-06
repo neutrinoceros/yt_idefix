@@ -28,8 +28,7 @@ def read_single_field(
     shape: tuple[int, int, int],
     offset: int | None = None,
     skip_data: Literal[False],
-) -> np.ndarray:
-    ...
+) -> np.ndarray: ...
 
 
 @overload
@@ -39,8 +38,7 @@ def read_single_field(
     shape: tuple[int, int, int],
     offset: int | None = None,
     skip_data: Literal[True],
-) -> None:
-    ...
+) -> None: ...
 
 
 def read_single_field(
