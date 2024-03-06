@@ -116,8 +116,7 @@ def read_chunk(
     byteorder: ByteOrder,
     is_scalar: bool,
     skip_data: Literal[True],
-) -> None:
-    ...
+) -> None: ...
 
 
 @overload
@@ -130,8 +129,7 @@ def read_chunk(
     byteorder: ByteOrder,
     is_scalar: Literal[True],
     skip_data: Literal[False],
-) -> float:
-    ...
+) -> float: ...
 
 
 @overload
@@ -144,8 +142,7 @@ def read_chunk(
     byteorder: ByteOrder,
     is_scalar: Literal[False],
     skip_data: Literal[False],
-) -> np.ndarray:
-    ...
+) -> np.ndarray: ...
 
 
 @overload
@@ -158,8 +155,7 @@ def read_chunk(
     byteorder: ByteOrder,
     is_scalar: bool,
     skip_data: bool,
-) -> float | np.ndarray | None:
-    ...
+) -> float | np.ndarray | None: ...
 
 
 def read_chunk(
@@ -205,8 +201,7 @@ def read_serial(
     *,
     byteorder: ByteOrder,
     is_scalar: Literal[True],
-) -> float:
-    ...
+) -> float: ...
 
 
 @overload
@@ -218,8 +213,7 @@ def read_serial(
     *,
     byteorder: ByteOrder,
     is_scalar: Literal[False],
-) -> np.ndarray:
-    ...
+) -> np.ndarray: ...
 
 
 @overload
@@ -231,8 +225,7 @@ def read_serial(
     *,
     byteorder: ByteOrder,
     is_scalar: bool = False,
-) -> float | np.ndarray:
-    ...
+) -> float | np.ndarray: ...
 
 
 def read_serial(fh, ndim, dim, dtype, *, byteorder, is_scalar=False):
@@ -257,8 +250,7 @@ def read_distributed(
     byteorder: ByteOrder,
     dtype: str,
     skip_data: Literal[False],
-) -> np.ndarray:
-    ...
+) -> np.ndarray: ...
 
 
 @overload
@@ -269,8 +261,7 @@ def read_distributed(
     byteorder: ByteOrder,
     dtype: str,
     skip_data: Literal[True],
-) -> None:
-    ...
+) -> None: ...
 
 
 @overload
@@ -281,8 +272,7 @@ def read_distributed(
     byteorder: ByteOrder,
     dtype: str,
     skip_data: bool = False,
-) -> np.ndarray | None:
-    ...
+) -> np.ndarray | None: ...
 
 
 def read_distributed(fh, dim, *, byteorder, dtype, skip_data):
