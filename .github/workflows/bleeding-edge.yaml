@@ -1,9 +1,5 @@
 name: CI (bleeding edge)
-# this workflow is heavily inspired from pandas, see
-# https://github.com/pandas-dev/pandas/blob/master/.github/workflows/python-dev.yml
-
 # goals: check stability against dev version of Python and yt
-# - building with future pip default options
 
 on:
   push:
@@ -40,9 +36,6 @@ jobs:
     - name: Build
       run: |
         python -m pip install --upgrade pip
-        python -m pip install --pre numpy matplotlib --only-binary ":all:" \
-          --extra-index \
-          https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
         python -m pip install git+https://github.com/yt-project/yt.git
         python -m pip install .
         python -m pip install --requirement requirements/tests.txt
