@@ -324,7 +324,6 @@ class GoodboyDataset(Dataset, ABC):
     _dataset_type: str
     _default_inifile: str
     _default_definitions_header: str
-    _version_regexp: re.Pattern
 
     @override
     def __init__(
@@ -488,10 +487,10 @@ class GoodboyDataset(Dataset, ABC):
         # we assume the version string is somewhere in the first two
         # lines, which is general enough for the data formats we support
         lines = self._read_data_header().splitlines()
-        header = "\n".join(lines[: (min(len(lines), 2))])
-        regexp = self.__class__._version_regexp
-        match = re.search(regexp, header)
+        version_line = [L for L in lines if not L.startswith(("# *", "# vtk"))][0]
+        match = re.search(r"\d+\.\d+\.?\d*[-\w+]*", version_line)
         if match is None:
+            header = "\n".join(lines)
             warnings.warn(
                 f"Could not determine code version from file header {header!r}",
                 stacklevel=2,
@@ -504,7 +503,6 @@ class GoodboyDataset(Dataset, ABC):
 class IdefixDataset(GoodboyDataset, ABC):
     _default_inifile = "idefix.ini"
     _default_definitions_header = "definitions.hpp"
-    _version_regexp = re.compile(r"v\d+\.\d+\.?\d*[-\w+]*")
 
 
 class StaticPlutoDataset(GoodboyDataset, ABC):
@@ -514,7 +512,6 @@ class StaticPlutoDataset(GoodboyDataset, ABC):
     _default_inifile = "pluto.ini"
     _default_definitions_header = "definitions.h"
     _field_info_class = PlutoFields
-    _version_regexp = re.compile(r"\d+\.\d+\.?\d*[-\w+]*")
 
     @abstractmethod
     def _get_log_file(self) -> str:
