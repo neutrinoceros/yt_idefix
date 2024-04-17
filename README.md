@@ -49,7 +49,8 @@ Geometry is parsed automatically whenever possible, but as a last resort, it can
 ds = yt.load("data.0010.vtk", geometry="spherical")
 ```
 
-The data are loaded as physical quantities with units. The default unit system is `cgs` in yt. Data is always interpreted as dimensionful. This frontends parses metadata from `definitions.h` and `pluto.ini` to guess the proper on-disk units automatically (which is a Pluto-only feature).
+The data are loaded as physical quantities with units. The default unit system is `cgs` in yt. Data is always interpreted as dimensionful.
+For Pluto simulation, metadata is retrieved from `definitions.h` and `pluto.ini` to guess the proper on-disk units automatically.
 
 Units may also be provided at runtime using the `units_override` argument
 ```python
@@ -61,9 +62,10 @@ ds = yt.load(
     },
 )
 ```
-Note that s will also be changed for consistency (Pluto).
+Note that other units will also be changed for consistency (Pluto).
 
-Displayed units can also be controled in two ways using the `unit_system` argument. Accepted values are `"cgs"` (default), `"mks"` and `"code"`.
+Displayed units can also be controled using the `unit_system` argument.
+Accepted values are `"cgs"` (default), `"mks"` and `"code"`.
 
 ```python
 ds = yt.load("data.0010.vtk", unit_system="mks")
@@ -91,7 +93,7 @@ ds = yt.load("data.0010.vtk", default_species_fields="ionized")
 
 Field names of on-disk fields for density, pressure, velocity and magnetic field components are always normalized to upper case, even if Pluto may use lowercase in some versions.
 
-```python-prompt
+```python
 >>> ds.field_list
 [('pluto-vtk', 'PRS'),
  ('pluto-vtk', 'RHO'),
@@ -100,5 +102,5 @@ Field names of on-disk fields for density, pressure, velocity and magnetic field
  ('pluto-vtk', 'VX3')]
 ```
 
-This normalization is only applied to not to user-defined outputs or Pluto's ion
+This normalization is only applied to non-user-defined outputs and Pluto's ion
 fraction outputs.
