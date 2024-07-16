@@ -38,22 +38,23 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-
-    - run: python -m pip install --upgrade pip
+    - uses: yezz123/setup-uv@v4
+      with:
+        uv-version: 0.2.25
+        uv-venv: .venv
 
     - if: matrix.deps == 'minimal'
       run: |
-        pipx run uv pip compile pyproject.toml --resolution=lowest-direct > mindeps.txt
-        python -m pip install --requirement mindeps.txt
+        uv pip compile pyproject.toml --resolution=lowest-direct | uv pip install -r -
 
     - name: Build
       env:
         INSTALL_TARGET: ${{ matrix.install-target }}
       run: |
-        python -m pip install "$INSTALL_TARGET"
-        python -m pip install --requirement requirements/tests.txt
+        uv pip install "$INSTALL_TARGET"
+        uv pip install --requirement requirements/tests.txt
 
-    - run: python -m pip list
+    - run: uv pip list
 
     - name: run tests
       run: pytest --color=yes
@@ -75,11 +76,16 @@ jobs:
         # to make sure we're not using unparseable syntax
         python-version: '3.9'
 
+    - uses: yezz123/setup-uv@v4
+      with:
+        uv-version: 0.2.25
+        uv-venv: .venv
+
     - name: Build
       run: |
-        python -m pip install --upgrade pip
-        python -m pip install .
-        python -m pip install --requirement requirements/typecheck.txt
+        uv pip install --upgrade pip
+        uv pip install .
+        uv pip install --requirement requirements/typecheck.txt
 
     - name: Run mypy
       run: mypy src/yt_idefix
