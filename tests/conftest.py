@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sys
 from importlib.metadata import version
+from importlib.util import find_spec
 from itertools import takewhile
 from pathlib import Path
 from typing import Any
@@ -14,14 +15,27 @@ from packaging.version import Version
 
 NUMPY_VERSION = Version(version("numpy"))
 
+if find_spec("h5py"):
+    H5PY_VERSION = Version(version("h5py"))
+else:
+    H5PY_VERSION = None
+
 
 def pytest_configure(config):
     if sys.version_info >= (3, 10) and NUMPY_VERSION < Version("1.23"):
         config.addinivalue_line(
             "filterwarnings",
-            (
-                "ignore:The distutils.sysconfig module is deprecated, use sysconfig instead:DeprecationWarning"
-            ),
+            "ignore:The distutils.sysconfig module is deprecated, use sysconfig instead:DeprecationWarning",
+        )
+
+    if (
+        H5PY_VERSION is not None
+        and H5PY_VERSION <= Version("3.11.0")
+        and NUMPY_VERSION >= Version("2.1.0")
+    ):
+        config.addinivalue_line(
+            "filterwarnings",
+            "ignore:__array__ implementation doesn't accept a copy keyword:DeprecationWarning",
         )
 
 
