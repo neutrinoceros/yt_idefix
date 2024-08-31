@@ -40,7 +40,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - uses: yezz123/setup-uv@v4
       with:
-        uv-version: 0.2.25
+        uv-version: 0.4.1
         uv-venv: .venv
 
     - if: matrix.deps == 'minimal'
@@ -78,7 +78,7 @@ jobs:
 
     - uses: yezz123/setup-uv@v4
       with:
-        uv-version: 0.2.25
+        uv-version: 0.4.1
         uv-venv: .venv
 
     - name: Build
