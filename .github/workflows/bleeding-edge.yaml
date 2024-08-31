@@ -31,7 +31,7 @@ jobs:
     - name: Set up Python Dev Version
       uses: actions/setup-python@v5
       with:
-        python-version: 3.12-dev
+        python-version: 3.13-dev
 
     - uses: yezz123/setup-uv@v4
       with:
