@@ -19,7 +19,7 @@ jobs:
         os:
         - ubuntu-latest
         python-version:
-        - '3.9'
+        - '3.10'
         - '3.12'
         install-args:
         - ''
@@ -27,7 +27,7 @@ jobs:
 
         include:
         - os: ubuntu-20.04
-          python-version: '3.9'
+          python-version: '3.10'
           install-args: --extra HDF5 --resolution=lowest-direct
 
     runs-on: ${{ matrix.os }}
@@ -68,5 +68,5 @@ jobs:
       # Match minimal supported Python version
       # to make sure we're not using unparseable syntax
       run: |
-        uvx --python 3.9 --with-requirements=requirements/typecheck.txt --with . \
+        uvx --python 3.10 --with-requirements=requirements/typecheck.txt --with . \
         mypy src/yt_idefix

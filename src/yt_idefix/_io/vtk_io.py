@@ -148,7 +148,9 @@ def read_grid_coordinates(
             coords.append(np.fromfile(fh, dtype=">f", count=nx))
             next(fh)
         line = next(fh).decode()
-        point_type, npoints = (t(_) for t, _ in zip((str, int), line.split()))
+        point_type, npoints = (
+            t(_) for t, _ in zip((str, int), line.split(), strict=True)
+        )
         next(fh)
         if point_type == "CELL_DATA":
             array_shape = shape.to_cell_centered()
