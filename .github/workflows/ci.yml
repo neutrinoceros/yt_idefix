@@ -21,43 +21,36 @@ jobs:
         python-version:
         - '3.9'
         - '3.12'
-        install-target:
-        - .
-        - .[HDF5]
+        install-args:
+        - ''
+        - --extra HDF5
 
         include:
         - os: ubuntu-20.04
           python-version: '3.9'
-          install-target: .[HDF5]
-          deps: minimal
+          install-args: --extra HDF5 --resolution=lowest-direct
 
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
-    - name: Setup Python
-      uses: actions/setup-python@v5
+    - uses: astral-sh/setup-uv@v2
       with:
-        python-version: ${{ matrix.python-version }}
-    - uses: yezz123/setup-uv@v4
-      with:
-        uv-version: 0.4.1
-        uv-venv: .venv
-
-    - if: matrix.deps == 'minimal'
-      run: |
-        uv pip compile pyproject.toml --resolution=lowest-direct | uv pip install -r -
+        enable-cache: true
+        github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build
-      env:
-        INSTALL_TARGET: ${{ matrix.install-target }}
       run: |
-        uv pip install "$INSTALL_TARGET"
+        uv venv --python ${{ matrix.python-version }}
+        uv pip install . --no-deps
+        uv pip install --requirement pyproject.toml --no-build ${{ matrix.install-args }}
         uv pip install --requirement requirements/tests.txt
 
     - run: uv pip list
 
     - name: run tests
-      run: pytest --color=yes
+      run: |
+        source .venv/bin/activate
+        pytest --color=yes -ra
 
 
   type-check:
@@ -66,26 +59,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - uses: astral-sh/setup-uv@v2
       with:
-        fetch-depth: 0
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        # Match minimal supported Python version
-        # to make sure we're not using unparseable syntax
-        python-version: '3.9'
-
-    - uses: yezz123/setup-uv@v4
-      with:
-        uv-version: 0.4.1
-        uv-venv: .venv
-
-    - name: Build
-      run: |
-        uv pip install --upgrade pip
-        uv pip install .
-        uv pip install --requirement requirements/typecheck.txt
+        enable-cache: true
+        github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Run mypy
-      run: mypy src/yt_idefix
+      # Match minimal supported Python version
+      # to make sure we're not using unparseable syntax
+      run: |
+        uvx --python 3.9 --with-requirements=requirements/typecheck.txt --with . \
+        mypy src/yt_idefix

@@ -33,13 +33,14 @@ jobs:
       with:
         python-version: 3.13-dev
 
-    - uses: yezz123/setup-uv@v4
+    - uses: astral-sh/setup-uv@v2
       with:
-        uv-version: 0.4.1
-        uv-venv: .venv
+        enable-cache: true
+        github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build
       run: |
+        uv venv
         uv pip install git+https://github.com/yt-project/yt.git
         uv pip install .
         uv pip install --requirement requirements/tests.txt
@@ -47,4 +48,6 @@ jobs:
     - run: uv pip list
 
     - name: Run Tests
-      run: pytest --color=yes
+      run: |
+        source .venv/bin/activate
+        pytest --color=yes -ra
