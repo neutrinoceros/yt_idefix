@@ -2,4 +2,9 @@
 # immediately after `import yt.extensions.idefix`
 from yt_idefix.api import *
 
-__version__ = "2.3.1"
+
+from importlib.metadata import version
+
+__version__ = version("yt-idefix")
+
+del version

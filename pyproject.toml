@@ -1,11 +1,10 @@
 [build-system]
-requires = [
-    "setuptools>=61.2",
-]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
 
 [project]
 name = "yt_idefix"
+version = "2.3.1"
 description = "An extension module for yt, adding a frontend for Idefix and Pluto"
 authors = [
     { name = "C.M.T. Robert" },
@@ -35,10 +34,7 @@ dependencies = [
     "yt>=4.2.0",
     "typing-extensions>=4.4.0 ; python_version < '3.12'"
 ]
-dynamic = ["version"]
 
-[tool.setuptools.dynamic]
-version = {attr = "yt_idefix.__version__"}
 
 [project.optional-dependencies]
 HDF5 = ["h5py>=3.1.0"]
@@ -62,20 +58,8 @@ Documentation = "https://yt-project.org/docs/dev/"
 Source = "https://github.com/neutrinoceros/yt_idefix"
 Tracker = "https://github.com/neutrinoceros/yt_idefix/issues"
 
-[tool.setuptools]
-license-files = [
-    "LICENSE",
-]
-include-package-data = false
-
-[tool.setuptools.package-data]
-yt_idefix = [
-    "py.typed",
-]
-
-[tool.setuptools.packages.find]
-where = ["src"]
-namespaces = false
+[tool.hatch.build]
+exclude = ["tests"]
 
 [tool.ruff.lint]
 exclude = [
