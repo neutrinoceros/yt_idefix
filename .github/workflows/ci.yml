@@ -36,7 +36,6 @@ jobs:
     - uses: astral-sh/setup-uv@v2
       with:
         enable-cache: true
-        github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build
       run: |
@@ -62,7 +61,6 @@ jobs:
     - uses: astral-sh/setup-uv@v2
       with:
         enable-cache: true
-        github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Run mypy
       # Match minimal supported Python version
