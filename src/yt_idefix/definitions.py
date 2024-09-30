@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 
@@ -39,7 +39,7 @@ class _PlutoBaseUnits:
 
     _base_unit_list = ("mass_unit", "length_unit", "time_unit")
 
-    def __init__(self, unit_combination: Dict[str, Any]):
+    def __init__(self, unit_combination: dict[str, Any]):
         # Fow now, unit_combination has been validated before passed in
         # But we still need to check the number of units here for insurance
         if len(unit_combination) != 3:

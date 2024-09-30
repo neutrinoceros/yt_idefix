@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Literal, NamedTuple, Tuple
+from typing import Any, Literal, NamedTuple
 
 import numpy as np
 
@@ -68,12 +68,12 @@ def get_native_coordinates_from_cartesian(
     elif geometry == "spherical":
         # Reconstruct the spherical coordinate system
         if shape.n3 == 1:
-            r = np.sqrt(xcart[:, 0, 0] ** 2 + ycart[:, 0, 0] ** 2)
+            r = np.sqrt(xcart[:, 0, 0] ** 2 + zcart[:, 0, 0] ** 2)
             phi = np.unwrap(
-                np.arctan2(zcart[0, shape.n2 // 2, :], xcart[0, shape.n2 // 2, :])
+                np.arctan2(ycart[0, shape.n2 // 2, :], xcart[0, shape.n2 // 2, :])
             )
             theta = np.arccos(
-                ycart[0, :, 0] / np.sqrt(xcart[0, :, 0] ** 2 + ycart[0, :, 0] ** 2)
+                zcart[0, :, 0] / np.sqrt(xcart[0, :, 0] ** 2 + zcart[0, :, 0] ** 2)
             )
         else:
             r = np.sqrt(xcart[:, 0, 0] ** 2 + ycart[:, 0, 0] ** 2 + zcart[:, 0, 0] ** 2)
@@ -100,7 +100,7 @@ def get_native_coordinates_from_cartesian(
 # map field name to numpy array init data:
 # precision (-> datatype), dimensionality, [nx, ny, nz]
 # the np.ndarray is assumed to contain *dim* elements
-IdefixFieldProperties = Dict[str, Tuple[Prec, Dim, np.ndarray]]
+IdefixFieldProperties = dict[str, tuple[Prec, Dim, np.ndarray]]
 
 # Map various str keys to scalars and arrays
-IdefixMetadata = Dict[str, Any]
+IdefixMetadata = dict[str, Any]

@@ -19,32 +19,37 @@ jobs:
         os:
         - ubuntu-latest
         python-version:
-        - '3.8'
-        - '3.11'
-        install-target:
-        - .
-        - .[HDF5]
+        - '3.10'
+        - '3.12'
+        install-args:
+        - ''
+        - --extra HDF5
+
+        include:
+        - os: ubuntu-20.04
+          python-version: '3.10'
+          install-args: --extra HDF5 --resolution=lowest-direct
 
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v3
-    - name: Setup Python
-      uses: actions/setup-python@v4
+    - uses: actions/checkout@v4
+    - uses: astral-sh/setup-uv@v2
       with:
-        python-version: ${{ matrix.python-version }}
+        enable-cache: true
 
     - name: Build
-      env:
-        INSTALL_TARGET: ${{ matrix.install-target }}
       run: |
-        python -m pip install --upgrade pip
-        python -m pip install "$INSTALL_TARGET"
-        python -m pip install --requirement requirements/tests.txt
+        uv venv --python ${{ matrix.python-version }}
+        uv pip install . --no-deps
+        uv pip install --requirement pyproject.toml --no-build ${{ matrix.install-args }}
+        uv pip install --requirement requirements/tests.txt
+
+    - run: uv pip list
 
     - name: run tests
       run: |
-        python -m pip freeze
-        pytest --color=yes
+        source .venv/bin/activate
+        pytest --color=yes -ra
 
 
   type-check:
@@ -52,22 +57,14 @@ jobs:
     name: type check
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+    - uses: astral-sh/setup-uv@v2
       with:
-        fetch-depth: 0
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        # Match minimal supported Python version
-        # to make sure we're not using unparseable syntax
-        python-version: '3.8'
-
-    - name: Build
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install .
-        python -m pip install --requirement requirements/typecheck.txt
+        enable-cache: true
 
     - name: Run mypy
-      run: mypy src/yt_idefix
+      # Match minimal supported Python version
+      # to make sure we're not using unparseable syntax
+      run: |
+        uvx --python 3.10 --with-requirements=requirements/typecheck.txt --with . \
+        mypy src/yt_idefix

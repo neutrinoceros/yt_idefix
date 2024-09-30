@@ -28,8 +28,7 @@ def read_single_field(
     shape: tuple[int, int, int],
     offset: int | None = None,
     skip_data: Literal[False],
-) -> np.ndarray:
-    ...
+) -> np.ndarray: ...
 
 
 @overload
@@ -39,8 +38,7 @@ def read_single_field(
     shape: tuple[int, int, int],
     offset: int | None = None,
     skip_data: Literal[True],
-) -> None:
-    ...
+) -> None: ...
 
 
 def read_single_field(
@@ -150,7 +148,9 @@ def read_grid_coordinates(
             coords.append(np.fromfile(fh, dtype=">f", count=nx))
             next(fh)
         line = next(fh).decode()
-        point_type, npoints = (t(_) for t, _ in zip((str, int), line.split()))
+        point_type, npoints = (
+            t(_) for t, _ in zip((str, int), line.split(), strict=True)
+        )
         next(fh)
         if point_type == "CELL_DATA":
             array_shape = shape.to_cell_centered()

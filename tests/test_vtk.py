@@ -213,7 +213,7 @@ def test_derived_field(vtk_file):
     # this derived field is compatible for all current test data
     # it'll be replaced once a better universal field is defined internally.
 
-    def mom_den(field, data):
+    def mom_den(field, data):  # NOQA: ARG001
         return data["RHO"] * data["VX1"]
 
     ds.add_field(
