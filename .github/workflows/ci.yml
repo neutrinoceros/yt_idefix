@@ -36,6 +36,9 @@ jobs:
     - uses: astral-sh/setup-uv@v3
       with:
         enable-cache: true
+        cache-dependency-glob: |
+          **/requirements/tests.txt
+          **/pyproject.toml
 
     - name: Build
       run: |
@@ -61,6 +64,9 @@ jobs:
     - uses: astral-sh/setup-uv@v3
       with:
         enable-cache: true
+        cache-dependency-glob: |
+          **/requirements/typecheck.txt
+          **/pyproject.toml
 
     - name: Run mypy
       # Match minimal supported Python version
