@@ -15,6 +15,7 @@ import inifix
 import numpy as np
 import numpy.testing as npt
 
+import yt
 from yt.data_objects.index_subobjects.stretched_grid import StretchedGrid
 from yt.data_objects.static_output import Dataset
 from yt.funcs import setdefaultattr
@@ -264,6 +265,8 @@ class IdefixDmpHierarchy(FieldOffsetHierarchy):
 
 
 class PlutoXdmfHierarchy(GoodBoyHierarchy):
+    _load_requirements = ["inifix", "h5py"]
+
     @cached_property
     def _cell_widths(self) -> tuple[XSpans, YSpans, ZSpans]:
         cell_edges = h5_io.read_grid_coordinates(
@@ -941,6 +944,8 @@ class PlutoXdmfDataset(StaticPlutoDataset):
     @override
     @classmethod
     def _is_valid(cls, filename: str, *args, **kwargs) -> bool:  # NOQA: ARG003
+        if yt.version_info >= (4, 3) and cls._missing_load_requirements():
+            return False
         if not (
             filename.endswith((".dbl.h5", ".flt.h5"))
             and os.path.isfile(filename.removesuffix(".h5") + ".xmf")
