@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import struct
 import warnings
 from typing import Any, BinaryIO, Literal, overload
@@ -75,6 +76,9 @@ def parse_shape(s: str, md: dict[str, Any]) -> None:
     md["shape"] = read_shape(s)
 
 
+NATIVE_COORDINATE_REGEXP = re.compile(r"X(1|2|3)(L|C)_NATIVE_COORDINATES")
+
+
 # this may not be kept in the following form
 def read_metadata(fh: BinaryIO) -> dict[str, Any]:
     fh.seek(0)
@@ -107,6 +111,12 @@ def read_metadata(fh: BinaryIO) -> dict[str, Any]:
             elif d.startswith("PERIODICITY"):
                 metadata["periodicity"] = tuple(
                     np.fromfile(fh, dtype=">i4", count=3).astype(bool)
+                )
+            elif NATIVE_COORDINATE_REGEXP.match(d):
+                entry, _ncomp, native_dim, _dtype = d.split()
+                metadata.setdefault("native_coordinates", {})
+                metadata["native_coordinates"][entry] = np.fromfile(
+                    fh, dtype=">f", count=int(native_dim)
                 )
             else:
                 warnings.warn(f"Found unknown field {d!r}", stacklevel=2)
@@ -221,12 +231,21 @@ def read_grid_coordinates(
             )
         return arr
 
-    return Coordinates(
-        warn_invalid(coords[0]),
-        warn_invalid(coords[1]),
-        warn_invalid(coords[2]),
-        array_shape,
-    )
+    if "native_coordinates" in md:
+        nc = md["native_coordinates"]
+        return Coordinates(
+            nc["X1C_NATIVE_COORDINATES"],
+            nc["X2C_NATIVE_COORDINATES"],
+            nc["X3C_NATIVE_COORDINATES"],
+            array_shape,
+        )
+    else:
+        return Coordinates(
+            warn_invalid(coords[0]),
+            warn_invalid(coords[1]),
+            warn_invalid(coords[2]),
+            array_shape,
+        )
 
 
 def read_field_offset_index(
