@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "yt_idefix"
-version = "2.3.2"
+version = "2.4.0"
 description = "An extension module for yt, adding a frontend for Idefix and Pluto"
 authors = [
     { name = "C.M.T. Robert" },
@@ -35,7 +35,6 @@ dependencies = [
     "typing-extensions>=4.4.0 ; python_version < '3.12'"
 ]
 
-
 [project.optional-dependencies]
 HDF5 = ["h5py>=3.7.0"]
 
@@ -57,6 +56,9 @@ Homepage = "https://yt-project.org/"
 Documentation = "https://yt-project.org/docs/dev/"
 Source = "https://github.com/neutrinoceros/yt_idefix"
 Tracker = "https://github.com/neutrinoceros/yt_idefix/issues"
+
+[tool.hatch.build.targets.sdist]
+exclude = [".*"] # exclude dot files (.gitignore is still included)
 
 [tool.hatch.build]
 exclude = ["tests"]
