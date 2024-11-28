@@ -264,7 +264,7 @@ class IdefixDmpHierarchy(FieldOffsetHierarchy):
         )
 
 
-class PlutoXdmfHierarchy(GoodBoyHierarchy):
+class XdmfHierarchy(GoodBoyHierarchy):
     @cached_property
     def _cell_widths(self) -> tuple[XSpans, YSpans, ZSpans]:
         cell_edges = h5_io.read_grid_coordinates(
@@ -314,10 +314,6 @@ class PlutoXdmfHierarchy(GoodBoyHierarchy):
             npt.assert_array_less(0, cell_centers)
 
         return cell_centers
-
-
-class IdefixXdmfHierarchy(PlutoXdmfHierarchy):
-    pass
 
 
 class GoodboyDataset(Dataset, ABC):
@@ -847,9 +843,12 @@ class IdefixVtkDataset(VtkMixin, IdefixDataset):
             return "Idefix" in header
 
 
-class IdefixXdmfDataset(IdefixDataset):
+class XdmfMixin(Dataset):
+    _index_class = XdmfHierarchy
+
+
+class IdefixXdmfDataset(XdmfMixin, IdefixDataset):
     _dataset_type = "idefix-xdmf"
-    _index_class = IdefixXdmfHierarchy
     _field_info_class = IdefixXdmfFields
 
     @override
@@ -1078,9 +1077,9 @@ class PlutoVtkDataset(VtkMixin, StaticPlutoDataset):
         return os.path.join(self.directory, "vtk.out")
 
 
-class PlutoXdmfDataset(StaticPlutoDataset):
+class PlutoXdmfDataset(XdmfMixin, StaticPlutoDataset):
     _dataset_type = "pluto-xdmf"
-    _index_class = PlutoXdmfHierarchy
+    _index_class = XdmfHierarchy
 
     @override
     def _get_log_file(self) -> str:
