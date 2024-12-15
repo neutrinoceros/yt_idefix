@@ -35,42 +35,30 @@ jobs:
     - uses: actions/checkout@v4
     - uses: astral-sh/setup-uv@v4
       with:
-        enable-cache: true
-        cache-dependency-glob: |
-          **/requirements/tests.txt
-          **/pyproject.toml
-
-    - name: Build
-      run: |
-        uv venv --python ${{ matrix.python-version }}
-        uv pip install . --no-deps
-        uv pip install --requirement pyproject.toml --no-build ${{ matrix.install-args }}
-        uv pip install --requirement requirements/tests.txt
-
-    - run: uv pip list
+        python-version: ${{ matrix.python-version }}
 
     - name: run tests
       run: |
-        source .venv/bin/activate
-        pytest --color=yes -ra
+        uv run --group test ${{ matrix.install-args }} \
+          pytest --color=yes
 
 
   type-check:
     runs-on: ubuntu-latest
     name: type check
 
+    strategy:
+      matrix:
+        python-version:
+        - '3.10'
+        - '3.13'
+
     steps:
     - uses: actions/checkout@v4
     - uses: astral-sh/setup-uv@v4
       with:
-        enable-cache: true
-        cache-dependency-glob: |
-          **/requirements/typecheck.txt
-          **/pyproject.toml
+        python-version: ${{ matrix.python-version }}
 
-    - name: Run mypy
-      # Match minimal supported Python version
-      # to make sure we're not using unparseable syntax
+    - name: Typecheck
       run: |
-        uvx --python 3.10 --with-requirements=requirements/typecheck.txt --with . \
-        mypy src/yt_idefix
+        uv run --frozen --group typecheck mypy src
