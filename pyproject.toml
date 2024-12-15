@@ -57,6 +57,17 @@ Documentation = "https://yt-project.org/docs/dev/"
 Source = "https://github.com/neutrinoceros/yt_idefix"
 Tracker = "https://github.com/neutrinoceros/yt_idefix/issues"
 
+[dependency-groups]
+test = [
+    "more-itertools>=8.4.0",
+    "pyaml>=17.10.0",
+    "pytest>=7.0.0",
+]
+
+typecheck = [
+    "mypy>=1.13.0",
+]
+
 [tool.hatch.build.targets.sdist]
 exclude = [".*"] # exclude dot files (.gitignore is still included)
 
@@ -103,6 +114,7 @@ warn_unreachable = true
 show_error_context = true
 
 [tool.pytest.ini_options]
+addopts = "-ra"
 filterwarnings = [
     "error",
     # already patched (but not released) upstream:

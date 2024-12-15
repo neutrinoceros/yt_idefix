@@ -34,22 +34,18 @@ jobs:
         python-version: 3.13-dev
 
     - uses: astral-sh/setup-uv@v4
-      with:
-        enable-cache: true
-        cache-dependency-glob: |
-          **/requirements/tests.txt
-          **/pyproject.toml
+    - name: Configure uv
+      run: |
+        echo "UV_PYTHON_PREFERENCE=only-system" >> $GITHUB_ENV
+        echo "UV_PYTHON=3.13" >> $GITHUB_ENV
+        echo "UV_PRERELEASE=allow" >> $GITHUB_ENV
+        echo "UV_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple" >> $GITHUB_ENV
 
     - name: Build
       run: |
-        uv venv
+        uv sync --group test --extra HDF5 --no-editable
         uv pip install git+https://github.com/yt-project/yt.git
-        uv pip install .
-        uv pip install --requirement requirements/tests.txt
-
-    - run: uv pip list
 
     - name: Run Tests
       run: |
-        source .venv/bin/activate
-        pytest --color=yes -ra
+        uv run --frozen --no-editable pytest --color=yes
