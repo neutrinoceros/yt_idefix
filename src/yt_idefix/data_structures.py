@@ -32,6 +32,7 @@ from .definitions import _PlutoBaseUnits, pluto_def_constants
 from .fields import (
     IdefixDmpFields,
     IdefixVtkFields,
+    IdefixXdmfFields,
     PlutoFields,
 )
 
@@ -264,7 +265,7 @@ class IdefixDmpHierarchy(FieldOffsetHierarchy):
         )
 
 
-class PlutoXdmfHierarchy(GoodBoyHierarchy):
+class XdmfHierarchy(GoodBoyHierarchy):
     _load_requirements = ["inifix", "h5py"]
 
     @cached_property
@@ -845,36 +846,8 @@ class IdefixVtkDataset(VtkMixin, IdefixDataset):
             return "Idefix" in header
 
 
-class PlutoVtkDataset(VtkMixin, StaticPlutoDataset):
-    _dataset_type = "pluto-vtk"
-
-    @override
-    @classmethod
-    def _is_valid(cls, filename: str, *args, **kwargs) -> bool:  # NOQA: ARG003
-        try:
-            header = vtk_io.read_header(filename)
-        except Exception:
-            return False
-        else:
-            return "PLUTO" in header
-
-    @override
-    def _get_log_file(self) -> str:
-        return os.path.join(self.directory, "vtk.out")
-
-
-class PlutoXdmfDataset(StaticPlutoDataset):
-    _dataset_type = "pluto-xdmf"
-    _index_class = PlutoXdmfHierarchy
-
-    @override
-    def _get_log_file(self) -> str:
-        if (suffix := re.search(r"(flt|dbl)\.h5$", self.filename)) is not None:
-            return os.path.join(self.directory, f"{suffix.group()}.out")
-        else:
-            raise RuntimeError(
-                f"Failed to detect log file associated with {self.filename}"
-            )
+class XdmfMixin(Dataset):
+    _index_class = XdmfHierarchy
 
     @override
     def _parse_parameter_file(self):
@@ -893,9 +866,7 @@ class PlutoXdmfDataset(StaticPlutoDataset):
         super()._parse_parameter_file()
 
         # parse the grid
-        coords = h5_io.read_grid_coordinates(
-            self.filename, geometry=self.parameters["definitions"]["geometry"]
-        )
+        coords = h5_io.read_grid_coordinates(self.filename, geometry=self.geometry)
 
         _default_field_list = [f[0] for f in self._field_info_class.known_other_fields]
         with h5py.File(self.filename, mode="r") as h5f:
@@ -927,6 +898,210 @@ class PlutoXdmfDataset(StaticPlutoDataset):
         self.domain_right_edge = dre
 
         self._periodicity = (True, True, True)
+
+
+class IdefixXdmfDataset(XdmfMixin, IdefixDataset):
+    _dataset_type = "idefix-xdmf"
+    _field_info_class = IdefixXdmfFields
+
+    @override
+    @classmethod
+    def _is_valid(cls, filename: str, *args, **kwargs) -> bool:  # NOQA: ARG003
+        if not (
+            filename.endswith((".dbl.h5", ".flt.h5"))
+            and os.path.isfile(filename.removesuffix(".h5") + ".xmf")
+        ):
+            return False
+
+        try:
+            fileh = h5py.File(filename, mode="r")
+        except (ImportError, OSError):
+            return False
+        else:
+            base_groups = list(fileh.keys())
+            key_entry = ""
+            for key in base_groups:
+                if "Timestep_" in key:
+                    key_entry = key
+                    break
+            if key_entry == "":
+                fileh.close()
+                return False
+            attributes = list(fileh[f"/{key_entry}"].attrs.keys())
+            if "version" not in attributes:
+                fileh.close()
+                return False
+            version = fileh[f"/{key_entry}"].attrs["version"][0].decode()
+            fileh.close()
+            return "Idefix" in version and "XDMF" in version
+
+    @override
+    def _read_data_header(self) -> str:
+        with h5py.File(self.filename, mode="r") as h5f:
+            base_groups = list(h5f.keys())
+            key_entry = ""
+            for key in base_groups:
+                if "Timestep_" in key:
+                    key_entry = key
+                    break
+            self.current_time = float(h5f[f"/{key_entry}"].attrs["time"])
+            version_line = h5f[f"/{key_entry}"].attrs["version"][0].decode()
+            attributes = list(h5f[f"/{key_entry}"].attrs.keys())
+            self.attributes = {}
+            for attribute in attributes:
+                if attribute == "version":
+                    continue
+                if attribute == "dump_datatype" or attribute == "geometry":
+                    self.attributes[attribute] = (
+                        h5f[f"/{key_entry}"].attrs[attribute][0].decode()
+                    )
+                else:
+                    self.attributes[attribute] = h5f[f"/{key_entry}"].attrs[attribute]
+        match = re.search(r"\d+\.\d+\.?\d*[-\w+]*", version_line)
+        if match is None:
+            warnings.warn(
+                "Could not determine code version from file HDF5 file attribute",
+                stacklevel=2,
+            )
+            return "unknown"
+
+        return match.group()
+
+    @override
+    def _setup_geometry(self) -> None:
+        self.geometry = Geometry(self.parameters["definitions"]["geometry"])
+
+    @override
+    def _set_code_unit_attributes(self):
+        """Conversion between physical units and code units."""
+
+        # Base units are length, velocity and density, but here we consider
+        # length, mass and time as base units. Since it can make us easy to calculate
+        # all units when self.units_override is not None.
+
+        # Default values of Pluto's base units which are stored in self.parameters
+        # if they can be read from definitions.h
+        # Otherwise, they are set to the following default values adopted
+        # velocity_unit = km/s
+        # density_unit = mp/cm**3
+        # length_unit = AU
+        defs = self.parameters["definitions"]
+        idefix_units = {}
+        idefix_units["length_unit"] = self.quan(defs.get("length_unit", 1.0), "cm")
+        idefix_units["velocity_unit"] = self.quan(
+            defs.get(
+                "velocity_unit",
+                defs.get("length_unit", 1.0) / defs.get("time_unit", 1.0),
+            ),
+            "cm/s",
+        )
+        idefix_units["density_unit"] = self.quan(
+            defs.get(
+                "density_unit",
+                defs.get("mass_unit", 1.0) / defs.get("length_unit", 1.0) ** 3,
+            ),
+            "g/cm**3",
+        )
+
+        uo_size = len(self.units_override)
+        if uo_size > 0 and uo_size < 3:
+            ytLogger.info(
+                "Less than 3 units were specified in units_override (got %s). "
+                "Need to rely on PLUTO's internal units to derive other units",
+                uo_size,
+            )
+
+        uo_cache = self.units_override.copy()
+        while len(uo_cache) < 3:
+            # If less than 3 units were passed into units_override,
+            # the rest will be chosen from Pluto's units
+            unit, value = idefix_units.popitem()
+            # If any Pluto's base unit is specified in units_override, it'll be preserved
+            if unit in uo_cache:
+                continue
+            uo_cache[unit] = value
+            # Make sure the combination of units are able to derive base units
+            # No need of validation and logging when no unit to be overrided
+            if uo_size > 0:
+                try:
+                    self.__class__._validate_units_override_keys(uo_cache)
+                except ValueError:
+                    # It means the combination is invalid
+                    del uo_cache[unit]
+                else:
+                    ytLogger.info("Relying on %s: %s.", unit, uo_cache[unit])
+
+        bu = _PlutoBaseUnits(uo_cache)
+        for unit, value in bu._data.items():
+            setattr(self, unit, value)
+
+        self.velocity_unit = self.length_unit / self.time_unit
+        self.density_unit = self.mass_unit / self.length_unit**3
+        self.magnetic_unit = (
+            np.sqrt(4.0 * np.pi * self.density_unit) * self.velocity_unit
+        )
+        self.magnetic_unit.convert_to_units("gauss")
+        self.temperature_unit = self.quan(1.0, "K")
+
+    invalid_unit_combinations = [
+        {"magnetic_unit", "velocity_unit", "density_unit"},
+        {"velocity_unit", "time_unit", "length_unit"},
+        {"density_unit", "length_unit", "mass_unit"},
+    ]
+
+    default_units = {
+        "length_unit": "cm",
+        "time_unit": "s",
+        "mass_unit": "g",
+        "velocity_unit": "cm/s",
+        "magnetic_unit": "gauss",
+        "temperature_unit": "K",
+        # this is the one difference with Dataset.default_units:
+        # we accept density_unit as a valid override
+        "density_unit": "g/cm**3",
+    }
+
+    @override
+    def _parse_definitions_header(self) -> None:
+        self.parameters["definitions"] = {}
+        self.parameters["definitions"]["geometry"] = self.attributes["geometry"]
+
+        for attribute in self.attributes:
+            if "unit" not in attribute:
+                continue
+            self.parameters["definitions"][attribute] = self.attributes[attribute]
+
+
+class PlutoVtkDataset(VtkMixin, StaticPlutoDataset):
+    _dataset_type = "pluto-vtk"
+
+    @override
+    @classmethod
+    def _is_valid(cls, filename: str, *args, **kwargs) -> bool:  # NOQA: ARG003
+        try:
+            header = vtk_io.read_header(filename)
+        except Exception:
+            return False
+        else:
+            return "PLUTO" in header
+
+    @override
+    def _get_log_file(self) -> str:
+        return os.path.join(self.directory, "vtk.out")
+
+
+class PlutoXdmfDataset(XdmfMixin, StaticPlutoDataset):
+    _dataset_type = "pluto-xdmf"
+    _index_class = XdmfHierarchy
+
+    @override
+    def _get_log_file(self) -> str:
+        if (suffix := re.search(r"(flt|dbl)\.h5$", self.filename)) is not None:
+            return os.path.join(self.directory, f"{suffix.group()}.out")
+        else:
+            raise RuntimeError(
+                f"Failed to detect log file associated with {self.filename}"
+            )
 
     def _read_data_header(self) -> str:
         grid_file = os.path.join(self.directory, "grid.out")
