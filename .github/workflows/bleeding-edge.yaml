@@ -33,7 +33,7 @@ jobs:
       with:
         python-version: 3.13-dev
 
-    - uses: astral-sh/setup-uv@v4
+    - uses: astral-sh/setup-uv@v5
     - name: Configure uv
       run: |
         echo "UV_PYTHON_PREFERENCE=only-system" >> $GITHUB_ENV
