@@ -75,6 +75,8 @@ exclude = [".*"] # exclude dot files (.gitignore is still included)
 exclude = ["tests"]
 
 [tool.ruff.lint]
+preview = true # needed for RUF031
+explicit-preview-rules = true
 exclude = [
     "*/api.py",
     "*/__init__.py",
@@ -90,6 +92,8 @@ select = [
     "YTT",  # flake8-2020
     "UP",   # pyupgrade
     "I",    # isort
+    "NPY",  # numpy specific rules
+    "RUF031"# incorrectly-parenthesized-tuple-in-subscript
 ]
 ignore = [
     "E501",  # line too long

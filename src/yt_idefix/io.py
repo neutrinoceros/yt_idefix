@@ -25,7 +25,7 @@ class SingleGridIO(BaseIOHandler, ABC):
                 for grid in chunk.objs:
                     nd = 0
                     for field in fields:
-                        ftype, fname = field
+                        _ftype, fname = field
                         foffset = grid._index._field_offsets[fname]
                         values = self._read_single_field(fh, foffset)
                         nd = grid.select(selector, values, data[field], ind)

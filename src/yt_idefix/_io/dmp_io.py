@@ -343,7 +343,7 @@ def read_single_field(
     data: 3D np.ndarray with dtype float64
     """
     fh.seek(field_offset)
-    field_name, dtype, ndim, dim = read_next_field_properties(fh, byteorder=byteorder)
+    _field_name, dtype, _ndim, dim = read_next_field_properties(fh, byteorder=byteorder)
     data = read_distributed(fh, dim, dtype=dtype, byteorder=byteorder, skip_data=False)
     return data
 
