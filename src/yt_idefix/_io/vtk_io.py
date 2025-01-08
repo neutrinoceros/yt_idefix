@@ -259,7 +259,7 @@ def read_field_offset_index(
         if len(line) < 2:
             break
         s = line.decode()
-        datatype, varname, dtype = s.split()
+        datatype, varname, _dtype = s.split()
 
         # some versions of Pluto define field names in lower case
         # so we normalize standard output field names to upper case

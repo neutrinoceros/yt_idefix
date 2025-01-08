@@ -43,7 +43,7 @@ def test_get_data():
 
 def test_read_dmp():
     fn = idefix_khi
-    fprops, fdata = read_idefix_dmpfile(fn)
+    fprops, _fdata = read_idefix_dmpfile(fn)
 
     expected_fields = {
         "x1",
