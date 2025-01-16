@@ -109,7 +109,7 @@ class PlutoXdmfIOHandler(BaseIOHandler):
             2 4.998045e+00 3.400969e-03 1458 single_file little rho vx1 vx2 vx3 prs tr1 tr2 tr3 Temp ndens PbykB mach
             3 7.497932e+00 3.386245e-03 2186 single_file little rho vx1 vx2 vx3 prs tr1 tr2 tr3 Temp ndens PbykB mach
         """
-        if (match := re.search(r"\d{4}", self.ds.filename)) is not None:
+        if (match := re.search(r"\d{4}", self.ds.basename)) is not None:
             entry = int(match.group())
         else:
             raise RuntimeError(f"Failed to parse output number from {self.ds.filename}")
