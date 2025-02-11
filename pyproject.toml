@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "yt_idefix"
-version = "2.4.1"
+version = "2.4.2"
 description = "An extension module for yt, adding a frontend for Idefix and Pluto"
 authors = [
     { name = "C.M.T. Robert" },
