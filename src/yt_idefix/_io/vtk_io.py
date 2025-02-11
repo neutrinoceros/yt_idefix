@@ -234,9 +234,9 @@ def read_grid_coordinates(
     if "native_coordinates" in md:
         nc = md["native_coordinates"]
         return Coordinates(
-            nc["X1C_NATIVE_COORDINATES"],
-            nc["X2C_NATIVE_COORDINATES"],
-            nc["X3C_NATIVE_COORDINATES"],
+            nc["X1L_NATIVE_COORDINATES"],
+            nc["X2L_NATIVE_COORDINATES"],
+            nc["X3L_NATIVE_COORDINATES"],
             array_shape,
         )
     else:
