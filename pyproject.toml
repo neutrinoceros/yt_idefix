@@ -1,6 +1,6 @@
 [build-system]
-requires = ["hatchling>=1.25"]
-build-backend = "hatchling.build"
+requires = ["flit_core >=3.11,<4"]
+build-backend = "flit_core.buildapi"
 
 [project]
 name = "yt_idefix"
@@ -9,12 +9,13 @@ description = "An extension module for yt, adding a frontend for Idefix and Plut
 authors = [
     { name = "C.M.T. Robert" },
 ]
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Framework :: Matplotlib",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: POSIX :: AIX",
     "Operating System :: POSIX :: Linux",
@@ -44,9 +45,6 @@ IdefixVtkDataset = "yt_idefix.api:IdefixVtkDataset"
 PlutoVtkDataset = "yt_idefix.api:PlutoVtkDataset"
 PlutoXdmfDataset = "yt_idefix.api:PlutoXdmfDataset"
 
-[project.license]
-text = "GPL-3.0"
-
 [project.readme]
 file = "README.md"
 content-type = "text/markdown"
@@ -67,12 +65,6 @@ test = [
 typecheck = [
     "mypy>=1.13.0",
 ]
-
-[tool.hatch.build.targets.sdist]
-exclude = [".*"] # exclude dot files (.gitignore is still included)
-
-[tool.hatch.build]
-exclude = ["tests"]
 
 [tool.ruff.lint]
 preview = true # needed for RUF031
