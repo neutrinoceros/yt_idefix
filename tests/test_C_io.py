@@ -8,7 +8,7 @@ from yt_idefix._io import C_io
     (
         ("//#define GEOMETRY CARTESIAN\n", "\n"),
         (
-            "#define GEOMETRY CARTESIAN\n" "/*\n" "#define GEOMETRY SPHERICAL\n" "*/\n",
+            "#define GEOMETRY CARTESIAN\n/*\n#define GEOMETRY SPHERICAL\n*/\n",
             "#define GEOMETRY CARTESIAN\n\n",
         ),
         (
@@ -21,7 +21,7 @@ from yt_idefix._io import C_io
             "a second multiline comment\n"
             "*/\n"
             "#define THREE 3\n",
-            "#define ONE 1\n" "\n" "#define TWO 2\n" "\n" "#define THREE 3\n",
+            "#define ONE 1\n\n#define TWO 2\n\n#define THREE 3\n",
         ),
     ),
 )
