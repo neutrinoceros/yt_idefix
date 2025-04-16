@@ -26,7 +26,7 @@ jobs:
         - --extra HDF5
 
         include:
-        - os: ubuntu-20.04
+        - os: ubuntu-22.04
           python-version: '3.10'
           install-args: --extra HDF5 --resolution=lowest-direct
 
