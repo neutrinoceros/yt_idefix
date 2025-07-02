@@ -41,7 +41,7 @@ jobs:
         echo "UV_INDEX_STRATEGY=unsafe-best-match" >> $GITHUB_ENV
         echo "RUST_LOG=uv=debug" >> $GITHUB_ENV
 
-    - run: uv lock --upgrade
+    - run: uv lock --upgrade --no-build
     - run: uv sync --group test --extra HDF5 --no-editable
     - run: uv pip install git+https://github.com/yt-project/yt.git
 
