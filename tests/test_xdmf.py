@@ -3,7 +3,8 @@ from pathlib import Path
 import pytest
 
 import yt
-from yt_idefix.api import PlutoXdmfDataset
+from yt_idefix.api import IdefixXdmfDataset, PlutoXdmfDataset
+from yt_idefix.data_structures import XdmfMixin
 
 pytest.importorskip("h5py")
 
@@ -15,12 +16,20 @@ ds_path_plutoXDMF = DATADIR.joinpath("pluto_isentropic_vortex", "data.0010.flt.h
 
 def test_class_validation(xdmf_file):
     file = xdmf_file
-    assert PlutoXdmfDataset._is_valid(str(file["path"]))
+    cls = {
+        "idefix": IdefixXdmfDataset,
+        "pluto": PlutoXdmfDataset,
+    }[file["kind"]]
+    assert cls._is_valid(str(file["path"]))
 
 
 def test_load_class(xdmf_file):
     file = xdmf_file
-    PlutoXdmfDataset(str(file["path"]))
+    cls = {
+        "idefix": IdefixXdmfDataset,
+        "pluto": PlutoXdmfDataset,
+    }[file["kind"]]
+    cls(str(file["path"]))
 
 
 # TODO: make this a pytest-mpl test
@@ -38,4 +47,4 @@ def test_projection_plot(xdmf_file):
 
 def test_load_magic(xdmf_file):
     ds = yt.load(xdmf_file["path"], geometry=xdmf_file["geometry"])
-    assert isinstance(ds, PlutoXdmfDataset)
+    assert isinstance(ds, XdmfMixin)
