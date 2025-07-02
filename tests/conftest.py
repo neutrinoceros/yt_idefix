@@ -39,6 +39,14 @@ def pytest_configure(config):
         )
 
 
+def pytest_report_header(config, start_path):  # noqa: ARG001
+    return [
+        f"NumPy: {version('numpy')}",
+        f"matplotlib: {version('matplotlib')}",
+        f"yt: {version('yt')}",
+    ]
+
+
 DATA_DIR = Path(__file__).parent / "data"
 
 VTK_FILES: dict[str, dict[str, Any]] = {}
