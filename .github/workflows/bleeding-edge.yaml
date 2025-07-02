@@ -39,11 +39,11 @@ jobs:
         echo "UV_PRERELEASE=allow" >> $GITHUB_ENV
         echo "UV_INDEX=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple" >> $GITHUB_ENV
         echo "UV_INDEX_STRATEGY=unsafe-best-match" >> $GITHUB_ENV
+        echo "RUST_LOG=uv=debug" >> $GITHUB_ENV
 
-    - name: Build
-      run: |
-        uv sync --group test --extra HDF5 --no-editable
-        uv pip install git+https://github.com/yt-project/yt.git
+    - run: uv lock --upgrade
+    - run: uv sync --group test --extra HDF5 --no-editable
+    - run: uv pip install git+https://github.com/yt-project/yt.git
 
     - name: Run Tests
       run: |
