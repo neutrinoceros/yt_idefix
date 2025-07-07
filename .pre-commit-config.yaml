@@ -24,7 +24,7 @@ repos:
   rev: v0.12.2
   hooks:
   - id: ruff-format
-  - id: ruff
+  - id: ruff-check
     args: [--fix]
 
 - repo: https://github.com/neutrinoceros/inifix.git
