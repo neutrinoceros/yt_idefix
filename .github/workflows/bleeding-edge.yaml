@@ -40,12 +40,7 @@ jobs:
         echo "UV_INDEX=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple" >> $GITHUB_ENV
         echo "UV_INDEX_STRATEGY=unsafe-best-match" >> $GITHUB_ENV
 
-    - run: uv lock --upgrade --no-build
-
-    # this additional step is needed as long as our requires-python
-    # (currently >=3.10) is lower than numpy's (currently >=3.11)
-    - run: uv lock -P numpy
-
+    - run: uv lock --upgrade -p "$UV_PYTHON"
     - run: uv sync --group test --extra HDF5 --no-editable --no-install-package yt
     - run: uv pip install git+https://github.com/yt-project/yt.git
 
