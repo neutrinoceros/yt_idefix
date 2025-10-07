@@ -42,13 +42,21 @@ jobs:
 
     - run: uv lock --upgrade --no-build
 
-    # this additional step is needed as long as our requires-python
-    # (currently >=3.10) is lower than numpy's (currently >=3.11)
-    - run: uv lock -P numpy
-
-    - run: uv sync --group test --extra HDF5 --no-editable --no-install-package yt
-    - run: uv pip install git+https://github.com/yt-project/yt.git
-
-    - name: Run Tests
+    # using pip compile + pip lock to workaround limitations of universal locking
+    # in particular, this method is more reliable at ensuring we get nightly wheels
+    # instead of building stable versions from source
+    - name: Resolve and lock env
       run: |
-        uv run --no-sync --no-editable pytest --color=yes
+        uv pip compile pyproject.toml \
+          --all-extras --group test \
+          --quiet \
+          -o pylock.toml
+
+    - name: Install env
+      run: |
+        uv venv
+        uv pip sync pylock.toml
+        uv pip install . --no-deps
+
+    - name: Run pytest
+      run: uv run --no-sync pytest --color=yes
