@@ -28,7 +28,7 @@ jobs:
         include:
         - os: ubuntu-22.04
           python-version: '3.10'
-          install-args: --extra HDF5 --resolution=lowest-direct
+          install-args: --extra HDF5 --resolution=lowest
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -42,7 +42,7 @@ jobs:
     - name: run tests
       run: |
         uv run --group test ${{ matrix.install-args }} \
-          pytest --color=yes
+          pytest --color=yes ${{ contains( matrix.install-args , 'lowest' ) && '-Wdefault' || '' }}
 
 
   type-check:
