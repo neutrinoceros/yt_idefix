@@ -32,7 +32,7 @@ requires-python = ">=3.10.3"
 dependencies = [
     "inifix>=4.1.0",
     "numpy>=1.21.2",
-    "yt>=4.2.0",
+    "yt>=4.4.0",
     "typing-extensions>=4.4.0 ; python_version < '3.12'"
 ]
 
@@ -59,12 +59,32 @@ Tracker = "https://github.com/neutrinoceros/yt_idefix/issues"
 test = [
     "more-itertools>=8.4.0",
     "pyaml>=17.10.0",
-    "pytest>=7.0.0",
+    "pytest>=9.0.0",
 ]
 
 typecheck = [
     "mypy>=1.13.0",
 ]
+
+[tool.uv]
+no-build-package = [
+    "numpy",
+    "matplotlib",
+    "pillow",
+    "pyparsing",
+    "contourpy",
+    "kiwisolver",
+    "h5py",
+    "ewah-bool-utils",
+    "mpmath",
+    "iniconfig",
+    "pyyaml",
+]
+constraint-dependencies = [
+    "matplotlib>=3.6.0", # can be cleaned once yt 4.5 is min
+]
+
+
 
 [tool.ruff.lint]
 preview = true # needed for RUF031

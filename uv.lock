@@ -10,6 +10,9 @@ resolution-markers = [
     "(python_full_version < '3.10.4' and platform_machine != 'arm64') or (python_full_version < '3.10.4' and sys_platform != 'darwin')",
 ]
 
+[manifest]
+constraints = [{ name = "matplotlib", specifier = ">=3.6.0" }]
+
 [[package]]
 name = "cmyt"
 version = "2.0.2"
@@ -1256,7 +1259,7 @@ requires-dist = [
     { name = "inifix", specifier = ">=4.1.0" },
     { name = "numpy", specifier = ">=1.21.2" },
     { name = "typing-extensions", marker = "python_full_version < '3.12'", specifier = ">=4.4.0" },
-    { name = "yt", specifier = ">=4.2.0" },
+    { name = "yt", specifier = ">=4.4.0" },
 ]
 provides-extras = ["hdf5"]
 
@@ -1264,6 +1267,6 @@ provides-extras = ["hdf5"]
 test = [
     { name = "more-itertools", specifier = ">=8.4.0" },
     { name = "pyaml", specifier = ">=17.10.0" },
-    { name = "pytest", specifier = ">=7.0.0" },
+    { name = "pytest", specifier = ">=9.0.0" },
 ]
 typecheck = [{ name = "mypy", specifier = ">=1.13.0" }]
