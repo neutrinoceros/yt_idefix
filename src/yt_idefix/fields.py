@@ -36,6 +36,24 @@ class IdefixVtkFields(FieldInfoContainer):
         )
 
 
+class IdefixXdmfFields(FieldInfoContainer):
+    known_other_fields = (
+        ("RHO", ("code_mass / code_length**3", ["density"], None)),  # type: ignore
+        ("VX1", ("code_length / code_time", ["velocity_x"], None)),
+        ("VX2", ("code_length / code_time", ["velocity_y"], None)),
+        ("VX3", ("code_length / code_time", ["velocity_z"], None)),
+        ("BX1", ("code_magnetic", [], None)),
+        ("BX2", ("code_magnetic", [], None)),
+        ("BX3", ("code_magnetic", [], None)),
+        ("PRS", ("code_pressure", ["pressure"], None)),
+    )
+
+    def setup_fluid_fields(self):
+        setup_magnetic_field_aliases(
+            self, "idefix-vtk", [f"BX{idir}" for idir in "123"]
+        )
+
+
 class IdefixDmpFields(FieldInfoContainer):
     known_other_fields = (
         ("Vc-RHO", ("code_mass / code_length**3", ["density"], None)),  # type: ignore
