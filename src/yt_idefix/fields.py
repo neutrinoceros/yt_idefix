@@ -1,5 +1,12 @@
+import sys
+
 from yt.fields.field_info_container import FieldInfoContainer
 from yt.fields.magnetic_field import setup_magnetic_field_aliases
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
 
 
 class IdefixVtkFields(FieldInfoContainer):
@@ -30,6 +37,7 @@ class IdefixVtkFields(FieldInfoContainer):
         ),
     )
 
+    @override
     def setup_fluid_fields(self):
         setup_magnetic_field_aliases(
             self, "idefix-vtk", [f"BX{idir}" for idir in "123"]
@@ -52,6 +60,7 @@ class IdefixDmpFields(FieldInfoContainer):
 
     known_particle_fields = ()
 
+    @override
     def setup_fluid_fields(self):
         setup_magnetic_field_aliases(
             self, "idefix-dmp", [f"Vc-BX{idir}" for idir in "123"]
@@ -110,12 +119,16 @@ class PlutoFields(FieldInfoContainer):
 
     known_particle_fields = ()
 
+    @override
     def setup_fluid_fields(self):
         setup_magnetic_field_aliases(
             self, self.ds._dataset_type, [f"BX{idir}" for idir in "123"]
         )
 
-    def setup_particle_fields(self, ptype):
+    @override
+    def setup_particle_fields(
+        self, ptype: str, ftype: str = "gas", num_neighbors: int = 64
+    ) -> None:
         super().setup_particle_fields(ptype)
         # This will get called for every particle type.
         # {TODO} Starting with version 4.4 PLUTO has particle support and this function needs an implementation in future
