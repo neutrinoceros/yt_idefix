@@ -122,6 +122,9 @@ known-third-party = [
 ]
 known-first-party = ["yt", "yt_idefix"]
 
+[tool.ty.rules]
+unused-type-ignore-comment = "ignore"
+
 [tool.mypy]
 python_version = '3.10'
 show_error_codes = true
