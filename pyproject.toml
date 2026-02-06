@@ -132,8 +132,8 @@ warn_unused_configs = true
 warn_unreachable = true
 show_error_context = true
 
-[tool.pytest.ini_options]
-addopts = "-ra"
+[tool.pytest]
+addopts = ["-ra"]
 filterwarnings = [
     "error",
     # already patched (but not released) upstream:
