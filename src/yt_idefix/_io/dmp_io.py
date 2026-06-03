@@ -187,8 +187,10 @@ def read_chunk(
         retv = struct.unpack(fmt, fh.read(size))[0]
         return retv
     else:
-        data = np.fromfile(fh, alignment + DTYPES_2_NUMPY[dtype], count=count)
-        data.shape = dim[::-1]
+        data = np.reshape(
+            np.fromfile(fh, alignment + DTYPES_2_NUMPY[dtype], count=count),
+            dim[::-1],
+        )
         return data.astype("=" + DTYPES_2_NUMPY[dtype], copy=False).T
 
 
