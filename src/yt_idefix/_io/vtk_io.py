@@ -56,9 +56,10 @@ def read_single_field(
         fh.seek(count * np.dtype("f").itemsize, 1)
         data = None
     else:
-        data = np.fromfile(fh, ">f", count=count)
-        data.shape = shape[::-1]
-        data = data.T
+        data = np.reshape(
+            np.fromfile(fh, ">f", count=count),
+            shape[::-1],
+        ).T
     return data
 
 
@@ -191,17 +192,9 @@ def read_grid_coordinates(
         points = np.fromfile(fh, dtype=">f", count=3 * npoints)
         next(fh)
 
-        xcart = points[::3]
-        xcart.shape = rshape
-        xcart = xcart.T
-
-        ycart = points[1::3]
-        ycart.shape = rshape
-        ycart = ycart.T
-
-        zcart = points[2::3]
-        zcart.shape = rshape
-        zcart = zcart.T
+        xcart = np.reshape(points[0::3], rshape).T
+        ycart = np.reshape(points[1::3], rshape).T
+        zcart = np.reshape(points[2::3], rshape).T
 
         coords = get_native_coordinates_from_cartesian(xcart, ycart, zcart, geometry)
 
