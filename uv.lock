@@ -365,15 +365,15 @@ wheels = [
 
 [[package]]
 name = "inifix"
-version = "6.1.1"
+version = "6.1.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a4/f4/78dba28215b7ba1c489c7e6ccaf6fe3fbc88cd394b6c0193fe3622c31b12/inifix-6.1.1.tar.gz", hash = "sha256:31770998f6fb6c5faf708f64a01986d8f3f641b2d663dc6ca4782ec9222e1899", size = 39108, upload-time = "2025-04-14T10:00:34.616Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2c/3d/ad54d3d791ce634a4f913c8a258ab548d3b4e23dee4bdffb16fe7d34c46f/inifix-6.1.2.tar.gz", hash = "sha256:b172f98b24180a401cdf6591a55d348c0ac5e80d4631445b59ba6f9c7e27f166", size = 39590, upload-time = "2026-04-01T17:16:17.206Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8b/eb/064be5405b5fd53bed5864f0f8c782c0144331ff43c7ecddbf5250b83282/inifix-6.1.1-py3-none-any.whl", hash = "sha256:defa6bbfeef815e1db6456e62b83956aeeffb449b0aa348307634019567cc4c8", size = 28829, upload-time = "2025-04-14T10:00:33.123Z" },
+    { url = "https://files.pythonhosted.org/packages/7b/65/4e6f4873f50c544461033e91f690b39fbf569a76365c20553c43eef15e99/inifix-6.1.2-py3-none-any.whl", hash = "sha256:097645fecbab5b57e7e3302d6b734aff59dd8892d3c665af172e7474fabd4ca3", size = 28899, upload-time = "2026-04-01T17:16:15.499Z" },
 ]
 
 [[package]]
