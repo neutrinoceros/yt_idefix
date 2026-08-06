@@ -67,6 +67,43 @@ class IdefixVtkIO(PlutoVtkIO, BaseParticleIOHandler):
         raise NotImplementedError("Particles are not currently supported for Idefix")
 
 
+class IdefixXdmfIOHandler(BaseIOHandler):
+    _dataset_type = "idefix-xdmf"
+
+    def _read_fluid_selection(self, chunks, selector, fields, size):
+        """
+        Filenames are data.<snapnum>.<dbl/flt>.h5
+        <snapnum> needs to be parse from the filename.
+        """
+        if (match := re.search(r"\d{4}", self.ds.filename)) is not None:
+            entry = int(match.group())
+        else:
+            raise RuntimeError(f"Failed to parse output number from {self.ds.filename}")
+
+        data = {field: np.empty(size, dtype="float64") for field in fields}
+
+        with h5py.File(self.ds.filename, "r") as fh:
+            ind = 0
+            for chunk in chunks:
+                for grid in chunk.objs:
+                    nd = 0
+                    for field in fields:
+                        _, fname = field
+                        position = (
+                            f"/Timestep_{entry}/vars/{self.ds._field_name_map[fname]}"
+                        )
+                        field_data = fh[position][:].astype("=f8")
+
+                        while field_data.ndim < 3:
+                            field_data = np.expand_dims(field_data, axis=0)
+
+                        # X3 X2 X1 orderding of fields in Idefix needs to rearranged to X1 X2 X3 order in yt.
+                        values = np.transpose(field_data, axes=(2, 1, 0))
+                        nd = grid.select(selector, values, data[field], ind)
+                    ind += nd
+        return data
+
+
 class IdefixDmpIO(SingleGridIO, BaseParticleIOHandler):
     _dataset_type = "idefix-dmp"
 
