@@ -73,9 +73,11 @@ With Pluto data, units not specified with `units_override` will be derived consi
 4. The following combinations are not allowed
 
 ```python
-{"magnetic_unit", "velocity_unit", "density_unit"},
-{"velocity_unit", "time_unit", "length_unit"},
-{"density_unit", "length_unit", "mass_unit"}
+[
+    {"magnetic_unit", "velocity_unit", "density_unit"},
+    {"velocity_unit", "time_unit", "length_unit"},
+    {"density_unit", "length_unit", "mass_unit"},
+]
 ```
 
 yt is able to provide some derived fields from existed fields, e.g., `"cell_volume"`. Fields related to element species can be created according to primordial abundances of H and He, through `default_species_fields` (`"neutral"` and `"ionized"`) parameters.
