@@ -28,16 +28,16 @@ classifiers = [
 keywords = [
     "astronomy astrophysics visualization amr adaptivemeshrefinement",
 ]
-requires-python = ">=3.10.3"
+requires-python = ">=3.11"
 dependencies = [
     "inifix>=4.1.0",
-    "numpy>=1.21.2",
+    "numpy>=1.23.2",
     "yt>=4.4.0",
     "typing-extensions>=4.4.0 ; python_version < '3.12'"
 ]
 
 [project.optional-dependencies]
-HDF5 = ["h5py>=3.7.0"]
+HDF5 = ["h5py>=3.8.0"]
 
 [project.entry-points."yt.frontends"]
 IdefixDmpkDataset = "yt_idefix.api:IdefixDmpDataset"
@@ -126,7 +126,7 @@ known-first-party = ["yt", "yt_idefix"]
 unused-type-ignore-comment = "ignore"
 
 [tool.mypy]
-python_version = '3.10'
+python_version = '3.11'
 show_error_codes = true
 warn_unused_configs = true
 warn_unreachable = true
