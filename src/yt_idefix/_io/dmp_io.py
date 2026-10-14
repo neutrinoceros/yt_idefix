@@ -2,20 +2,13 @@ from __future__ import annotations
 
 import re
 import struct
-import sys
 import warnings
 from enum import IntEnum
-from typing import BinaryIO, Literal, cast, overload
+from typing import BinaryIO, Literal, assert_never, cast, overload
 
 import numpy as np
 
 from .commons import Dim, IdefixFieldProperties, IdefixMetadata, Prec
-
-if sys.version_info >= (3, 11):
-    from typing import assert_never
-else:
-    from typing_extensions import assert_never
-
 
 KNOWN_GEOMETRIES: dict[int, str] = {
     1: "cartesian",
